@@ -1,0 +1,56 @@
+:root {
+  font-family: 'Open Sans', 'Segoe UI', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #2d2d2d;
+  background-color: #ffffff;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Стилистика в духе чистого минималистичного магазина: белый фон, тёмный текст, красно-оранжевый акцент */
+  --color-primary: #c45c26;
+  --color-primary-dark: #a84d1f;
+  --color-dark: #1a1a1a;
+  --color-text: #2d2d2d;
+  --color-gray: #6b7280;
+  --color-light-gray: #e5e7eb;
+  --color-border: #d1d5db;
+  --color-white: #ffffff;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #fff;
+  color: #2d2d2d;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+a:hover {
+  color: var(--color-primary);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+input {
+  font-family: inherit;
+}

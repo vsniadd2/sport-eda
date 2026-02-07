@@ -1,0 +1,150 @@
+.main {
+  flex: 1;
+  padding: 32px 24px 64px;
+  background: var(--color-white);
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.container h1 {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: var(--color-text);
+}
+
+.container p {
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--color-gray);
+}
+
+.links {
+  list-style: none;
+  margin-top: 24px;
+}
+
+.links li {
+  margin-bottom: 12px;
+}
+
+.links a {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-primary);
+}
+
+.links a:hover {
+  text-decoration: underline;
+}
+
+/* ——— Карта сайта ——— */
+.breadcrumb {
+  font-size: 13px;
+  color: var(--color-gray);
+  margin-bottom: 20px;
+}
+
+.breadcrumb a {
+  color: var(--color-gray);
+}
+
+.breadcrumb a:hover {
+  color: var(--color-primary);
+}
+
+.breadcrumbSep {
+  margin: 0 4px;
+  color: var(--color-light-gray);
+}
+
+.pageTitle {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 12px;
+}
+
+.sitemapIntro {
+  font-size: 15px;
+  color: var(--color-gray);
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.sitemapGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 24px;
+}
+
+.sitemapSection {
+  background: var(--color-white);
+  border: 1px solid var(--color-light-gray);
+  border-radius: 8px;
+  padding: 20px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.sitemapSection:hover {
+  border-color: var(--color-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.sitemapSectionTitle {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text);
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--color-primary);
+}
+
+.sitemapList {
+  list-style: none;
+}
+
+.sitemapList li {
+  margin-bottom: 8px;
+}
+
+.sitemapList li:last-child {
+  margin-bottom: 0;
+}
+
+.sitemapLink {
+  display: inline-block;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text);
+  padding: 4px 0;
+  transition: color 0.15s;
+}
+
+.sitemapLink:hover {
+  color: var(--color-primary);
+}
+
+@media (max-width: 600px) {
+  .main {
+    padding: 24px 16px 48px;
+  }
+
+  .sitemapGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .sitemapSection {
+    padding: 16px;
+  }
+
+  .pageTitle {
+    font-size: 24px;
+  }
+}

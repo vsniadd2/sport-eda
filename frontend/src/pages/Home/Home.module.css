@@ -1,0 +1,276 @@
+.main {
+  flex: 1;
+  background: #fff;
+}
+
+.banner {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  background: #1a1a1a;
+}
+
+.bannerLink {
+  display: block;
+  position: relative;
+  width: 100%;
+  text-decoration: none;
+  color: inherit;
+}
+
+.bannerImage {
+  width: 100%;
+  height: auto;
+  max-height: 520px;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  vertical-align: middle;
+}
+
+.bannerOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px 24px;
+  background: linear-gradient(to right, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.2) 50%, transparent 100%);
+  color: #fff;
+}
+
+.bannerOverlay .heroLabel {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.9);
+  margin-bottom: 12px;
+}
+
+.bannerOverlay h1 {
+  font-size: clamp(28px, 5vw, 42px);
+  font-weight: 700;
+  margin-bottom: 12px;
+  line-height: 1.2;
+  color: #fff;
+  max-width: 560px;
+}
+
+.bannerOverlay p {
+  font-size: clamp(14px, 2.5vw, 18px);
+  color: rgba(255,255,255,0.9);
+  margin-bottom: 24px;
+  max-width: 480px;
+}
+
+.bannerOverlay .heroBtn {
+  display: inline-block;
+  padding: 14px 32px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+  background: #fff;
+  border-radius: 6px;
+  width: fit-content;
+  transition: background 0.2s, color 0.2s;
+}
+
+.bannerLink:hover .bannerOverlay .heroBtn {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+@media (max-width: 600px) {
+  .bannerImage {
+    max-height: 380px;
+  }
+
+  .bannerOverlay {
+    background: linear-gradient(to top, rgba(0,0,0,0.6), transparent 60%);
+    justify-content: flex-end;
+  }
+}
+
+.section {
+  padding: 48px 24px;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.sectionTitle {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.allCatalog {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.allCatalog:hover {
+  color: var(--color-primary);
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.tab {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-gray);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: #1a1a1a;
+}
+
+.tabActive {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-bottom: 2px solid var(--color-primary);
+}
+
+.categoryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 24px;
+}
+
+.categoryCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 24px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.categoryCard:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 12px rgba(196, 92, 38, 0.12);
+}
+
+.categoryImage {
+  width: 120px;
+  height: 120px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.categoryName {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+  text-align: center;
+}
+
+.productGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 24px;
+}
+
+.loading {
+  padding: 48px;
+  text-align: center;
+  color: var(--color-gray);
+}
+
+@media (max-width: 600px) {
+  .section {
+    padding: 32px 16px;
+  }
+
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sectionTitle {
+    font-size: 22px;
+  }
+
+  .tabs {
+    order: 2;
+  }
+
+  .categoryGrid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+  }
+
+  .productGrid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .section {
+    padding: 24px 12px;
+  }
+
+  .sectionTitle {
+    font-size: 20px;
+  }
+
+  .categoryGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .categoryCard {
+    padding: 16px;
+  }
+
+  .categoryImage {
+    width: 80px;
+    height: 80px;
+  }
+
+  .productGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .bannerOverlay {
+    padding: 24px 16px;
+  }
+
+  .bannerOverlay h1 {
+    font-size: 22px;
+  }
+}

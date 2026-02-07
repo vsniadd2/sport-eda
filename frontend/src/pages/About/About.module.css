@@ -1,0 +1,163 @@
+.main {
+  flex: 1;
+  padding: 48px 24px 64px;
+  background: #fff;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.container h1 {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 32px;
+  color: #2d2d2d;
+}
+
+.section {
+  margin-bottom: 32px;
+}
+
+.section h2 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #2d2d2d;
+}
+
+.section h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 24px 0 12px;
+  color: #2d2d2d;
+}
+
+.section p {
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--color-gray);
+  margin-bottom: 16px;
+}
+
+.lead {
+  font-size: 18px !important;
+  font-weight: 600;
+  color: #2d2d2d !important;
+}
+
+.welcome {
+  font-size: 18px !important;
+  font-weight: 600;
+  color: var(--color-primary) !important;
+}
+
+.imageBlock {
+  margin: 32px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--color-light-gray);
+}
+
+.image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.list {
+  list-style: none;
+  margin: 16px 0;
+}
+
+.list li {
+  position: relative;
+  padding-left: 24px;
+  margin-bottom: 12px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--color-gray);
+}
+
+.list li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.list strong {
+  color: #2d2d2d;
+}
+
+.addresses {
+  margin: 40px 0;
+}
+
+.addresses h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #2d2d2d;
+}
+
+.addressGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.addressCard {
+  background: #fafafa;
+  border: 1px solid var(--color-light-gray);
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.addressCard h4 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #2d2d2d;
+}
+
+.addressCard p {
+  margin-bottom: 8px;
+  font-size: 15px;
+  color: var(--color-gray);
+}
+
+.phone {
+  display: block;
+  color: var(--color-primary);
+  font-weight: 500;
+  text-decoration: none;
+  margin-bottom: 16px;
+}
+
+.phone:hover {
+  text-decoration: underline;
+}
+
+.title {
+  text-transform: uppercase;
+  font-size: 18px !important;
+}
+
+.orderNote {
+  margin-top: 40px;
+  padding: 24px;
+  background: #2d2d2d;
+  color: #fff;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.orderNote p {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff !important;
+}

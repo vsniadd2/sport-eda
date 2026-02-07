@@ -1,0 +1,40 @@
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+.app-content {
+  flex: 1;
+  position: relative;
+}
+
+/* Фоновый паттерн в стиле водяного знака (как на макете) */
+.app-content::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: 
+    repeating-linear-gradient(
+      -12deg,
+      transparent,
+      transparent 120px,
+      rgba(196, 92, 38, 0.03) 120px,
+      rgba(196, 92, 38, 0.03) 121px
+    ),
+    repeating-linear-gradient(
+      18deg,
+      transparent,
+      transparent 120px,
+      rgba(196, 92, 38, 0.02) 120px,
+      rgba(196, 92, 38, 0.02) 121px
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app-content > * {
+  position: relative;
+  z-index: 1;
+}

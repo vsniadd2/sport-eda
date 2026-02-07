@@ -1,0 +1,148 @@
+.main {
+  min-height: calc(100vh - 200px);
+  padding: 24px 16px 48px;
+  background: var(--color-white);
+}
+
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 8px;
+}
+
+.greeting {
+  font-size: 15px;
+  color: var(--color-gray);
+  margin-bottom: 32px;
+}
+
+.section {
+  margin-bottom: 32px;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 20px;
+}
+
+.error {
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.loading,
+.empty {
+  font-size: 15px;
+  color: var(--color-gray);
+  margin-bottom: 12px;
+}
+
+.link {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-primary);
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.orderList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.orderCard {
+  border: 1px solid var(--color-light-gray);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--color-white);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.orderCard:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(196, 92, 38, 0.1);
+}
+
+.orderCardBtn {
+  width: 100%;
+  padding: 0;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.orderHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  padding: 16px;
+}
+
+.orderId {
+  font-weight: 600;
+  color: var(--color-text);
+  font-size: 15px;
+}
+
+.orderDate {
+  font-size: 14px;
+  color: var(--color-gray);
+}
+
+.orderTotal {
+  margin-left: auto;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.orderPreview {
+  font-size: 13px;
+  color: var(--color-gray);
+  padding: 0 16px 12px;
+  margin: 0;
+}
+
+.detailLink {
+  display: inline-block;
+  padding: 0 16px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-primary);
+}
+
+.orderCardBtn:hover .detailLink {
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .orderHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .orderTotal {
+    margin-left: 0;
+  }
+}
