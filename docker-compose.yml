@@ -1,3 +1,5 @@
+# База данных: том postgres_data сохраняет данные при перезапуске контейнера.
+# Не используйте «docker compose down -v» — флаг -v удалит том и все данные.
 services:
   postgres:
     image: postgres:16

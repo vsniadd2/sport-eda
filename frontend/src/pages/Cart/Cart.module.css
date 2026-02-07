@@ -1,46 +1,66 @@
 .main {
   min-height: calc(100vh - 200px);
-  padding: 24px 16px 48px;
+  padding: 32px 24px 56px;
   background: var(--color-white);
 }
 
 .container {
-  max-width: 960px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
 .title {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 600;
   color: var(--color-text);
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 /* Empty state */
 .empty {
   text-align: center;
-  padding: 48px 24px;
+  padding: 56px 32px;
 }
 
 .emptyText {
-  font-size: 16px;
+  font-size: 17px;
   color: var(--color-gray);
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .ctaLink {
   display: inline-block;
-  padding: 12px 24px;
-  font-size: 15px;
+  padding: 16px 28px;
+  font-size: 16px;
   font-weight: 500;
   color: #fff;
   background: var(--color-primary);
-  border-radius: 6px;
+  border-radius: 8px;
   transition: background 0.15s;
+  min-height: 48px;
+  line-height: 1.2;
 }
 
 .ctaLink:hover {
   background: var(--color-primary-dark);
+}
+
+.authNote {
+  background: #fef9c3;
+  color: #854d0e;
+  padding: 16px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 15px;
+}
+
+.authNote a {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.authNote a:hover {
+  text-decoration: underline;
 }
 
 /* Error */
@@ -84,8 +104,8 @@
 
 .itemMain {
   display: flex;
-  gap: 16px;
-  padding: 16px;
+  gap: 20px;
+  padding: 20px 24px;
 }
 
 @media (max-width: 480px) {
@@ -96,9 +116,9 @@
 
 .itemThumb {
   flex-shrink: 0;
-  width: 100px;
-  height: 100px;
-  border-radius: 6px;
+  width: 120px;
+  height: 120px;
+  border-radius: 8px;
   overflow: hidden;
   background: var(--color-light-gray);
   display: flex;
@@ -132,13 +152,13 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .itemName {
   font-weight: 500;
   color: var(--color-text);
-  font-size: 15px;
+  font-size: 16px;
 }
 
 .itemName:hover {
@@ -217,45 +237,46 @@
 .checkoutCard {
   background: #fafafa;
   border: 1px solid var(--color-light-gray);
-  border-radius: 8px;
-  padding: 24px;
+  border-radius: 10px;
+  padding: 28px 32px;
 }
 
 .checkoutTitle {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   color: var(--color-text);
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .checkoutNote {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-gray);
-  margin-bottom: 20px;
-  line-height: 1.4;
+  margin-bottom: 24px;
+  line-height: 1.5;
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .label {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  font-size: 14px;
+  gap: 8px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--color-text);
 }
 
 .label input {
-  padding: 12px 14px;
+  padding: 16px 18px;
   border: 1px solid var(--color-light-gray);
-  border-radius: 6px;
-  font-size: 14px;
+  border-radius: 8px;
+  font-size: 16px;
   background: var(--color-white);
+  min-height: 48px;
 }
 
 .label input:focus {
@@ -267,25 +288,26 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 8px;
-  font-size: 16px;
+  padding-top: 20px;
+  font-size: 18px;
   color: var(--color-text);
 }
 
 .totalSum {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 600;
 }
 
 .submitBtn {
-  padding: 14px 24px;
+  padding: 16px 28px;
   font-size: 16px;
   font-weight: 500;
   color: #fff;
   background: var(--color-primary);
   border: 1px solid var(--color-primary);
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
+  min-height: 48px;
   transition: background 0.15s, border-color 0.15s;
 }
 

@@ -78,6 +78,11 @@ export default function Cart() {
     <main className={styles.main}>
       <div className={styles.container}>
         <h1 className={styles.title}>Корзина</h1>
+        {!user && items.length > 0 && (
+          <div className={styles.authNote}>
+            Для оформления заказа необходимо <Link to="/login">войти</Link> или <Link to="/register">зарегистрироваться</Link>.
+          </div>
+        )}
         {error && <div className={styles.error}>{error}</div>}
         <div className={styles.grid}>
           <section className={styles.items}>
@@ -148,7 +153,7 @@ export default function Cart() {
                   Телефон
                   <input
                     type="tel"
-                    placeholder="+7 (999) 000-00-00"
+                    placeholder="+375 (29) 000-00-00"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                   />
@@ -157,8 +162,8 @@ export default function Cart() {
                   <span>Итого:</span>
                   <span className={styles.totalSum}>{formatPrice(totalSum)}</span>
                 </div>
-                <button type="submit" disabled={loading} className={styles.submitBtn}>
-                  {loading ? 'Оформление...' : 'Оформить заказ'}
+                <button type="submit" disabled={loading || !user} className={styles.submitBtn}>
+                  {loading ? 'Оформление...' : !user ? 'Войдите для оформления' : 'Оформить заказ'}
                 </button>
               </form>
             </div>

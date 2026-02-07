@@ -4,25 +4,28 @@ import ProductCard from '../../components/ProductCard/ProductCard';
 import styles from './Home.module.css';
 
 export default function Home() {
-  const [categories, setCategories] = useState([]);
-  const [products, setProducts] = useState([]);
+  const [popularCategories, setPopularCategories] = useState([]);
+  const [bestProducts, setBestProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/products/categories').then((r) => r.json()),
-      fetch('/api/products').then((r) => r.json()),
-    ])
-      .then(([cats, prods]) => {
-        setCategories(cats);
-        setProducts(prods);
+    fetch('/api/home')
+      .then((r) => r.json())
+      .then(({ bestProducts: prods, popularCategories: cats }) => {
+        setBestProducts(Array.isArray(prods) ? prods : []);
+        setPopularCategories(Array.isArray(cats) ? cats : []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  const bestOffers = products.slice(0, 8);
+  const filteredBestProducts = (() => {
+    if (activeTab === 'sale') return bestProducts.filter((p) => p.is_sale).slice(0, 8);
+    if (activeTab === 'hit') return bestProducts.filter((p) => p.is_hit).slice(0, 8);
+    if (activeTab === 'rec') return bestProducts.filter((p) => p.is_recommended).slice(0, 8);
+    return bestProducts.slice(0, 8);
+  })();
 
   return (
     <main className={styles.main}>
@@ -48,7 +51,7 @@ export default function Home() {
             <div className={styles.loading}>Загрузка...</div>
           ) : (
             <div className={styles.categoryGrid}>
-              {categories.map((cat) => (
+              {popularCategories.map((cat) => (
                 <Link key={cat.id} to={`/catalog?category=${cat.slug}`} className={styles.categoryCard}>
                   <div className={styles.categoryImage} />
                   <span className={styles.categoryName}>{cat.name}</span>
@@ -75,7 +78,7 @@ export default function Home() {
             <div className={styles.loading}>Загрузка...</div>
           ) : (
             <div className={styles.productGrid}>
-              {bestOffers.map((product, i) => (
+              {filteredBestProducts.map((product, i) => (
                 <ProductCard key={product.id} product={product} showTag={i < 4} showAvailability />
               ))}
             </div>

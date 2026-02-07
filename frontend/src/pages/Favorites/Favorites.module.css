@@ -1,6 +1,6 @@
 .main {
   min-height: calc(100vh - 200px);
-  padding: 24px 16px 48px;
+  padding: 32px 24px 56px;
   background: var(--color-white);
 }
 
@@ -29,16 +29,16 @@
 }
 
 .title {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 600;
   color: var(--color-text);
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .subtitle {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-gray);
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 .empty {
@@ -49,13 +49,15 @@
 
 .ctaLink {
   display: inline-block;
-  padding: 12px 24px;
-  font-size: 15px;
+  padding: 16px 28px;
+  font-size: 16px;
   font-weight: 500;
   color: #fff;
   background: var(--color-primary);
-  border-radius: 6px;
+  border-radius: 8px;
   transition: background 0.15s;
+  min-height: 48px;
+  line-height: 1.2;
 }
 
 .ctaLink:hover {

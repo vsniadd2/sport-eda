@@ -8,17 +8,28 @@ const router = Router();
 
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, username } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email и пароль обязательны' });
+    const { email, password, username, first_name, last_name, patronymic } = req.body;
+    if (!password || password.length < 6) {
+      return res.status(400).json({ message: 'Пароль обязателен (минимум 6 символов)' });
     }
     if (!username || username.trim().length < 2) {
       return res.status(400).json({ message: 'Имя пользователя обязательно (минимум 2 символа)' });
     }
+    const emailVal = email && String(email).trim() ? String(email).trim().toLowerCase() : null;
     const passwordHash = await bcrypt.hash(password, 10);
     const result = await pool.query(
-      'INSERT INTO users (email, password_hash, role, username) VALUES ($1, $2, $3, $4) RETURNING id, email, username, role',
-      [email.toLowerCase(), passwordHash, 'user', username.trim().toLowerCase()]
+      `INSERT INTO users (email, password_hash, role, username, first_name, last_name, patronymic)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id, email, username, role, first_name, last_name, patronymic`,
+      [
+        emailVal,
+        passwordHash,
+        'user',
+        username.trim(),
+        first_name ? String(first_name).trim() || null : null,
+        last_name ? String(last_name).trim() || null : null,
+        patronymic ? String(patronymic).trim() || null : null,
+      ]
     );
     const user = result.rows[0];
     const token = jwt.sign(
@@ -26,7 +37,7 @@ router.post('/register', async (req, res) => {
       config.jwt.secret,
       { expiresIn: config.jwt.expiresIn }
     );
-    res.status(201).json({ token, user: { id: user.id, email: user.email, username: user.username, role: user.role || 'user' } });
+    res.status(201).json({ token, user: { id: user.id, email: user.email, username: user.username, role: user.role || 'user', first_name: user.first_name, last_name: user.last_name, patronymic: user.patronymic } });
   } catch (err) {
     if (err.code === '23505') {
       const msg = err.constraint?.includes('username') ? 'Имя пользователя уже занято' : 'Пользователь с таким email уже существует';

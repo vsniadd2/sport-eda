@@ -10,6 +10,9 @@ router.get('/', async (req, res) => {
       SELECT p.id, p.name, p.description, p.weight, p.price, p.image_url, p.article, p.manufacturer,
              (p.image_data IS NOT NULL) AS has_image,
              COALESCE(p.in_stock, true) AS in_stock,
+             COALESCE(p.is_sale, false) AS is_sale,
+             COALESCE(p.is_hit, false) AS is_hit,
+             COALESCE(p.is_recommended, false) AS is_recommended,
              c.id as category_id, c.name as category_name, c.slug as category_slug
       FROM products p
       JOIN categories c ON p.category_id = c.id
@@ -83,6 +86,9 @@ router.get('/:id', async (req, res) => {
       `SELECT p.id, p.category_id, p.name, p.description, p.weight, p.price, p.image_url, p.article, p.manufacturer,
               (p.image_data IS NOT NULL) AS has_image,
               COALESCE(p.in_stock, true) AS in_stock,
+              COALESCE(p.is_sale, false) AS is_sale,
+              COALESCE(p.is_hit, false) AS is_hit,
+              COALESCE(p.is_recommended, false) AS is_recommended,
               c.name as category_name, c.slug as category_slug
        FROM products p JOIN categories c ON p.category_id = c.id WHERE p.id = $1`,
       [id]

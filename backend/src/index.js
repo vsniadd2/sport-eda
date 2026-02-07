@@ -8,6 +8,7 @@ import { initDb } from './db.js';
 import authRoutes from './routes/auth.js';
 import productsRoutes from './routes/products.js';
 import ordersRoutes from './routes/orders.js';
+import homeRoutes from './routes/home.js';
 import reviewsRoutes from './routes/reviews.js';
 import adminRoutes from './routes/admin.js';
 import callbackRequestsRoutes from './routes/callbackRequests.js';
@@ -40,6 +41,7 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/home', homeRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/reviews', reviewsRoutes);

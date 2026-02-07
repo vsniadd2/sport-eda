@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 import { useFavorites } from '../../contexts/FavoritesContext';
 import { formatPrice } from '../../utils/formatPrice';
@@ -8,6 +9,8 @@ import styles from './ProductCard.module.css';
 const PLACEHOLDER = 'https://placehold.co/300x300/e5e7eb/6b7280?text=%D0%A2%D0%BE%D0%B2%D0%B0%D1%80';
 
 export default function ProductCard({ product, showTag, showAvailability, showWishlist, layout }) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const { addItem } = useCart();
   const { isFavorite, toggle } = useFavorites();
   const [added, setAdded] = useState(false);
@@ -17,6 +20,10 @@ export default function ProductCard({ product, showTag, showAvailability, showWi
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     addItem(product.id, 1, parseFloat(product.price), product.name);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);

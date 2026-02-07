@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatPrice } from '../../utils/formatPrice';
+import { formatDateTime } from '../../utils/formatDate';
 import OrderDetailModal from '../../components/OrderDetailModal/OrderDetailModal';
 import styles from './Profile.module.css';
 
@@ -47,9 +48,6 @@ export default function Profile() {
   return (
     <main className={styles.main}>
       <div className={styles.container}>
-        <h1 className={styles.title}>Профиль</h1>
-        <p className={styles.greeting}>{displayName}</p>
-
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Заказы</h2>
           {error && <div className={styles.error}>{error}</div>}
@@ -72,10 +70,11 @@ export default function Profile() {
                     <div className={styles.orderHeader}>
                       <span className={styles.orderId}>Заказ №{order.id}</span>
                       <span className={styles.orderDate}>
-                        {order.created_at ? new Date(order.created_at).toLocaleString('ru-RU') : ''}
+                        {order.created_at ? formatDateTime(order.created_at) : ''}
                       </span>
                       <span className={styles.orderTotal}>{formatPrice(order.total)}</span>
                     </div>
+                    <p className={styles.orderWho}>Оформил: {displayName}</p>
                     <p className={styles.orderPreview}>
                       {order.items?.length ? `${order.items.length} ${order.items.length === 1 ? 'товар' : 'товара'}` : ''} · {formatPrice(order.total)}
                     </p>

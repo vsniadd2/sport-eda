@@ -6,8 +6,11 @@ import styles from '../Auth.module.css';
 const API_URL = '/api';
 
 export default function Register() {
-  const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [patronymic, setPatronymic] = useState('');
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -27,7 +30,14 @@ export default function Register() {
       const res = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, username }),
+        body: JSON.stringify({
+          first_name: firstName.trim() || undefined,
+          last_name: lastName.trim() || undefined,
+          patronymic: patronymic.trim() || undefined,
+          username: username.trim(),
+          email: email.trim() || undefined,
+          password,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Ошибка регистрации');
@@ -48,6 +58,26 @@ export default function Register() {
           {error && <div className={styles.error}>{error}</div>}
           <input
             type="text"
+            placeholder="Имя"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            required
+          />
+          <input
+            type="text"
+            placeholder="Фамилия"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            required
+          />
+          <input
+            type="text"
+            placeholder="Отчество"
+            value={patronymic}
+            onChange={(e) => setPatronymic(e.target.value)}
+          />
+          <input
+            type="text"
             placeholder="Имя пользователя"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
@@ -55,10 +85,9 @@ export default function Register() {
           />
           <input
             type="email"
-            placeholder="Email"
+            placeholder="Почта (необязательно)"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            required
           />
           <input
             type="password"

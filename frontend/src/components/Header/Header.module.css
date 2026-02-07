@@ -7,24 +7,26 @@
 }
 
 .topRow {
-  padding: 12px 0 16px;
+  padding: 14px 0 16px;
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 100%;
+  width: 100%;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 32px;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 20px 24px;
+  gap: 24px 32px;
+  box-sizing: border-box;
 }
 
 .logo {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  margin-right: auto;
+  flex-shrink: 0;
 }
 
 .logoTitle {
@@ -56,6 +58,15 @@
   flex-direction: column;
   gap: 8px;
   align-items: flex-start;
+  flex-shrink: 0;
+}
+
+.navWrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
 }
 
 .phones {
@@ -96,11 +107,13 @@
 .nav {
   display: flex;
   align-items: center;
-  gap: 4px 20px;
+  gap: 4px 24px;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .navLink {
@@ -125,6 +138,7 @@
   display: flex;
   align-items: center;
   gap: 4px 12px;
+  flex-shrink: 0;
 }
 
 .iconBtn {
@@ -259,14 +273,16 @@ a.iconBtn {
 }
 
 @media (max-width: 1020px) {
-  .nav {
+  .navWrap {
     order: 4;
-    width: 100%;
-    flex-wrap: wrap;
+    flex-basis: 100%;
+    justify-content: flex-start;
   }
 
-  .contactsBlock {
-    margin-right: 0;
+  .nav {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 }
 

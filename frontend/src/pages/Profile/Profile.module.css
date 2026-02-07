@@ -1,36 +1,36 @@
 .main {
   min-height: calc(100vh - 200px);
-  padding: 24px 16px 48px;
+  padding: 32px 24px 56px;
   background: var(--color-white);
 }
 
 .container {
-  max-width: 720px;
+  max-width: 800px;
   margin: 0 auto;
 }
 
 .title {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 600;
   color: var(--color-text);
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .greeting {
-  font-size: 15px;
+  font-size: 16px;
   color: var(--color-gray);
-  margin-bottom: 32px;
+  margin-bottom: 36px;
 }
 
 .section {
-  margin-bottom: 32px;
+  margin-bottom: 40px;
 }
 
 .sectionTitle {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   color: var(--color-text);
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .error {
@@ -95,8 +95,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px 20px;
-  padding: 16px;
+  gap: 14px 24px;
+  padding: 20px 24px;
 }
 
 .orderId {
@@ -117,17 +117,24 @@
   color: var(--color-text);
 }
 
-.orderPreview {
+.orderWho {
   font-size: 13px;
   color: var(--color-gray);
-  padding: 0 16px 12px;
+  padding: 0 24px 4px;
+  margin: 0;
+}
+
+.orderPreview {
+  font-size: 14px;
+  color: var(--color-gray);
+  padding: 0 24px 16px;
   margin: 0;
 }
 
 .detailLink {
   display: inline-block;
-  padding: 0 16px 16px;
-  font-size: 14px;
+  padding: 0 24px 20px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--color-primary);
 }

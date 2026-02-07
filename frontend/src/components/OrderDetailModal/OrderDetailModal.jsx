@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { formatPrice } from '../../utils/formatPrice';
+import { formatDateTimeLong } from '../../utils/formatDate';
 import styles from './OrderDetailModal.module.css';
 
 export default function OrderDetailModal({ order, onClose }) {
@@ -27,7 +28,7 @@ export default function OrderDetailModal({ order, onClose }) {
         </div>
         <div className={styles.body}>
           <p className={styles.date}>
-            {order.created_at ? new Date(order.created_at).toLocaleString('ru-RU', { dateStyle: 'long', timeStyle: 'short' }) : ''}
+            {order.created_at ? formatDateTimeLong(order.created_at) : ''}
           </p>
           {(order.address || order.phone) && (
             <div className={styles.contacts}>
