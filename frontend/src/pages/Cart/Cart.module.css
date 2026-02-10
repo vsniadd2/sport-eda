@@ -1,44 +1,88 @@
 .main {
-  min-height: calc(100vh - 200px);
-  padding: 32px 24px 56px;
-  background: var(--color-white);
+  min-height: calc(100vh - 180px);
+  padding: 24px 24px 64px;
+  background: #fff;
 }
 
 .container {
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 0 auto;
+}
+
+.breadcrumb {
+  font-size: 13px;
+  color: var(--color-gray);
+  margin-bottom: 20px;
+}
+
+.breadcrumb a {
+  color: var(--color-gray);
+}
+
+.breadcrumb a:hover {
+  color: var(--color-primary);
+}
+
+.breadcrumbSep {
+  margin: 0 4px;
+  color: var(--color-light-gray);
 }
 
 .title {
   font-size: 28px;
-  font-weight: 600;
-  color: var(--color-text);
+  font-weight: 700;
+  color: var(--color-dark);
+  margin-bottom: 4px;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: 15px;
+  color: var(--color-gray);
   margin-bottom: 28px;
 }
 
 /* Empty state */
 .empty {
   text-align: center;
-  padding: 56px 32px;
+  padding: 64px 24px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.emptyIcon {
+  color: var(--color-light-gray);
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.emptyTitle {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--color-dark);
+  margin-bottom: 12px;
 }
 
 .emptyText {
-  font-size: 17px;
+  font-size: 15px;
   color: var(--color-gray);
-  margin-bottom: 24px;
+  margin-bottom: 28px;
+  line-height: 1.5;
 }
 
 .ctaLink {
-  display: inline-block;
-  padding: 16px 28px;
-  font-size: 16px;
-  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 28px;
+  font-size: 15px;
+  font-weight: 600;
   color: #fff;
   background: var(--color-primary);
   border-radius: 8px;
-  transition: background 0.15s;
+  transition: background 0.2s, transform 0.1s;
   min-height: 48px;
-  line-height: 1.2;
 }
 
 .ctaLink:hover {
@@ -46,45 +90,153 @@
 }
 
 .authNote {
-  background: #fef9c3;
-  color: #854d0e;
-  padding: 16px 20px;
+  background: #fffbeb;
+  color: #92400e;
+  padding: 14px 20px;
   border-radius: 8px;
-  margin-bottom: 20px;
-  font-size: 15px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  border: 1px solid #fde68a;
 }
 
 .authNote a {
   color: var(--color-primary);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .authNote a:hover {
   text-decoration: underline;
 }
 
-/* Error */
 .error {
   background: #fef2f2;
-  color: #dc2626;
-  padding: 12px 16px;
-  border-radius: 6px;
-  margin-bottom: 20px;
+  color: #b91c1c;
+  padding: 14px 20px;
+  border-radius: 8px;
+  margin-bottom: 24px;
   font-size: 14px;
+  border: 1px solid #fecaca;
+}
+
+.paymentMethodGroup {
+  margin-bottom: 20px;
+}
+
+.paymentMethodLabel {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 10px;
+}
+
+.paymentMethodGroup .paymentOptionContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  padding: 16px;
+  border-radius: 16px;
+  transition: background 0.2s, box-shadow 0.2s;
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.paymentMethodGroup .paymentOptionContent:last-child {
+  margin-bottom: 0;
+}
+
+.paymentMethodGroup .paymentOptionContent:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.paymentMethodGroup .paymentOptionContent:has(input:checked) {
+  background: #fffbf9;
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+.paymentMethodGroup .paymentOptionContent input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+.paymentOptionCircle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--color-border);
+  position: relative;
+  flex-shrink: 0;
+  transition: box-shadow 0.2s;
+}
+
+.paymentMethodGroup .paymentOptionContent:has(input:checked) .paymentOptionCircle {
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+.paymentMethodGroup .paymentOptionContent:has(input:checked) .paymentOptionCircle::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  background: var(--color-primary);
+  border-radius: 50%;
+}
+
+.paymentOptionTextWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.paymentOptionTitle {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--color-text);
+}
+
+.paymentOptionDesc {
+  font-size: 11px;
+  color: var(--color-gray);
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: var(--color-text);
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.radioLabel input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.required {
+  color: #dc2626;
 }
 
 /* Grid */
 .grid {
   display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 32px;
+  grid-template-columns: 1fr 360px;
+  gap: 40px;
   align-items: start;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .grid {
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 28px;
   }
 }
 
@@ -96,31 +248,37 @@
 }
 
 .item {
-  background: var(--color-white);
-  border: 1px solid var(--color-light-gray);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.itemMain {
-  display: flex;
+  display: grid;
+  grid-template-columns: 100px 1fr;
   gap: 20px;
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--color-light-gray);
+  border-radius: 12px;
   padding: 20px 24px;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-@media (max-width: 480px) {
-  .itemMain {
-    flex-direction: column;
+.item:hover {
+  border-color: var(--color-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+@media (max-width: 520px) {
+  .item {
+    grid-template-columns: 80px 1fr;
+    gap: 16px;
+    padding: 16px;
   }
 }
 
 .itemThumb {
+  width: 100px;
+  height: 100px;
   flex-shrink: 0;
-  width: 120px;
-  height: 120px;
   border-radius: 8px;
   overflow: hidden;
-  background: var(--color-light-gray);
+  background: #f5f5f5;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -135,55 +293,62 @@
 .itemThumbPlaceholder {
   font-size: 12px;
   color: var(--color-gray);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  text-decoration: none;
 }
 
-.itemThumbPlaceholder:hover {
-  color: var(--color-primary);
+@media (max-width: 520px) {
+  .itemThumb {
+    width: 80px;
+    height: 80px;
+  }
 }
 
-.itemInfo {
-  flex: 1;
+.itemBody {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .itemName {
-  font-weight: 500;
-  color: var(--color-text);
+  font-weight: 600;
   font-size: 16px;
+  color: var(--color-dark);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .itemName:hover {
   color: var(--color-primary);
 }
 
-.itemPrice {
+.itemMeta {
   font-size: 14px;
   color: var(--color-gray);
 }
 
-.itemActions {
+.itemPrice {
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.itemRow {
   display: flex;
   align-items: center;
-  gap: 16px;
   flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 4px;
 }
 
 .quantity {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
   border: 1px solid var(--color-light-gray);
-  border-radius: 6px;
+  border-radius: 8px;
   overflow: hidden;
+  background: #fafafa;
 }
 
 .quantity button {
@@ -193,8 +358,9 @@
   align-items: center;
   justify-content: center;
   font-size: 18px;
+  font-weight: 500;
   color: var(--color-text);
-  background: #fafafa;
+  background: transparent;
   transition: background 0.15s;
 }
 
@@ -203,32 +369,42 @@
 }
 
 .quantity span {
-  min-width: 32px;
+  min-width: 36px;
   text-align: center;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--color-dark);
+}
+
+.itemTotal {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-dark);
+  margin-left: auto;
 }
 
 .removeBtn {
-  padding: 8px 12px;
+  padding: 8px 14px;
   font-size: 13px;
-  color: #dc2626;
+  font-weight: 500;
+  color: #b91c1c;
   background: transparent;
   border-radius: 6px;
-  transition: background 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
 
 .removeBtn:hover {
   background: #fef2f2;
+  color: #991b1b;
 }
 
-/* Checkout card */
+/* Checkout */
 .checkout {
   position: sticky;
-  top: 24px;
+  top: 100px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .checkout {
     position: static;
   }
@@ -237,86 +413,238 @@
 .checkoutCard {
   background: #fafafa;
   border: 1px solid var(--color-light-gray);
-  border-radius: 10px;
-  padding: 28px 32px;
+  border-radius: 12px;
+  padding: 28px 28px 24px;
 }
 
 .checkoutTitle {
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--color-text);
-  margin-bottom: 12px;
-}
-
-.checkoutNote {
-  font-size: 14px;
-  color: var(--color-gray);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-dark);
   margin-bottom: 24px;
-  line-height: 1.5;
+  letter-spacing: -0.01em;
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
-.label {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--color-text);
+/* Обёртка для инпута + подсказка об ошибке */
+.inputGroupWrap {
+  position: relative;
+  margin: 0.6em 0;
 }
 
-.label input {
-  padding: 16px 18px;
-  border: 1px solid var(--color-light-gray);
-  border-radius: 8px;
-  font-size: 16px;
-  background: var(--color-white);
-  min-height: 48px;
+/* Плавающий лейбл как в 1.txt */
+.inputGroup {
+  font-family: inherit;
+  margin: 0;
+  position: relative;
+  max-width: 100%;
 }
 
-.label input:focus {
+.inputGroup input {
+  font-size: 100%;
+  padding: 0.8em 1em;
   outline: none;
-  border-color: var(--color-primary);
+  border: 2px solid rgb(200, 200, 200);
+  background-color: transparent;
+  border-radius: 20px;
+  width: 100%;
+  font-family: inherit;
+  transition: border-color 0.3s ease;
 }
 
-.totalRow {
+.inputGroup label {
+  font-size: 100%;
+  position: absolute;
+  left: 0;
+  padding: 0.8em 1em;
+  margin-left: 0.5em;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  color: rgb(100, 100, 100);
+  font-family: inherit;
+}
+
+/* Обязательные поля: лейбл вверх при focus или valid. Опциональные: только при focus или .filled */
+.inputGroup:not(.inputGroupOptional) :is(input:focus, input:valid) ~ label,
+.inputGroup.filled input ~ label,
+.inputGroup.inputGroupOptional input:focus ~ label {
+  transform: translateY(-50%) scale(0.9);
+  margin: 0;
+  margin-left: 1.3em;
+  padding: 0.4em;
+  background-color: #fafafa;
+}
+
+.inputGroup:not(.inputGroupOptional) :is(input:focus, input:valid),
+.inputGroup.filled input,
+.inputGroup.inputGroupOptional input:focus {
+  border-color: rgb(150, 150, 200);
+}
+
+.inputGroup input:focus {
+  border-color: var(--color-primary, rgb(150, 150, 200));
+}
+
+.totalBlock {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding-top: 20px;
-  font-size: 18px;
+  align-items: baseline;
+  padding: 20px 0 8px;
+  margin-top: 8px;
+  border-top: 1px solid var(--color-light-gray);
+  gap: 16px;
+}
+
+.totalLabel {
+  font-size: 16px;
+  font-weight: 500;
   color: var(--color-text);
 }
 
 .totalSum {
-  font-size: 24px;
-  font-weight: 600;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-dark);
+  letter-spacing: -0.02em;
 }
 
 .submitBtn {
-  padding: 16px 28px;
-  font-size: 16px;
-  font-weight: 500;
-  color: #fff;
-  background: var(--color-primary);
-  border: 1px solid var(--color-primary);
-  border-radius: 8px;
+  --submit-primary: var(--color-dark, #111);
+  --submit-hover: var(--color-primary, #c84747);
+  padding: 0;
+  margin: 0;
+  margin-top: 8px;
+  border: none;
+  background: none;
   cursor: pointer;
-  min-height: 48px;
-  transition: background 0.15s, border-color 0.15s;
+  position: relative;
+  display: inline-flex;
+  font-weight: 600;
+  font-size: 18px;
+  gap: 0.5rem;
+  align-items: center;
+  min-height: 52px;
 }
 
-.submitBtn:hover:not(:disabled) {
-  background: var(--color-primary-dark);
-  border-color: var(--color-primary-dark);
+.submitBtnText {
+  position: relative;
+  color: var(--submit-primary);
+  transition: color 0.3s ease-out;
+}
+
+.submitBtn::after {
+  position: absolute;
+  content: "";
+  width: 0;
+  left: 0;
+  bottom: 10px;
+  background: var(--submit-hover);
+  height: 2px;
+  transition: width 0.3s ease-out;
+}
+
+.submitBtn:hover:not(:disabled) .submitBtnText {
+  color: var(--submit-hover);
+}
+
+.submitBtn:hover:not(:disabled)::after {
+  width: 100%;
+}
+
+.submitBtn:hover:not(:disabled) .submitBtnArrow {
+  transform: translateX(4px);
+  color: var(--submit-hover);
+}
+
+.submitBtnArrow {
+  color: var(--submit-primary);
+  transition: transform 0.2s, color 0.3s;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .submitBtn:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
+}
+
+.checkoutNote {
+  font-size: 12px;
+  color: var(--color-gray);
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-light-gray);
+  line-height: 1.5;
+}
+
+/* Success screen after order */
+.successBlock {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
+  text-align: center;
+}
+
+.successTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-dark);
+  margin-bottom: 12px;
+  letter-spacing: -0.02em;
+}
+
+.successPaymentText {
+  font-size: 15px;
+  color: var(--color-gray);
+  margin-bottom: 28px;
+}
+
+.successActions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.successBtnPrimary {
+  width: 100%;
+  padding: 16px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-primary);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  min-height: 48px;
+  transition: background 0.2s;
+}
+
+.successBtnPrimary:hover {
+  background: var(--color-primary-dark);
+}
+
+.successBtnSecondary {
+  width: 100%;
+  padding: 16px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-text);
+  background: transparent;
+  border: 2px solid var(--color-light-gray);
+  border-radius: 8px;
+  cursor: pointer;
+  min-height: 48px;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.successBtnSecondary:hover {
+  border-color: var(--color-border);
+  background: var(--color-light-gray);
 }

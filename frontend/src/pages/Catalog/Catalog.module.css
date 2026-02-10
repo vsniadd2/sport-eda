@@ -1,6 +1,6 @@
 .main {
   flex: 1;
-  padding: 40px 28px 56px;
+  padding: 24px 28px 56px;
   background: #fff;
 }
 
@@ -63,7 +63,7 @@
 
 @media (max-width: 600px) {
   .main {
-    padding: 28px 20px 48px;
+    padding: 24px 20px 48px;
   }
 
   .container {

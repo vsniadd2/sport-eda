@@ -1,5 +1,6 @@
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import Loader from '../components/Loader/Loader';
 import styles from './AdminLayout.module.css';
 
 export default function AdminLayout() {
@@ -8,7 +9,7 @@ export default function AdminLayout() {
   if (loading) {
     return (
       <div className={styles.wrapper}>
-        <div className={styles.loading}>Загрузка...</div>
+        <Loader wrap />
       </div>
     );
   }

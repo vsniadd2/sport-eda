@@ -1,17 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useFavorites } from '../../contexts/FavoritesContext';
-import { useCart } from '../../contexts/CartContext';
-import { formatPrice } from '../../utils/formatPrice';
 import ProductCard from '../../components/ProductCard/ProductCard';
+import Loader from '../../components/Loader/Loader';
 import styles from './Favorites.module.css';
 
 const API_URL = '/api';
-const PLACEHOLDER = 'https://placehold.co/400x400/e5e7eb/6b7280?text=%D0%A2%D0%BE%D0%B2%D0%B0%D1%80';
 
 export default function Favorites() {
-  const { favoriteIds, remove, refetch, synced } = useFavorites();
-  const { addItem } = useCart();
+  const { favoriteIds, refetch, synced } = useFavorites();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,8 +31,13 @@ export default function Favorites() {
     return (
       <main className={styles.main}>
         <div className={styles.container}>
+          <nav className={styles.breadcrumb}>
+            <Link to="/">Главная</Link>
+            <span className={styles.breadcrumbSep}> / </span>
+            <span>Избранное</span>
+          </nav>
           <h1 className={styles.title}>Избранное</h1>
-          <p className={styles.loading}>Загрузка...</p>
+          <Loader wrap />
         </div>
       </main>
     );
@@ -45,9 +47,19 @@ export default function Favorites() {
     return (
       <main className={styles.main}>
         <div className={styles.container}>
-          <h1 className={styles.title}>Избранное</h1>
-          <p className={styles.empty}>В избранном пока ничего нет.</p>
-          <Link to="/catalog" className={styles.ctaLink}>Перейти в каталог</Link>
+          <nav className={styles.breadcrumb}>
+            <Link to="/">Главная</Link>
+            <span className={styles.breadcrumbSep}> / </span>
+            <span>Избранное</span>
+          </nav>
+          <div className={styles.empty}>
+            <div className={styles.emptyIcon} aria-hidden>
+              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </div>
+            <h1 className={styles.emptyTitle}>В избранном пока пусто</h1>
+            <p className={styles.emptyText}>Добавляйте понравившиеся товары — они появятся здесь</p>
+            <Link to="/catalog" className={styles.ctaLink}>Перейти в каталог</Link>
+          </div>
         </div>
       </main>
     );
@@ -58,13 +70,14 @@ export default function Favorites() {
       <div className={styles.container}>
         <nav className={styles.breadcrumb}>
           <Link to="/">Главная</Link>
-          <span className={styles.breadcrumbSep}> &gt; </span>
+          <span className={styles.breadcrumbSep}> / </span>
           <span>Избранное</span>
         </nav>
         <h1 className={styles.title}>Избранное</h1>
         <p className={styles.subtitle}>Товаров: {products.length}</p>
+
         {loading ? (
-          <p className={styles.loading}>Загрузка...</p>
+          <Loader wrap />
         ) : (
           <div className={styles.grid}>
             {products.map((product) => (

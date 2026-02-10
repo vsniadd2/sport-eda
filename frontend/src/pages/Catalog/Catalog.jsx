@@ -32,7 +32,17 @@ export default function Catalog() {
     } else {
       next.delete('category');
     }
+    next.delete('search');
     setSearchParams(next);
+    setSearchInput('');
+  };
+
+  const handleCategorySelect = (slug) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('category', slug);
+    next.delete('search');
+    setSearchParams(next);
+    setSearchInput('');
   };
 
   const handleSearchChange = (q) => {
@@ -67,6 +77,7 @@ export default function Catalog() {
               onFilterChange={handleFilterChange}
               searchQuery={searchInput}
               onSearchChange={handleSearchChange}
+              onCategorySelect={handleCategorySelect}
             />
           </aside>
           <div className={styles.content}>

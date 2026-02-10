@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { pool } from '../db.js';
+import { getIO } from '../socket.js';
 
 const router = Router();
 
@@ -15,7 +16,9 @@ router.post('/', async (req, res) => {
       'INSERT INTO callback_requests (name, phone) VALUES ($1, $2) RETURNING id, name, phone, created_at',
       [nameVal, phoneTrim]
     );
-    res.status(201).json(result.rows[0]);
+    const row = result.rows[0];
+    getIO().emitToAdmin('newCallback', row);
+    res.status(201).json(row);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Ошибка сервера' });

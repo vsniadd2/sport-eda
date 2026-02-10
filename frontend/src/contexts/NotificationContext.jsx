@@ -10,9 +10,9 @@ export function NotificationProvider({ children }) {
     setItems((prev) => prev.filter((n) => n.id !== id));
   }, []);
 
-  const notify = useCallback((message, type = 'info') => {
+  const notify = useCallback((message, type = 'info', subText = null) => {
     const id = Date.now() + Math.random();
-    setItems((prev) => [...prev, { id, message, type }]);
+    setItems((prev) => [...prev, { id, message, type, subText }]);
     return id;
   }, []);
 

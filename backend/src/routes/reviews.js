@@ -27,7 +27,12 @@ router.get('/product/:id/can-review', authMiddleware, async (req, res) => {
        WHERE o.user_id = $1 AND oi.product_id = $2 LIMIT 1`,
       [req.user.userId, id]
     );
-    res.json({ canReview: bought.rows.length > 0 });
+    const existing = await pool.query(
+      'SELECT id, rating, text, created_at FROM reviews WHERE user_id = $1 AND product_id = $2 LIMIT 1',
+      [req.user.userId, id]
+    );
+    const review = existing.rows[0] || null;
+    res.json({ canReview: bought.rows.length > 0, hasReview: !!review, review });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Ошибка сервера' });
@@ -65,6 +70,23 @@ router.post('/product/:id', authMiddleware, async (req, res) => {
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ message: 'Вы уже оставили отзыв' });
     if (err.constraint === 'idx_reviews_user_product') return res.status(400).json({ message: 'Вы уже оставили отзыв' });
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+router.delete('/product/:productId', authMiddleware, async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const result = await pool.query(
+      'DELETE FROM reviews WHERE user_id = $1 AND product_id = $2 RETURNING id',
+      [req.user.userId, productId]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: 'Отзыв не найден' });
+    }
+    res.status(204).send();
+  } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Ошибка сервера' });
   }

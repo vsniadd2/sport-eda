@@ -3,9 +3,11 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 import { useFavorites } from '../../contexts/FavoritesContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import { formatPrice } from '../../utils/formatPrice';
 import { formatDate } from '../../utils/formatDate';
 import ProductCard from '../../components/ProductCard/ProductCard';
+import Loader from '../../components/Loader/Loader';
 import styles from './ProductDetail.module.css';
 
 const API_URL = '/api';
@@ -21,8 +23,9 @@ export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { addItem } = useCart();
+  const { addItem, getQuantity, updateQuantity } = useCart();
   const { isFavorite, toggle: toggleFavorite } = useFavorites();
+  const { notify } = useNotifications();
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [canReview, setCanReview] = useState(false);
@@ -30,14 +33,16 @@ export default function ProductDetail() {
   const [error, setError] = useState('');
   const [reviewForm, setReviewForm] = useState({ rating: 5, text: '' });
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewDeleting, setReviewDeleting] = useState(false);
   const [reviewError, setReviewError] = useState('');
-  const [cartAdded, setCartAdded] = useState(false);
+  const [editingMyReview, setEditingMyReview] = useState(false);
   const [sameCategoryProducts, setSameCategoryProducts] = useState([]);
-  const [recommendedProducts, setRecommendedProducts] = useState([]);
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const reviewListRef = useRef(null);
 
   const productId = String(id ?? '');
+  const cartQty = getQuantity(product?.id || 0);
+  const inCart = cartQty > 0;
+  const myReview = reviews.find((r) => Number(r.user_id) === Number(user?.id));
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -70,21 +75,15 @@ export default function ProductDetail() {
         }
         setReviews(Array.isArray(rv) ? rv : []);
         if (pr?.category_slug && prRes.ok) {
-          fetch(`${API_URL}/products?category=${encodeURIComponent(pr.category_slug)}`)
+          fetch(`${API_URL}/products?category=${encodeURIComponent(pr.category_slug)}&sort=sales&limit=9`)
             .then((r) => r.json())
             .then((list) => {
-              if (!cancelled) setSameCategoryProducts(Array.isArray(list) ? list.filter((p) => p.id !== pr.id).slice(0, 12) : []);
+              if (!cancelled && Array.isArray(list)) {
+                setSameCategoryProducts(list.filter((p) => p.id !== pr.id).slice(0, 8));
+              }
             })
             .catch(() => { if (!cancelled) setSameCategoryProducts([]); });
         } else if (!cancelled) setSameCategoryProducts([]);
-        fetch(`${API_URL}/home`)
-          .then((r) => r.json())
-          .then((data) => {
-            if (!cancelled && data?.bestProducts) {
-              setRecommendedProducts(Array.isArray(data.bestProducts) ? data.bestProducts.filter((p) => p.id !== pr?.id).slice(0, 8) : []);
-            }
-          })
-          .catch(() => { if (!cancelled) setRecommendedProducts([]); });
       } catch {
         if (!cancelled) setError('Ошибка загрузки');
       } finally {
@@ -102,26 +101,49 @@ export default function ProductDetail() {
     let cancelled = false;
     fetch(`${API_URL}/reviews/product/${productId}/can-review`, { headers: getAuthHeaders() })
       .then((r) => r.json())
-      .then((data) => { if (!cancelled) setCanReview(!!data.canReview); })
+      .then((data) => {
+        if (!cancelled) setCanReview(!!data.canReview);
+      })
       .catch(() => { if (!cancelled) setCanReview(false); });
     return () => { cancelled = true; };
   }, [user, productId]);
 
   const handleAddToCart = () => {
-    if (!user) return;
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     if (!product) return;
+    const priceToUse = (product.is_sale && product.sale_price != null) ? parseFloat(product.sale_price) : parseFloat(product.price);
     const imgUrl = product.has_image ? `/api/products/${product.id}/image` : (product.image_url?.startsWith('http') ? product.image_url : null);
-    addItem(product.id, 1, parseFloat(product.price), product.name, imgUrl);
-    setCartAdded(true);
-    setTimeout(() => setCartAdded(false), 2000);
+    addItem(product.id, 1, priceToUse, product.name, imgUrl);
+    notify('Товар добавлен в корзину', 'info');
   };
 
-  const handleShare = () => {
-    const url = window.location.href;
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(url);
-      // можно показать уведомление
+  const handleIncrease = () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (!product) return;
+    const priceToUse = (product.is_sale && product.sale_price != null) ? parseFloat(product.sale_price) : parseFloat(product.price);
+    addItem(product.id, 1, priceToUse, product.name);
+  };
+
+  const handleDecrease = () => {
+    if (cartQty > 1) {
+      updateQuantity(product.id, cartQty - 1);
     } else {
+      updateQuantity(product.id, 0);
+    }
+  };
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      notify('Ссылка скопирована', 'info');
+    } catch {
       window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}`, '_blank');
     }
   };
@@ -146,20 +168,59 @@ export default function ProductDetail() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Ошибка');
-      setReviews((prev) => [{ ...data, username: user.username || user.email }, ...prev]);
+      const withUsername = { ...data, username: user.username || user.email, user_id: user.id };
+      setReviews((prev) => {
+        const rest = prev.filter((r) => Number(r.user_id) !== Number(user.id));
+        return [withUsername, ...rest];
+      });
       setReviewForm({ rating: 5, text: '' });
+      setEditingMyReview(false);
+      notify(myReview ? 'Отзыв обновлён' : 'Отзыв добавлен', 'success');
     } catch (e) {
       setReviewError(e.message);
+      notify(e.message, 'error');
     } finally {
       setReviewSubmitting(false);
     }
+  };
+
+  const handleDeleteReview = async () => {
+    if (!user || !myReview) return;
+    setReviewDeleting(true);
+    setReviewError('');
+    try {
+      const res = await fetch(`${API_URL}/reviews/product/${productId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || 'Ошибка удаления');
+      }
+      setReviews((prev) => prev.filter((r) => r.id !== myReview.id));
+      setReviewForm({ rating: 5, text: '' });
+      setEditingMyReview(false);
+      notify('Отзыв удалён', 'success');
+    } catch (e) {
+      setReviewError(e.message);
+      notify(e.message, 'error');
+    } finally {
+      setReviewDeleting(false);
+    }
+  };
+
+  const startEditMyReview = () => {
+    if (!myReview) return;
+    setReviewForm({ rating: myReview.rating, text: myReview.text || '' });
+    setEditingMyReview(true);
+    setReviewError('');
   };
 
   if (loading) {
     return (
       <main className={styles.main}>
         <div className={styles.container}>
-          <p className={styles.loadingText}>Загрузка...</p>
+          <Loader wrap />
         </div>
       </main>
     );
@@ -169,8 +230,10 @@ export default function ProductDetail() {
     return (
       <main className={styles.main}>
         <div className={styles.container}>
-          <p className={styles.error}>{error || 'Товар не найден'}</p>
-          <Link to="/catalog" className={styles.backLink}>Вернуться в каталог</Link>
+          <div className={styles.errorBlock}>
+            <p className={styles.error}>{error || 'Товар не найден'}</p>
+            <Link to="/catalog" className={styles.backLink}>Вернуться в каталог</Link>
+          </div>
         </div>
       </main>
     );
@@ -179,276 +242,277 @@ export default function ProductDetail() {
   const imageUrl = product.has_image
     ? `/api/products/${product.id}/image`
     : (product.image_url?.startsWith('http') ? product.image_url : PLACEHOLDER);
-  const images = [imageUrl];
   const avgRating = reviews.length
     ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
     : null;
   const inFavorites = isFavorite(product.id);
-  const oldPrice = product.is_sale ? (parseFloat(product.price) * 2.82).toFixed(2) : null;
+  const showSalePrice = product.is_sale && product.sale_price != null;
+  const effectivePrice = showSalePrice ? parseFloat(product.sale_price) : parseFloat(product.price);
+  const oldPrice = showSalePrice ? product.price : null;
 
   return (
     <main className={styles.main}>
       <div className={styles.container}>
-        {/* Верхняя навигация: назад + хлебные крошки + действия */}
+        {/* Хлебные крошки и действия */}
         <div className={styles.topBar}>
-          <button type="button" className={styles.backBtn} onClick={() => navigate(-1)} aria-label="Назад">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-          </button>
           <nav className={styles.breadcrumb}>
             <Link to="/">Главная</Link>
             <span className={styles.breadcrumbSep}>/</span>
-            <Link to="/catalog">Спорт</Link>
+            <Link to="/catalog">Каталог</Link>
             {product.category_name && (
               <>
                 <span className={styles.breadcrumbSep}>/</span>
-                <Link to={`/catalog?category=${product.category_slug || ''}`}>Спортивное питание и косметика</Link>
+                <Link to={`/catalog?category=${product.category_slug || ''}`}>{product.category_name}</Link>
               </>
             )}
-            <span className={styles.breadcrumbSep}>/</span>
-            <Link to={`/catalog?category=${product.category_slug || ''}`}>{product.category_name || 'Креатины'}</Link>
-            <span className={styles.breadcrumbSep}>/</span>
-            <span className={styles.breadcrumbLast}>{product.manufacturer || 'PWR ultimate power'}</span>
           </nav>
           <div className={styles.topActions}>
             <button
               type="button"
-              className={styles.iconBtn}
+              className={`${styles.actionBtn} ${inFavorites ? styles.actionBtnActive : ''}`}
               onClick={() => toggleFavorite(product.id)}
               aria-label={inFavorites ? 'Убрать из избранного' : 'В избранное'}
-              data-active={inFavorites}
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill={inFavorites ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill={inFavorites ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
             </button>
-            <button type="button" className={styles.iconBtn} onClick={handleShare} aria-label="Поделиться">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-            </button>
-            <button type="button" className={styles.iconBtn} aria-label="Сообщить об ошибке">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+            <button type="button" className={styles.actionBtn} onClick={handleShare} aria-label="Поделиться">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                <polyline points="16 6 12 2 8 6"/>
+                <line x1="12" y1="2" x2="12" y2="15"/>
+              </svg>
             </button>
           </div>
         </div>
 
+        {/* Основной контент в стиле WB */}
         <div className={styles.productLayout}>
-          {/* Левая колонка: вертикальные миниатюры + основное изображение */}
-          <div className={styles.galleryColumn}>
-            <div className={styles.thumbnails}>
-              {images.map((src, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  className={`${styles.thumb} ${selectedImageIndex === i ? styles.thumbActive : ''}`}
-                  onClick={() => setSelectedImageIndex(i)}
-                >
-                  <img src={src} alt="" />
-                </button>
-              ))}
-            </div>
-            <div className={styles.mainImageWrap}>
-              <img src={images[selectedImageIndex]} alt={product.name} className={styles.mainImage} />
+          {/* Галерея слева */}
+          <div className={styles.gallery}>
+            <div className={styles.imageWrap}>
+              <img src={imageUrl} alt={product.name} className={styles.mainImage} loading="eager" decoding="async" />
+              {(product.is_sale || product.is_hit || product.is_recommended) && (
+                <div className={styles.badges}>
+                  {product.is_sale && <span className={styles.badgeSale}>Акция</span>}
+                  {product.is_hit && <span className={styles.badgeHit}>Хит</span>}
+                  {product.is_recommended && <span className={styles.badgeRec}>Советуем</span>}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Центр: информация о товаре */}
-          <div className={styles.infoColumn}>
-            <div className={styles.brandRow}>
-              <span className={styles.brandName}>{product.manufacturer || 'PWR ultimate power'}</span>
-            </div>
+          {/* Информация по центру */}
+          <div className={styles.info}>
+            {product.manufacturer && (
+              <div className={styles.brandRow}>
+                <span className={styles.brand}>{product.manufacturer}</span>
+                <span className={styles.originalBadge}>✓ Оригинал</span>
+              </div>
+            )}
             <h1 className={styles.title}>{product.name}</h1>
-            <div className={styles.ratingRow}>
-              <span className={styles.ratingValue}>{avgRating ?? '4.9'}</span>
-              <span className={styles.ratingStars} aria-hidden>★★★★★</span>
-              <button type="button" className={styles.ratingLink} onClick={() => reviewListRef.current?.scrollIntoView({ behavior: 'smooth' })}>
-                {reviews.length > 0 ? `${reviews.length} оценок` : '56 100 оценок'}
+
+            {reviews.length > 0 && (
+              <button
+                type="button"
+                className={styles.ratingRow}
+                onClick={() => reviewListRef.current?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                <span className={styles.ratingStars}>{'★'.repeat(Math.round(parseFloat(avgRating)))}</span>
+                <span className={styles.ratingValue}>{avgRating}</span>
+                <span className={styles.ratingCount}>{reviews.length} отзывов</span>
               </button>
-            </div>
-            <p className={styles.weightLine}>{product.weight || '500 мл'} • <span>Без вкуса</span></p>
+            )}
+
             <div className={styles.specTable}>
               {product.article && (
                 <div className={styles.specRow}>
                   <span className={styles.specLabel}>Артикул</span>
                   <span className={styles.specValue}>{product.article}</span>
-                  <button type="button" className={styles.copyBtn} onClick={() => navigator.clipboard?.writeText(product.article)} aria-label="Копировать">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                  </button>
                 </div>
               )}
-              <div className={styles.specRow}>
-                <span className={styles.specLabel}>Состав</span>
-                <span className={styles.specValue}>{product.description || 'Креатин моногидрат'}</span>
-              </div>
               {product.weight && (
                 <div className={styles.specRow}>
-                  <span className={styles.specLabel}>Объём товара</span>
+                  <span className={styles.specLabel}>Вес</span>
                   <span className={styles.specValue}>{product.weight}</span>
                 </div>
               )}
+              {product.category_name && (
+                <div className={styles.specRow}>
+                  <span className={styles.specLabel}>Категория</span>
+                  <span className={styles.specValue}>{product.category_name}</span>
+                </div>
+              )}
               <div className={styles.specRow}>
-                <span className={styles.specLabel}>Вкус</span>
-                <span className={styles.specValue}>без вкуса; натуральный вкус</span>
-              </div>
-              <div className={styles.specRow}>
-                <span className={styles.specLabel}>Форма выпуска</span>
-                <span className={styles.specValue}>креатин моногидрат порошок</span>
-              </div>
-              <div className={styles.specRow}>
-                <span className={styles.specLabel}>Добавки</span>
-                <span className={styles.specValue}>без добавок; не содержит сахар и сахарозаменители</span>
-              </div>
-              <div className={styles.specRow}>
-                <span className={styles.specLabel}>Тип креатина</span>
-                <span className={styles.specValue}>Моногидрат в порошке; креатин моногидрат</span>
+                <span className={styles.specLabel}>В наличии</span>
+                <span className={styles.specValue}>{(product.quantity ?? 0) > 0 ? `${product.quantity} шт` : 'Нет'}</span>
               </div>
             </div>
-            <details className={styles.detailsBox}>
-              <summary className={styles.detailsSummary}>Характеристики и описание</summary>
-              <div className={styles.detailsContent}>
-                {product.description && <p>{product.description}</p>}
-                {!product.description && <p>Подробное описание товара отсутствует.</p>}
+
+            {product.description && (
+              <div className={styles.descriptionBlock}>
+                <h3 className={styles.descriptionTitle}>Описание</h3>
+                <p className={styles.descriptionText}>{product.description}</p>
               </div>
-            </details>
+            )}
           </div>
 
-          {/* Правая колонка: прайс блок (липкий) */}
-          <div className={styles.priceColumn}>
+          {/* Блок покупки справа */}
+          <aside className={styles.priceBlock}>
             <div className={styles.priceCard}>
               <div className={styles.priceRow}>
-                <span className={styles.priceCurrent}>{formatPrice(product.price)}</span>
-                {oldPrice && (
+                <span className={styles.priceCurrent}>{formatPrice(effectivePrice)}</span>
+                {oldPrice != null && (
                   <span className={styles.priceOld}>{formatPrice(oldPrice)}</span>
                 )}
               </div>
-              {user ? (
-                <>
-                  <button type="button" className={styles.btnAddCart} onClick={handleAddToCart} disabled={cartAdded}>
-                    {cartAdded ? 'Добавлено' : 'Добавить в корзину'}
-                  </button>
-                </>
-              ) : (
-                <Link to="/login" className={styles.btnAddCart}>
-                  Войдите, чтобы купить
-                </Link>
-              )}
-              <div className={styles.deliveryInfo}>
-                <div className={styles.deliveryRow}>
-                  <span className={styles.deliveryLabel}>Последняя</span>
-                  <span className={styles.deliveryValue}>сегодня WB</span>
+              {oldPrice != null && (
+                <div className={styles.discountBadge}>
+                  Скидка {Math.round((1 - effectivePrice / parseFloat(oldPrice)) * 100)}%
                 </div>
-                <div className={styles.deliveryRow}>
-                  <span className={styles.deliveryLabel}>AMA TERRIA</span>
-                  <span className={styles.deliveryStars}>★ 4.9</span>
+              )}
+
+              {user ? (
+                inCart ? (
+                  <div className={styles.quantityControl}>
+                    <button type="button" className={styles.qtyBtn} onClick={handleDecrease} aria-label="Уменьшить">
+                      −
+                    </button>
+                    <span className={styles.qtyValue}>{cartQty}</span>
+                    <button type="button" className={styles.qtyBtn} onClick={handleIncrease} aria-label="Увеличить">
+                      +
+                    </button>
+                  </div>
+                ) : (
+                  <button type="button" className={styles.btnAddCart} onClick={handleAddToCart}>
+                    В корзину
+                  </button>
+                )
+              ) : (
+                <Link to="/login" className={styles.btnAddCart}>Войдите, чтобы купить</Link>
+              )}
+
+              <Link to="/cart" className={styles.btnBuyNow}>
+                Перейти в корзину
+              </Link>
+
+              <div className={styles.deliveryInfo}>
+                <div className={styles.deliveryItem}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="1" y="3" width="15" height="13" rx="1"/>
+                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                    <circle cx="5.5" cy="18.5" r="2.5"/>
+                    <circle cx="18.5" cy="18.5" r="2.5"/>
+                  </svg>
+                  <span>Доставка по всей стране</span>
+                </div>
+                <div className={styles.deliveryItem}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="1" y="4" width="22" height="16" rx="2"/>
+                    <line x1="1" y1="10" x2="23" y2="10"/>
+                  </svg>
+                  <span>Оплата онлайн или при получении</span>
                 </div>
               </div>
             </div>
-          </div>
+          </aside>
         </div>
 
-        {/* Оценки и отзывы */}
+        {/* Отзывы */}
         <section ref={reviewListRef} className={styles.reviewsSection}>
-          <div className={styles.reviewsHeader}>
-            <h2 className={styles.reviewsTitle}>Оценки и отзывы</h2>
-            <div className={styles.reviewsTabs}>
-              <span className={styles.tabActive}>{reviews.length} оценок</span>
-            </div>
-          </div>
-          <div className={styles.reviewsSummary}>
-            <span className={styles.reviewsStars}>{'★'.repeat(5)}</span>
-            <span className={styles.reviewsRatingValue}>{avgRating ?? '—'}</span>
-            <span className={styles.reviewsCount}>{reviews.length} оценок</span>
-          </div>
-          <div className={styles.reviewCards}>
-            {reviews.length === 0 ? (
-              <p className={styles.noReviews}>Пока нет отзывов. Будьте первым.</p>
-            ) : (
-              reviews.slice(0, 6).map((r) => {
-                const name = r.username || 'Покупатель';
-                return (
-                  <div key={r.id} className={styles.reviewCard}>
-                    <div className={styles.reviewCardHeader}>
-                      <span className={styles.reviewUser}>{name}</span>
-                      <span className={styles.reviewDate}>{r.created_at ? formatDate(r.created_at) : ''}</span>
-                    </div>
-                    <div className={styles.reviewStars}>{'★'.repeat(r.rating)}</div>
-                    {r.text && (
-                      <div className={styles.reviewBlock}>
-                        <span className={styles.reviewBlockLabel}>Комментарий</span>
-                        <p className={styles.reviewText}>{r.text}</p>
-                      </div>
-                    )}
+          <h2 className={styles.sectionTitle}>Отзывы о товаре</h2>
+          {reviews.length === 0 ? (
+            <p className={styles.noReviews}>Пока нет отзывов. Будьте первым, кто оставит отзыв.</p>
+          ) : (
+            <div className={styles.reviewList}>
+              {reviews.slice(0, 6).map((r) => (
+                <div key={r.id} className={styles.reviewCard}>
+                  <div className={styles.reviewHead}>
+                    <span className={styles.reviewUser}>{r.username || 'Покупатель'}</span>
+                    <span className={styles.reviewDate}>{r.created_at ? formatDate(r.created_at) : ''}</span>
                   </div>
-                );
-              })
-            )}
-          </div>
-          {reviews.length > 0 && (
-            <button type="button" className={styles.reviewShowAll} onClick={() => document.getElementById('review-form')?.scrollIntoView({ behavior: 'smooth' })}>
-              Смотреть все отзывы
-            </button>
+                  <div className={styles.reviewStars}>{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</div>
+                  {r.text && <p className={styles.reviewText}>{r.text}</p>}
+                  {r.admin_reply && (
+                    <div className={styles.reviewAdminReply}>
+                      <span className={styles.reviewAdminReplyLabel}>Ответ магазина</span>
+                      {r.admin_replied_at && <span className={styles.reviewAdminReplyDate}>{formatDate(r.admin_replied_at)}</span>}
+                      <p className={styles.reviewAdminReplyText}>{r.admin_reply}</p>
+                    </div>
+                  )}
+                  {user && Number(r.user_id) === Number(user?.id) && !editingMyReview && (
+                    <div className={styles.reviewActions}>
+                      <button type="button" className={styles.reviewEditBtn} onClick={startEditMyReview}>Редактировать</button>
+                      <button type="button" className={styles.reviewDeleteBtn} onClick={handleDeleteReview} disabled={reviewDeleting}>{reviewDeleting ? 'Удаление...' : 'Удалить'}</button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {user && (editingMyReview || (canReview && !myReview)) && (
+            <div className={styles.reviewFormWrap}>
+              <h3 className={styles.reviewFormTitle}>{editingMyReview ? 'Редактировать отзыв' : 'Оставить отзыв'}</h3>
+              <form onSubmit={handleSubmitReview} className={styles.reviewForm}>
+                {reviewError && <div className={styles.reviewError}>{reviewError}</div>}
+                <div className={styles.reviewLabel}>
+                  <span>Оценка</span>
+                  <div className={styles.ratingStarsInput} role="group" aria-label="Оценка звёздами">
+                    {[5, 4, 3, 2, 1].flatMap((n) => [
+                      <input
+                        key={`star-inp-${n}`}
+                        type="radio"
+                        name={`rate-${productId}`}
+                        value={n}
+                        id={`star${n}-${productId}`}
+                        checked={reviewForm.rating === n}
+                        onChange={(e) => setReviewForm((f) => ({ ...f, rating: +e.target.value }))}
+                      />,
+                      <label key={`star-lbl-${n}`} htmlFor={`star${n}-${productId}`} title={`${n} звезд`}> </label>,
+                    ])}
+                  </div>
+                </div>
+                <label className={styles.reviewLabel}>
+                  Комментарий (по желанию)
+                  <textarea
+                    placeholder="Поделитесь впечатлениями о товаре"
+                    value={reviewForm.text}
+                    onChange={(e) => setReviewForm((f) => ({ ...f, text: e.target.value }))}
+                    rows={3}
+                  />
+                </label>
+                <div className={styles.reviewFormActions}>
+                  <button type="submit" disabled={reviewSubmitting} className={styles.reviewSubmit}>
+                    {reviewSubmitting ? 'Отправка...' : (editingMyReview ? 'Сохранить' : 'Отправить отзыв')}
+                  </button>
+                  {editingMyReview && (
+                    <button type="button" className={styles.reviewCancelBtn} onClick={() => { setEditingMyReview(false); setReviewError(''); }}>Отмена</button>
+                  )}
+                </div>
+              </form>
+            </div>
+          )}
+          {user && !canReview && reviews.length > 0 && !myReview && (
+            <p className={styles.reviewHint}>Оставить отзыв могут только покупатели этого товара.</p>
           )}
           {!user && (
             <p className={styles.reviewHint}><Link to="/login">Войдите</Link>, чтобы оставить отзыв.</p>
           )}
-          {user && !canReview && reviews.length > 0 && (
-            <p className={styles.reviewHint}>Оставить отзыв могут только покупатели этого товара.</p>
-          )}
-          {user && canReview && (
-            <div id="review-form" className={styles.reviewFormCard}>
-              <h3 className={styles.reviewFormTitle}>Написать отзыв</h3>
-              <form onSubmit={handleSubmitReview} className={styles.reviewForm}>
-                {reviewError && <div className={styles.reviewError}>{reviewError}</div>}
-                <div className={styles.reviewRow}>
-                  <label htmlFor="review-rating">Оценка:</label>
-                  <select
-                    id="review-rating"
-                    value={reviewForm.rating}
-                    onChange={(e) => setReviewForm((f) => ({ ...f, rating: +e.target.value }))}
-                  >
-                    {[5, 4, 3, 2, 1].map((n) => (
-                      <option key={n} value={n}>{n} ★</option>
-                    ))}
-                  </select>
-                </div>
-                <textarea
-                  placeholder="Текст отзыва (по желанию)"
-                  value={reviewForm.text}
-                  onChange={(e) => setReviewForm((f) => ({ ...f, text: e.target.value }))}
-                  rows={3}
-                />
-                <button type="submit" disabled={reviewSubmitting} className={styles.reviewSubmit}>
-                  {reviewSubmitting ? 'Отправка...' : 'Оставить отзыв'}
-                </button>
-              </form>
-            </div>
-          )}
         </section>
 
-        {/* Продавец рекомендует */}
-        {recommendedProducts.length > 0 && (
-          <section className={styles.carouselSection}>
-            <h2 className={styles.carouselTitle}>Продавец рекомендует</h2>
-            <div className={styles.carousel}>
-              {recommendedProducts.map((p) => (
-                <div key={p.id} className={styles.carouselCard}>
-                  <ProductCard product={p} showAvailability showWishlist />
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Смотрите также */}
+        {/* Рекомендуемые товары */}
         {sameCategoryProducts.length > 0 && (
-          <section className={styles.carouselSection}>
-            <h2 className={styles.carouselTitle}>Смотрите также</h2>
-            <div className={styles.carousel}>
+          <section className={styles.relatedSection}>
+            <h2 className={styles.sectionTitle}>Рекомендуемые товары</h2>
+            <div className={styles.relatedGrid}>
               {sameCategoryProducts.map((p) => (
-                <div key={p.id} className={styles.carouselCard}>
-                  <ProductCard product={p} showAvailability showWishlist />
-                </div>
+                <ProductCard key={p.id} product={p} showWishlist layout="grid" compact />
               ))}
             </div>
             {product?.category_slug && (
-              <Link to={`/catalog?category=${product.category_slug}`} className={styles.carouselLink}>
-                Все товары категории
+              <Link to={`/catalog?category=${product.category_slug}`} className={styles.categoryLink}>
+                Все товары категории «{product.category_name}»
               </Link>
             )}
           </section>

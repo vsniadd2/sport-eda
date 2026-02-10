@@ -8,6 +8,15 @@ export default function ConfirmModal({ isOpen, title, message, confirmLabel = 'Ð
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') onCancel();
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [isOpen, onCancel]);
+
   if (!isOpen) return null;
 
   return (

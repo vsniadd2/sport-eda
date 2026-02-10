@@ -1,0 +1,54 @@
+/* Лоадер из 1.txt — три анимированные полоски */
+.loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+.bar {
+  display: inline-block;
+  width: 3px;
+  height: 20px;
+  background-color: rgba(196, 92, 38, 0.45);
+  border-radius: 10px;
+  animation: scaleUp 1s linear infinite;
+}
+
+.bar:nth-child(2) {
+  height: 35px;
+  margin: 0 5px;
+  animation-delay: 0.25s;
+}
+
+.bar:nth-child(3) {
+  animation-delay: 0.5s;
+}
+
+@keyframes scaleUp {
+  20% {
+    background-color: var(--color-primary, #c45c26);
+    transform: scaleY(1.5);
+  }
+  40% {
+    transform: scaleY(1);
+  }
+}
+
+.loaderSmall .bar {
+  width: 2px;
+  height: 12px;
+}
+
+.loaderSmall .bar:nth-child(2) {
+  height: 20px;
+  margin: 0 3px;
+}
+
+.loaderWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  padding: 24px;
+}

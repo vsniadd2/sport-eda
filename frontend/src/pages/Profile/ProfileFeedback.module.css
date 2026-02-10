@@ -1,0 +1,233 @@
+.feedbackFormBox {
+  background: var(--color-white);
+  border: 1px solid var(--color-light-gray);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.feedbackFormTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 16px;
+  text-align: center;
+}
+
+.feedbackFormHint {
+  font-size: 14px;
+  color: var(--color-gray);
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border-left: 3px solid var(--color-primary);
+}
+
+.feedbackTextarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--color-text);
+  background: var(--color-bg, #fafafa);
+  resize: vertical;
+  margin-bottom: 16px;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.feedbackTextarea:focus {
+  border-color: var(--color-primary);
+}
+
+.feedbackTextarea::placeholder {
+  color: var(--color-gray);
+}
+
+.feedbackSubmitBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 200px;
+  margin: 0 auto;
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-primary);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.feedbackSubmitBtn:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+
+.feedbackSubmitBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 20px;
+}
+
+.ticketList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ticketCard {
+  background: var(--color-white);
+  border: 1px solid var(--color-light-gray);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.ticketSummary {
+  padding: 16px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ticketSummary:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.ticketPreview {
+  font-size: 14px;
+  color: var(--color-gray);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ticketDate {
+  font-size: 13px;
+  color: var(--color-gray);
+  flex-shrink: 0;
+}
+
+.ticketDetails {
+  padding: 0 20px 20px;
+  border-top: 1px solid var(--color-light-gray);
+}
+
+.messagesList {
+  list-style: none;
+  padding: 16px 0 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.messageItem {
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.messageItemUser {
+  background: rgba(196, 92, 38, 0.08);
+  border-left: 3px solid var(--color-primary);
+}
+
+.messageItemAdmin {
+  background: var(--color-light-gray);
+  border-left: 3px solid var(--color-gray);
+}
+
+.messageMeta {
+  font-size: 12px;
+  color: var(--color-gray);
+  margin-bottom: 4px;
+}
+
+.replyForm {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-light-gray);
+}
+
+.replyForm .feedbackTextarea {
+  min-height: 80px;
+  margin-bottom: 12px;
+}
+
+.replyForm .feedbackSubmitBtn {
+  margin: 0;
+}
+
+.ticketActions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-light-gray);
+}
+
+.closeTicketBtn {
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-gray);
+  background: transparent;
+  border: 1px solid var(--color-light-gray);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.closeTicketBtn:hover:not(:disabled) {
+  border-color: var(--color-gray);
+  color: var(--color-text);
+}
+
+.closeTicketBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.emptyTickets {
+  font-size: 15px;
+  color: var(--color-gray);
+  padding: 24px;
+  text-align: center;
+  background: var(--color-white);
+  border: 1px solid var(--color-light-gray);
+  border-radius: 12px;
+}
+
+.error {
+  background: #fef2f2;
+  color: #b91c1c;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}

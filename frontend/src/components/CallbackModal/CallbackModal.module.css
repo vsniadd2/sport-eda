@@ -2,26 +2,42 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-modal, 500);
   padding: 24px;
-  animation: fadeIn 0.2s ease-out;
+  overflow-y: auto;
+  animation: overlayFadeIn 0.2s ease-out;
 }
 
-@keyframes fadeIn {
+@keyframes overlayFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 .modal {
   background: var(--color-white);
-  border-radius: 10px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
   width: 100%;
   max-width: 460px;
   overflow: hidden;
+  flex-shrink: 0;
+  animation: modalSlideIn 0.25s ease-out;
 }
 
 .header {

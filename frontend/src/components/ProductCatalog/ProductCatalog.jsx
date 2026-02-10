@@ -1,6 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { io } from 'socket.io-client';
 import ProductCard from '../ProductCard/ProductCard';
+import Loader from '../Loader/Loader';
 import styles from './ProductCatalog.module.css';
 
 const SORT_OPTIONS = [
@@ -38,7 +40,9 @@ export default function ProductCatalog({ limitPerCategory }) {
   const [viewMode, setViewMode] = useState('grid');
 
   const category = categoryFilter ?? '';
-  useEffect(() => {
+  const sectionRef = useRef(null);
+
+  const fetchData = useCallback(() => {
     setLoading(true);
     const url = new URL('/api/products', window.location.origin);
     if (category) url.searchParams.set('category', category);
@@ -59,7 +63,21 @@ export default function ProductCatalog({ limitPerCategory }) {
   }, [category, searchFilter]);
 
   useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    const socket = io(window.location.origin);
+    socket.on('productsChanged', () => fetchData());
+    return () => socket.disconnect();
+  }, [fetchData]);
+
+  useEffect(() => {
     setPage(1);
+  }, [category, searchFilter]);
+
+  useEffect(() => {
+    sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [category, searchFilter]);
 
   const filteredCategories = category
@@ -84,12 +102,14 @@ export default function ProductCatalog({ limitPerCategory }) {
 
   if (isCatalogPage) {
     return (
-      <section className={styles.section}>
-        {loading && (
-          <div className={styles.loadingBar}>
-            <span>Загрузка...</span>
-          </div>
+      <section className={styles.section} ref={sectionRef}>
+        {loading && products.length === 0 && (
+          <Loader wrap />
         )}
+        {loading && products.length > 0 && (
+          <Loader wrap />
+        )}
+        {!(loading && products.length === 0) && (
         <div className={styles.toolbar}>
           <span className={styles.toolbarText}>
             Отображение {from}-{to} из {total}
@@ -138,18 +158,24 @@ export default function ProductCatalog({ limitPerCategory }) {
             </div>
           </div>
         </div>
-        <div className={viewMode === 'list' ? styles.list : styles.grid}>
-          {displayProducts.map((product) => (
-            <ProductCard key={product.id} product={product} showWishlist layout={viewMode} />
-          ))}
-        </div>
-        {totalPages > 1 && (
+        )}
+          {(loading && products.length === 0) ? null : (
+          <div className={viewMode === 'list' ? styles.list : styles.grid}>
+            {displayProducts.map((product) => (
+              <ProductCard key={product.id} product={product} showWishlist layout={viewMode} compact={viewMode === 'grid'} />
+            ))}
+          </div>
+        )}
+        {!(loading && products.length === 0) && totalPages > 1 && (
           <div className={styles.pagination}>
             <button
               type="button"
               className={styles.pageBtn}
               disabled={currentPage <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              onClick={() => {
+                setPage((p) => Math.max(1, p - 1));
+                sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
             >
               Назад
             </button>
@@ -160,7 +186,10 @@ export default function ProductCatalog({ limitPerCategory }) {
               type="button"
               className={styles.pageBtn}
               disabled={currentPage >= totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              onClick={() => {
+                setPage((p) => Math.min(totalPages, p + 1));
+                sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
             >
               Вперёд
             </button>

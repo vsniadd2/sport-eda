@@ -49,8 +49,17 @@ export function CartProvider({ children }) {
   const totalItems = items.reduce((s, i) => s + i.quantity, 0);
   const totalSum = items.reduce((s, i) => s + (i.price || 0) * i.quantity, 0);
 
+  const getQuantity = useCallback((productId) => {
+    const item = items.find((i) => i.product_id === productId);
+    return item ? item.quantity : 0;
+  }, [items]);
+
+  const isInCart = useCallback((productId) => {
+    return items.some((i) => i.product_id === productId);
+  }, [items]);
+
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalSum }}>
+    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalSum, getQuantity, isInCart }}>
       {children}
     </CartContext.Provider>
   );

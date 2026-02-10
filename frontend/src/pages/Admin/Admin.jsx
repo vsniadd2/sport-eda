@@ -1,55 +1,19 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { io } from 'socket.io-client';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import { formatPrice } from '../../utils/formatPrice';
 import { formatDateTime, formatDateTimeLong, formatDate } from '../../utils/formatDate';
 import ConfirmModal from '../../components/ConfirmModal/ConfirmModal';
+import Loader from '../../components/Loader/Loader';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import styles from './Admin.module.css';
-
-function useAnimatedNumber(ref, value, format = (v) => String(Math.round(v)), emptyText = '0') {
-  const objRef = useRef({ value: 0 });
-  const animRef = useRef(null);
-  useEffect(() => {
-    if (ref.current == null) return;
-    if (value == null || value === '') {
-      if (ref.current) ref.current.textContent = emptyText;
-      return;
-    }
-    const target = Number(value);
-    if (Number.isNaN(target)) {
-      if (ref.current) ref.current.textContent = emptyText;
-      return;
-    }
-    objRef.current.value = 0;
-    ref.current.textContent = format(0);
-    let cancelled = false;
-    (async () => {
-      try {
-        const { animate, utils } = await import('https://esm.sh/animejs');
-        if (cancelled) return;
-        animRef.current = animate(objRef.current, {
-          value: target,
-          duration: 1400,
-          ease: 'outExpo',
-          modifier: utils.round(0),
-          onUpdate: () => {
-            if (ref.current) ref.current.textContent = format(objRef.current.value);
-          },
-        });
-      } catch {
-        if (ref.current) ref.current.textContent = format(target);
-      }
-    })();
-    return () => {
-      cancelled = true;
-      if (animRef.current?.pause) animRef.current.pause();
-    };
-  }, [value]);
-}
 
 const API_URL = '/api';
 const TOKEN_KEY = 'sport-eda-token';
@@ -59,12 +23,21 @@ function getAuthHeaders() {
   return { Authorization: `Bearer ${token}` };
 }
 
+function getFeedbackAuthorLabel(t) {
+  return (t.user_id && (t.username || t.email)) ? `${t.username || t.email} (ID ${t.user_id})` : 'Аноним';
+}
+
 const CHART_COLORS = ['#c45c26', '#3b82f6', '#eab308', '#22c55e', '#a84d1f', '#8b5cf6'];
 
+const ADMIN_TABS = ['users', 'orders', 'callbacks', 'feedback', 'reviews', 'catalog', 'visits', 'banners', 'stats'];
+
 export default function Admin() {
-  const { user, logout, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
-  const [tab, setTab] = useState('users');
+  useAuth();
+  const { notify } = useNotifications();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const tab = ADMIN_TABS.includes(tabParam) ? tabParam : 'users';
+  const setTab = (id) => setSearchParams({ tab: id });
   const [catalogSubTab] = useState('categories'); // оставлено для стабильного размера deps, UI — дерево категорий
   const [expandedCategoryIds, setExpandedCategoryIds] = useState([]);
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
@@ -81,28 +54,51 @@ export default function Admin() {
   const [userDeleting, setUserDeleting] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [orders, setOrders] = useState([]);
+  const [archiveOrders, setArchiveOrders] = useState([]);
+  const [ordersSubTab, setOrdersSubTab] = useState('active');
   const [callbacks, setCallbacks] = useState([]);
+  const [archiveCallbacks, setArchiveCallbacks] = useState([]);
+  const [callbacksSubTab, setCallbacksSubTab] = useState('active');
   const [callbackToggling, setCallbackToggling] = useState(null);
+  const [orderPaymentToggling, setOrderPaymentToggling] = useState(null);
+  const [orderShipToggling, setOrderShipToggling] = useState(null);
+  const [orderProcessToggling, setOrderProcessToggling] = useState(null);
+  const [feedbackTickets, setFeedbackTickets] = useState([]);
+  const [selectedFeedbackId, setSelectedFeedbackId] = useState(null);
+  const [feedbackReplyBody, setFeedbackReplyBody] = useState('');
+  const [feedbackReplySending, setFeedbackReplySending] = useState(false);
+  const [feedbackClosing, setFeedbackClosing] = useState(null);
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [stats, setStats] = useState(null);
+  const [visitsByDay, setVisitsByDay] = useState([]);
+  const [visitsTodayCount, setVisitsTodayCount] = useState(0);
+  const [selectedVisitDate, setSelectedVisitDate] = useState('');
+  const [banners, setBanners] = useState([]);
+  const [showAddBannerModal, setShowAddBannerModal] = useState(false);
+  const [addBannerFile, setAddBannerFile] = useState(null);
+  const [addBannerLinkUrl, setAddBannerLinkUrl] = useState('');
+  const [addBannerTitle, setAddBannerTitle] = useState('');
+  const [bannerSaving, setBannerSaving] = useState(false);
+  const [bannerDeleting, setBannerDeleting] = useState(null);
+  const [adminReviews, setAdminReviews] = useState([]);
+  const [reviewReplyDrafts, setReviewReplyDrafts] = useState({});
+  const [reviewReplySending, setReviewReplySending] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [newOrderNotify, setNewOrderNotify] = useState(null);
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [confirmDeleteCategoryId, setConfirmDeleteCategoryId] = useState(null);
   const [confirmDeleteProductId, setConfirmDeleteProductId] = useState(null);
-  const statRevenueRef = useRef(null);
-  const statOrdersRef = useRef(null);
-  const statAvgRef = useRef(null);
-
+  const [productSaleChecked, setProductSaleChecked] = useState({});
+  const [addProductIsSale, setAddProductIsSale] = useState(false);
+  const [addProductSalePrice, setAddProductSalePrice] = useState('');
+  const [addProductSalePercent, setAddProductSalePercent] = useState('');
+  const [productSalePrice, setProductSalePrice] = useState({});
+  const [productSalePercent, setProductSalePercent] = useState({});
   const totalRevenue = stats?.summary != null ? Number(stats.summary.totalRevenue) : null;
   const totalOrders = stats?.summary != null ? Number(stats.summary.totalOrders) : null;
   const averageOrder = stats?.summary != null && stats.summary.totalOrders > 0 ? Number(stats.summary.averageCheck) : null;
-
-  useAnimatedNumber(statRevenueRef, totalRevenue, (v) => formatPrice(v), '0');
-  useAnimatedNumber(statOrdersRef, totalOrders, (v) => String(Math.round(v)), '0');
-  useAnimatedNumber(statAvgRef, averageOrder, (v) => formatPrice(v), '—');
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -124,14 +120,16 @@ export default function Admin() {
     }
   }, [usersPage, usersSearch]);
 
-  const fetchOrders = useCallback(async () => {
+  const fetchOrders = useCallback(async (archive = false) => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${API_URL}/admin/orders`, { headers: getAuthHeaders() });
+      const url = archive ? `${API_URL}/admin/orders?archive=1` : `${API_URL}/admin/orders`;
+      const res = await fetch(url, { headers: getAuthHeaders() });
       if (!res.ok) throw new Error('Ошибка загрузки');
       const data = await res.json();
-      setOrders(data);
+      if (archive) setArchiveOrders(data);
+      else setOrders(data);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -139,14 +137,149 @@ export default function Admin() {
     }
   }, []);
 
-  const fetchCallbacks = useCallback(async () => {
+  const fetchCallbacks = useCallback(async (archive = false) => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${API_URL}/admin/callback-requests`, { headers: getAuthHeaders() });
+      const url = archive ? `${API_URL}/admin/callback-requests?archive=1` : `${API_URL}/admin/callback-requests`;
+      const res = await fetch(url, { headers: getAuthHeaders() });
       if (!res.ok) throw new Error('Ошибка загрузки');
       const data = await res.json();
-      setCallbacks(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? data : [];
+      if (archive) setArchiveCallbacks(list);
+      else setCallbacks(list);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchVisits = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`${API_URL}/admin/visits`, { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error('Ошибка загрузки');
+      const data = await res.json();
+      setVisitsByDay(Array.isArray(data.visitsByDay) ? data.visitsByDay : []);
+      setVisitsTodayCount(Number(data.todayCount) || 0);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchBanners = useCallback(async () => {
+    setError('');
+    try {
+      const res = await fetch(`${API_URL}/admin/banners`, { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error('Ошибка загрузки');
+      const data = await res.json();
+      setBanners(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setError(e.message);
+    }
+  }, []);
+
+  const handleAddBanner = useCallback(async (e) => {
+    e.preventDefault();
+    if (!addBannerFile) {
+      notify('Загрузите изображение', 'error');
+      return;
+    }
+    setBannerSaving(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', addBannerFile);
+      formData.append('link_url', addBannerLinkUrl.trim());
+      formData.append('title', addBannerTitle.trim());
+      formData.append('sort_order', String(banners.length));
+      const res = await fetch(`${API_URL}/admin/banners`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: formData,
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || 'Ошибка сохранения');
+      }
+      setShowAddBannerModal(false);
+      setAddBannerFile(null);
+      setAddBannerLinkUrl('');
+      setAddBannerTitle('');
+      notify('Баннер добавлен');
+      fetchBanners();
+    } catch (err) {
+      notify(err.message || 'Ошибка', 'error');
+    } finally {
+      setBannerSaving(false);
+    }
+  }, [addBannerFile, addBannerLinkUrl, addBannerTitle, banners.length, notify, fetchBanners]);
+
+  const handleDeleteBanner = useCallback(async (id) => {
+    setBannerDeleting(id);
+    try {
+      const res = await fetch(`${API_URL}/admin/banners/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      if (!res.ok) throw new Error('Ошибка удаления');
+      notify('Баннер удалён');
+      fetchBanners();
+    } catch (err) {
+      notify(err.message || 'Ошибка', 'error');
+    } finally {
+      setBannerDeleting(null);
+    }
+  }, [notify, fetchBanners]);
+
+  const handleBannerMove = useCallback(async (id, direction) => {
+    const idx = banners.findIndex((b) => b.id === id);
+    if (idx < 0) return;
+    const newIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (newIdx < 0 || newIdx >= banners.length) return;
+    const reordered = [...banners];
+    const [removed] = reordered.splice(idx, 1);
+    reordered.splice(newIdx, 0, removed);
+    try {
+      await Promise.all(
+        reordered.map((b, i) =>
+          fetch(`${API_URL}/admin/banners/${b.id}`, {
+            method: 'PATCH',
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sort_order: i }),
+          })
+        )
+      );
+      setBanners(reordered);
+      notify('Порядок обновлён');
+    } catch (err) {
+      notify(err.message || 'Ошибка', 'error');
+    }
+  }, [banners, notify]);
+
+  const fetchAdminReviews = useCallback(async () => {
+    setError('');
+    try {
+      const res = await fetch(`${API_URL}/admin/reviews`, { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error('Ошибка загрузки');
+      const data = await res.json();
+      setAdminReviews(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setError(e.message);
+    }
+  }, []);
+
+  const fetchFeedback = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`${API_URL}/admin/feedback`, { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error('Ошибка загрузки');
+      const data = await res.json();
+      setFeedbackTickets(Array.isArray(data) ? data : []);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -204,15 +337,55 @@ export default function Admin() {
   }, []);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [tab]);
+
+  useEffect(() => {
+    if (addProductModalCategoryId != null) {
+      setAddProductIsSale(false);
+      setAddProductSalePrice('');
+      setAddProductSalePercent('');
+    }
+  }, [addProductModalCategoryId]);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setUsersSearch(usersSearchInput.trim());
+      setUsersPage(1);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [usersSearchInput]);
+
+  useEffect(() => {
     if (tab === 'users') fetchUsers();
-    if (tab === 'orders') fetchOrders();
-    if (tab === 'callbacks') fetchCallbacks();
+    if (tab === 'orders') fetchOrders(ordersSubTab === 'archive');
+    if (tab === 'callbacks') {
+      setLoading(true);
+      setError('');
+      Promise.all([
+        fetch(`${API_URL}/admin/callback-requests`, { headers: getAuthHeaders() }).then((r) => r.ok ? r.json() : []),
+        fetch(`${API_URL}/admin/callback-requests?archive=1`, { headers: getAuthHeaders() }).then((r) => r.ok ? r.json() : []),
+      ]).then(([data1, data2]) => {
+        setCallbacks(Array.isArray(data1) ? data1 : []);
+        setArchiveCallbacks(Array.isArray(data2) ? data2 : []);
+      }).catch((e) => setError(e.message)).finally(() => setLoading(false));
+    }
+    if (tab === 'feedback') fetchFeedback();
     if (tab === 'catalog') {
       fetchCategories();
       fetchProducts();
     }
+    if (tab === 'reviews') fetchAdminReviews();
+    if (tab === 'visits') fetchVisits();
+    if (tab === 'banners') {
+      setError('');
+      fetch(`${API_URL}/admin/banners`, { headers: getAuthHeaders() })
+        .then((res) => (res.ok ? res.json() : Promise.reject(new Error('Ошибка загрузки'))))
+        .then((data) => setBanners(Array.isArray(data) ? data : []))
+        .catch((e) => setError(e.message));
+    }
     if (tab === 'stats') fetchStats();
-  }, [tab, catalogSubTab, fetchUsers, fetchOrders, fetchCallbacks, fetchCategories, fetchProducts, fetchStats]);
+  }, [tab, ordersSubTab, catalogSubTab, fetchUsers, fetchOrders, fetchCallbacks, fetchFeedback, fetchAdminReviews, fetchVisits, fetchCategories, fetchProducts, fetchStats]);
 
   useEffect(() => {
     fetchUserDetail(selectedUserId);
@@ -240,9 +413,19 @@ export default function Admin() {
       } catch {
         setOrders((prev) => [{ ...order, items: [] }, ...prev]);
       }
+      fetchStats();
     });
+    socket.on('catalogChanged', () => {
+      fetchCategories();
+      fetchProducts();
+    });
+    socket.on('newCallback', (data) => {
+      setCallbacks((prev) => [data, ...prev]);
+    });
+    socket.on('feedbackNewTicket', fetchFeedback);
+    socket.on('feedbackNewMessage', fetchFeedback);
     return () => socket.disconnect();
-  }, []);
+  }, [fetchCategories, fetchProducts, fetchStats, fetchFeedback]);
 
   useEffect(() => {
     if (!newOrderNotify) return;
@@ -250,11 +433,27 @@ export default function Admin() {
     return () => clearTimeout(t);
   }, [newOrderNotify]);
 
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key !== 'Escape') return;
+      if (confirmDeleteOpen) setConfirmDeleteOpen(false);
+      else if (confirmDeleteCategoryId != null) setConfirmDeleteCategoryId(null);
+      else if (confirmDeleteProductId != null) setConfirmDeleteProductId(null);
+      else if (userDetail) setSelectedUserId(null);
+      else if (showAddCategoryModal) setShowAddCategoryModal(false);
+      else if (addProductModalCategoryId != null) setAddProductModalCategoryId(null);
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [confirmDeleteOpen, confirmDeleteCategoryId, confirmDeleteProductId, userDetail, showAddCategoryModal, addProductModalCategoryId]);
+
+  const slugFromName = (name) => name.trim().toLowerCase().replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'category';
+
   const handleCreateCategory = async (e) => {
     e.preventDefault();
     const form = e.target;
     const name = form.name.value.trim();
-    const slug = (form.slug.value.trim() || name.toLowerCase().replace(/\s+/g, '-'));
+    const slug = slugFromName(name);
     if (!name) return;
     setError('');
     try {
@@ -268,8 +467,10 @@ export default function Admin() {
       form.reset();
       setShowAddCategoryModal(false);
       fetchCategories();
+      notify('Категория добавлена', 'success');
     } catch (e) {
       setError(e.message);
+      notify(e.message, 'error');
     }
   };
 
@@ -277,7 +478,7 @@ export default function Admin() {
     e.preventDefault();
     const form = e.target;
     const name = form.name.value.trim();
-    const slug = (form.slug.value.trim() || name.toLowerCase().replace(/\s+/g, '-'));
+    const slug = slugFromName(name);
     if (!name) return;
     setError('');
     try {
@@ -290,9 +491,32 @@ export default function Admin() {
       if (!res.ok) throw new Error(data.message || 'Ошибка');
       setEditingCategoryId(null);
       fetchCategories();
+      notify('Категория сохранена', 'success');
     } catch (e) {
       setError(e.message);
+      notify(e.message, 'error');
     }
+  };
+
+  const handleCategoryImageUpload = async (categoryId, e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+      const res = await fetch(`${API_URL}/admin/categories/${categoryId}/image`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Ошибка');
+      fetchCategories();
+      notify('Изображение категории загружено', 'success');
+    } catch (err) {
+      notify(err.message, 'error');
+    }
+    e.target.value = '';
   };
 
   const handleDeleteCategory = async () => {
@@ -307,8 +531,10 @@ export default function Admin() {
       if (!res.ok) throw new Error(data.message || 'Ошибка');
       setConfirmDeleteCategoryId(null);
       fetchCategories();
+      notify('Категория удалена', 'success');
     } catch (e) {
       setError(e.message);
+      notify(e.message, 'error');
     }
   };
 
@@ -324,8 +550,10 @@ export default function Admin() {
       if (!res.ok) throw new Error(data.message || 'Ошибка');
       setConfirmDeleteProductId(null);
       fetchProducts();
+      notify('Товар удалён', 'success');
     } catch (e) {
       setError(e.message);
+      notify(e.message, 'error');
     }
   };
 
@@ -350,6 +578,11 @@ export default function Admin() {
       body.append('is_sale', form.is_sale?.checked ? 'true' : 'false');
       body.append('is_hit', form.is_hit?.checked ? 'true' : 'false');
       body.append('is_recommended', form.is_recommended?.checked ? 'true' : 'false');
+      body.append('in_stock', form.in_stock?.checked !== false ? 'true' : 'false');
+      const qty = form.quantity?.value?.trim() !== '' && !Number.isNaN(parseInt(form.quantity.value, 10)) ? Math.max(0, parseInt(form.quantity.value, 10)) : 0;
+      body.append('quantity', String(qty));
+      const salePriceVal = addProductIsSale ? (addProductSalePrice || form.sale_price?.value?.trim()) : '';
+      if (salePriceVal && !Number.isNaN(parseFloat(salePriceVal))) body.append('sale_price', salePriceVal);
       if (imageFile) body.append('image', imageFile);
       const res = await fetch(`${API_URL}/admin/products`, {
         method: 'POST',
@@ -361,8 +594,10 @@ export default function Admin() {
       form.reset();
       setAddProductModalCategoryId(null);
       fetchProducts();
+      notify('Товар добавлен', 'success');
     } catch (e) {
       setError(e.message);
+      notify(e.message, 'error');
     }
   };
 
@@ -390,6 +625,12 @@ export default function Admin() {
         body.append('is_sale', is_sale ? 'true' : 'false');
         body.append('is_hit', is_hit ? 'true' : 'false');
         body.append('is_recommended', is_recommended ? 'true' : 'false');
+        body.append('in_stock', form.in_stock?.checked !== false ? 'true' : 'false');
+        const qtyVal = form.quantity?.value?.trim();
+        const qty = qtyVal !== '' && !Number.isNaN(parseInt(qtyVal, 10)) ? Math.max(0, parseInt(qtyVal, 10)) : undefined;
+        if (qty !== undefined) body.append('quantity', String(qty));
+        const salePriceVal = (productSalePrice[id] ?? form.sale_price?.value?.trim()) || '';
+        body.append('sale_price', (is_sale && salePriceVal && !Number.isNaN(parseFloat(salePriceVal))) ? salePriceVal : '');
         body.append('image', imageFile);
         const res = await fetch(`${API_URL}/admin/products/${id}`, {
           method: 'PATCH',
@@ -399,9 +640,13 @@ export default function Admin() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Ошибка');
       } else {
-        const image_url = form.image_url?.value?.trim() || null;
-        const payload = { name, description, weight, price, image_url, is_sale, is_hit, is_recommended };
+        const salePriceRaw = (productSalePrice[id] ?? form.sale_price?.value?.trim()) || '';
+        const sale_price = salePriceRaw !== '' && !Number.isNaN(parseFloat(salePriceRaw)) ? parseFloat(salePriceRaw) : null;
+        const payload = { name, description, weight, price, sale_price, is_sale, is_hit, is_recommended };
+        if (form.in_stock !== undefined) payload.in_stock = form.in_stock.checked;
         if (category_id) payload.category_id = category_id;
+        const qtyVal = form.quantity?.value?.trim();
+        if (qtyVal !== '' && !Number.isNaN(parseInt(qtyVal, 10))) payload.quantity = Math.max(0, parseInt(qtyVal, 10));
         const res = await fetch(`${API_URL}/admin/products/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
@@ -411,8 +656,10 @@ export default function Admin() {
         if (!res.ok) throw new Error(data.message || 'Ошибка');
       }
       fetchProducts();
+      notify('Товар сохранён', 'success');
     } catch (e) {
       setError(e.message);
+      notify(e.message, 'error');
     }
   };
 
@@ -445,8 +692,10 @@ export default function Admin() {
         patronymic: data.patronymic || '',
       });
       fetchUsers();
+      notify('Данные пользователя сохранены', 'success');
     } catch (e) {
       setError(e.message);
+      notify(e.message, 'error');
     } finally {
       setUserSaving(false);
     }
@@ -469,8 +718,10 @@ export default function Admin() {
       setSelectedUserId(null);
       setUserDetail(null);
       fetchUsers();
+      notify('Пользователь удалён', 'success');
     } catch (e) {
       setError(e.message);
+      notify(e.message, 'error');
     } finally {
       setUserDeleting(false);
     }
@@ -486,10 +737,151 @@ export default function Admin() {
       });
       if (!res.ok) throw new Error('Ошибка');
       setCallbacks((prev) => prev.filter((c) => c.id !== id));
+      const archiveRes = await fetch(`${API_URL}/admin/callback-requests?archive=1`, { headers: getAuthHeaders() });
+      const archiveData = await archiveRes.json();
+      setArchiveCallbacks(Array.isArray(archiveData) ? archiveData : []);
+      notify('Заявка отмечена как обработанная', 'success');
     } catch (e) {
       setError(e.message);
+      notify(e.message, 'error');
     } finally {
       setCallbackToggling(null);
+    }
+  };
+
+  const handleOrderPaymentToggle = async (orderId, currentlyPaid) => {
+    setOrderPaymentToggling(orderId);
+    setError('');
+    try {
+      const res = await fetch(`${API_URL}/admin/orders/${orderId}/payment`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ paid: !currentlyPaid }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Ошибка');
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, payment_status: data.payment_status, paid_at: data.paid_at } : o)));
+      notify(currentlyPaid ? 'Отметка об оплате снята' : 'Заказ помечен как оплаченный', 'success');
+      fetchOrders(false);
+      fetchOrders(true);
+    } catch (e) {
+      setError(e.message);
+      notify(e.message, 'error');
+    } finally {
+      setOrderPaymentToggling(null);
+    }
+  };
+
+  const handleOrderShip = async (orderId, currentlyShipped) => {
+    setOrderShipToggling(orderId);
+    setError('');
+    try {
+      const res = await fetch(`${API_URL}/admin/orders/${orderId}/ship`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ shipped: !currentlyShipped }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Ошибка');
+      notify(currentlyShipped ? 'Отметка «Отправлен» снята' : 'Заказ отмечен как отправленный', 'success');
+      await Promise.all([fetchOrders(false), fetchOrders(true)]);
+    } catch (e) {
+      setError(e.message);
+      notify(e.message, 'error');
+    } finally {
+      setOrderShipToggling(null);
+    }
+  };
+
+  const handleOrderProcessToggle = async (orderId, currentlyProcessed) => {
+    setOrderProcessToggling(orderId);
+    setError('');
+    try {
+      const res = await fetch(`${API_URL}/admin/orders/${orderId}/process`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ processed: !currentlyProcessed }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Ошибка');
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, processed_at: data.processed_at } : o)));
+      notify(currentlyProcessed ? 'Отметка «Обработка» снята' : 'Заказ отмечен как обработанный', 'success');
+    } catch (e) {
+      setError(e.message);
+      notify(e.message, 'error');
+    } finally {
+      setOrderProcessToggling(null);
+    }
+  };
+
+  const handleFeedbackReply = async (ticketId) => {
+    const bodyTrim = feedbackReplyBody.trim();
+    if (!bodyTrim) return;
+    setFeedbackReplySending(true);
+    setError('');
+    try {
+      const res = await fetch(`${API_URL}/admin/feedback/${ticketId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ body: bodyTrim }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Ошибка');
+      setFeedbackReplyBody('');
+      setFeedbackTickets((prev) => prev.map((t) => (t.id === ticketId ? { ...t, messages: [...(t.messages || []), data] } : t)));
+      notify('Ответ отправлен', 'success');
+    } catch (e) {
+      setError(e.message);
+      notify(e.message, 'error');
+    } finally {
+      setFeedbackReplySending(false);
+    }
+  };
+
+  const handleFeedbackClose = async (ticketId) => {
+    setFeedbackClosing(ticketId);
+    setError('');
+    try {
+      const res = await fetch(`${API_URL}/admin/feedback/${ticketId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      if (!res.ok && res.status !== 204) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || 'Ошибка');
+      }
+      setFeedbackTickets((prev) => prev.filter((t) => t.id !== ticketId));
+      if (selectedFeedbackId === ticketId) setSelectedFeedbackId(null);
+      notify('Тикет закрыт и удалён', 'success');
+    } catch (e) {
+      setError(e.message);
+      notify(e.message, 'error');
+    } finally {
+      setFeedbackClosing(null);
+    }
+  };
+
+  const handleReviewReply = async (reviewId) => {
+    const draft = reviewReplyDrafts[reviewId];
+    const text = typeof draft === 'string' ? draft.trim() : '';
+    setReviewReplySending(reviewId);
+    setError('');
+    try {
+      const res = await fetch(`${API_URL}/admin/reviews/${reviewId}/reply`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ reply: text || null }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Ошибка');
+      setAdminReviews((prev) => prev.map((r) => (r.id === reviewId ? { ...r, admin_reply: data.admin_reply, admin_replied_at: data.admin_replied_at } : r)));
+      setReviewReplyDrafts((prev) => ({ ...prev, [reviewId]: '' }));
+      notify('Ответ на отзыв сохранён', 'success');
+    } catch (e) {
+      setError(e.message);
+      notify(e.message, 'error');
+    } finally {
+      setReviewReplySending(null);
     }
   };
 
@@ -511,34 +903,29 @@ export default function Admin() {
     { id: 'users', label: 'Клиенты' },
     { id: 'orders', label: 'Заказы' },
     { id: 'callbacks', label: 'Заявки на звонок' },
+    { id: 'feedback', label: 'Обратная связь' },
+    { id: 'reviews', label: 'Отзывы' },
     { id: 'catalog', label: 'Каталог' },
+    { id: 'visits', label: 'Посещения' },
+    { id: 'banners', label: 'Визуал главная' },
     { id: 'stats', label: 'Статистика' },
   ];
 
   return (
     <main className={styles.main}>
       <div className={styles.dashboard}>
-        <div className={styles.header}>
-          <span className={styles.logo}>APanel</span>
-          <nav className={styles.tabs}>
-            {mainTabs.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                className={tab === t.id ? styles.tabActive : styles.tab}
-                onClick={() => setTab(t.id)}
-              >
-                {t.label}
-              </button>
-            ))}
-          </nav>
-          <div className={styles.headerRight}>
-            <Link to="/" className={styles.backLink}>На сайт</Link>
-            <button type="button" onClick={() => { logout(); navigate('/'); }} className={styles.logoutBtn}>
-              Выйти
+        <nav className={styles.tabs}>
+          {mainTabs.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              className={tab === t.id ? styles.tabActive : styles.tab}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}
             </button>
-          </div>
-        </div>
+          ))}
+        </nav>
 
         {newOrderNotify && (
           <div className={styles.notify}>
@@ -578,17 +965,17 @@ export default function Admin() {
                 )}
               </form>
               {loading ? (
-                <p>Загрузка...</p>
+                <Loader wrap />
               ) : (
                 <>
                   <div className={styles.tableWrap}>
                     <table className={styles.clientsTable}>
                       <thead>
                         <tr>
+                          <th>ID</th>
                           <th>Имя</th>
                           <th>Фамилия</th>
                           <th>Отчество</th>
-                          <th>ID</th>
                           <th>Сумма заказов</th>
                           <th>Дата</th>
                           <th className={styles.thAction}></th>
@@ -601,10 +988,10 @@ export default function Admin() {
                             className={selectedUserId === u.id ? styles.rowSelected : ''}
                             onClick={() => setSelectedUserId(u.id)}
                           >
+                            <td>{u.id}</td>
                             <td>{u.first_name || u.username || (u.email ? u.email.split('@')[0] : '—')}</td>
                             <td>{u.last_name || '—'}</td>
                             <td>{u.patronymic || '—'}</td>
-                            <td>{u.id}</td>
                             <td>{formatPrice(u.total_spent != null ? u.total_spent : 0)}</td>
                             <td>{formatDateTime(u.created_at) || '—'}</td>
                             <td className={styles.tdAction}>
@@ -641,7 +1028,7 @@ export default function Admin() {
                   </div>
                 </>
               )}
-              {userDetail && (
+              {userDetail && createPortal(
                 <div className={styles.userDetailOverlay} onClick={() => setSelectedUserId(null)}>
                   <div className={styles.userDetailModal} onClick={(e) => e.stopPropagation()}>
                     <div className={styles.userDetailHeader}>
@@ -649,7 +1036,7 @@ export default function Admin() {
                       <button type="button" className={styles.closeBtn} onClick={() => setSelectedUserId(null)} aria-label="Закрыть">×</button>
                     </div>
                     <p className={styles.userDetailMeta}>Зарегистрирован: {formatDateTimeLong(userDetail.created_at) || '—'}</p>
-                    <form onSubmit={handleSaveUser} className={styles.form}>
+                    <form onSubmit={handleSaveUser} className={styles.form + ' ' + styles.userDetailForm}>
                       <label className={styles.label}>
                         Имя
                         <input value={userEdit.first_name} onChange={(e) => setUserEdit((p) => ({ ...p, first_name: e.target.value }))} />
@@ -685,7 +1072,8 @@ export default function Admin() {
                       </div>
                     </form>
                   </div>
-                </div>
+                </div>,
+                document.body
               )}
             </div>
           )}
@@ -703,22 +1091,94 @@ export default function Admin() {
 
           {tab === 'orders' && (
             <div className={styles.card + ' ' + styles.cardFullWidth}>
-              <h2>Заказы</h2>
+              <div className={styles.ordersHeader}>
+                <h2>Заказы</h2>
+                <div className={styles.ordersSubTabs}>
+                  <button
+                    type="button"
+                    className={ordersSubTab === 'active' ? styles.ordersSubTabActive : ''}
+                    onClick={() => setOrdersSubTab('active')}
+                  >
+                    Заказы
+                  </button>
+                  <button
+                    type="button"
+                    className={ordersSubTab === 'archive' ? styles.ordersSubTabActive : ''}
+                    onClick={() => setOrdersSubTab('archive')}
+                  >
+                    Архив
+                  </button>
+                </div>
+              </div>
               {loading ? (
-                <p>Загрузка...</p>
+                <Loader wrap />
               ) : (
                 <div className={styles.ordersList}>
-                  {orders.length === 0 ? (
-                    <p>Заказов пока нет</p>
+                  {(ordersSubTab === 'archive' ? archiveOrders : orders).length === 0 ? (
+                    <p>{ordersSubTab === 'archive' ? 'В архиве пока нет заказов' : 'Заказов пока нет'}</p>
                   ) : (
-                    orders.map((o) => (
+                    (ordersSubTab === 'archive' ? archiveOrders : orders).map((o) => (
                       <details key={o.id} className={styles.orderCard}>
                         <summary>
                           Заказ #{o.id} — {o.username || o.email || 'Пользователь'} — {formatPrice(o.total)} — {formatDateTime(o.created_at)}
+                          {o.payment_method === 'on_delivery' && <span className={styles.orderBadge}>при получении</span>}
+                          {(o.payment_status === 'paid') ? <span className={styles.orderBadgePaid}>оплачен</span> : <span className={styles.orderBadgePending}>ожидается оплата</span>}
+                          {o.shipped_at && <span className={styles.orderBadgeShipped}>отправлен</span>}
                         </summary>
                         <div className={styles.orderDetails}>
                           {o.address && <p><strong>Адрес:</strong> {o.address}</p>}
                           {o.phone && <p><strong>Телефон:</strong> {o.phone}</p>}
+                          <p><strong>Способ оплаты:</strong> {o.payment_method === 'card' ? 'Оплата картой' : 'Оплата при получении'}</p>
+                          <p>
+                            <strong>Оплата:</strong>{' '}
+                            {ordersSubTab !== 'archive' ? (
+                              <label className={styles.checkLabel}>
+                                <input
+                                  type="checkbox"
+                                  checked={o.payment_status === 'paid'}
+                                  disabled={orderPaymentToggling === o.id}
+                                  onChange={() => handleOrderPaymentToggle(o.id, o.payment_status === 'paid')}
+                                />
+                                <span>Оплачен</span>
+                              </label>
+                            ) : (
+                              (o.payment_status === 'paid' ? 'Оплачен' : 'Ожидается')
+                            )}
+                          </p>
+                          <p>
+                            <strong>Обработка заказа:</strong>{' '}
+                            {ordersSubTab !== 'archive' ? (
+                              <label className={styles.checkLabel}>
+                                <input
+                                  type="checkbox"
+                                  checked={!!o.processed_at}
+                                  disabled={orderProcessToggling === o.id}
+                                  onChange={() => handleOrderProcessToggle(o.id, !!o.processed_at)}
+                                />
+                                <span>Обработан</span>
+                                {o.processed_at && <span className={styles.orderDetailMeta}> {formatDateTime(o.processed_at)}</span>}
+                              </label>
+                            ) : (
+                              o.processed_at ? `Обработан ${formatDateTime(o.processed_at)}` : '—'
+                            )}
+                          </p>
+                          <p>
+                            <strong>Отправка:</strong>{' '}
+                            {ordersSubTab !== 'archive' ? (
+                              <label className={styles.checkLabel}>
+                                <input
+                                  type="checkbox"
+                                  checked={!!o.shipped_at}
+                                  disabled={orderShipToggling === o.id}
+                                  onChange={() => handleOrderShip(o.id, !!o.shipped_at)}
+                                />
+                                <span>Доставлен</span>
+                                {o.shipped_at && <span className={styles.orderDetailMeta}> {formatDateTime(o.shipped_at)}</span>}
+                              </label>
+                            ) : (
+                              o.shipped_at ? `Отправлен ${formatDateTime(o.shipped_at)}` : '—'
+                            )}
+                          </p>
                           <p><strong>Товары:</strong></p>
                           <ul>
                             {o.items?.map((it) => (
@@ -737,11 +1197,38 @@ export default function Admin() {
           {tab === 'callbacks' && (
             <div className={styles.card + ' ' + styles.cardFullWidth}>
               <h2>Заявки на звонок</h2>
-              <p className={styles.cardHint}>Отметьте галочкой, что звонок совершён — заявка исчезнет из списка. Через 24 часа обработанные заявки удаляются из базы.</p>
+              <p className={styles.cardHint}>Отметьте галочкой, что звонок совершён — заявка попадёт в архив. Обработанные заявки не удаляются.</p>
+              <div className={styles.ordersSubTabs}>
+                <button type="button" className={callbacksSubTab === 'active' ? styles.ordersSubTabActive : ''} onClick={() => setCallbacksSubTab('active')}>Активные</button>
+                <button type="button" className={callbacksSubTab === 'archive' ? styles.ordersSubTabActive : ''} onClick={() => setCallbacksSubTab('archive')}>Архив</button>
+              </div>
               {loading ? (
-                <p>Загрузка...</p>
-              ) : callbacks.length === 0 ? (
-                <p>Заявок пока нет</p>
+                <Loader wrap />
+              ) : (callbacksSubTab === 'archive' ? archiveCallbacks : callbacks).length === 0 ? (
+                <p>{callbacksSubTab === 'archive' ? 'В архиве пока нет заявок' : 'Заявок пока нет'}</p>
+              ) : callbacksSubTab === 'archive' ? (
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Имя</th>
+                      <th>Телефон</th>
+                      <th>Дата заявки</th>
+                      <th>Обработан</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {archiveCallbacks.map((c) => (
+                      <tr key={c.id}>
+                        <td>{c.id}</td>
+                        <td>{c.name || '—'}</td>
+                        <td><a href={`tel:${c.phone}`} className={styles.phoneLink}>{c.phone}</a></td>
+                        <td>{formatDateTime(c.created_at) || '—'}</td>
+                        <td>{formatDateTime(c.completed_at) || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               ) : (
                 <table className={styles.table}>
                   <thead>
@@ -783,6 +1270,302 @@ export default function Admin() {
             </div>
           )}
 
+          {tab === 'feedback' && (
+            <div className={styles.card + ' ' + styles.cardFullWidth}>
+              <h2>Обратная связь</h2>
+              <p className={styles.cardHint}>Тикеты от пользователей. Ответьте на обращение — пользователь увидит ответ в разделе «Обратная связь» в личном кабинете. Закрытие тикета удаляет его.</p>
+              {loading ? (
+                <Loader wrap />
+              ) : feedbackTickets.length === 0 ? (
+                <p>Обращений пока нет.</p>
+              ) : (
+                <div className={styles.ordersList}>
+                  {feedbackTickets.map((t) => (
+                    <details key={t.id} className={styles.orderCard} open={selectedFeedbackId === t.id}>
+                      <summary onClick={(e) => { e.preventDefault(); setSelectedFeedbackId(selectedFeedbackId === t.id ? null : t.id); setFeedbackReplyBody(''); }}>
+                        Тикет #{t.id} — {getFeedbackAuthorLabel(t)} — {formatDateTime(t.created_at)}
+                        {t.messages?.[0]?.body && (
+                          <span className={styles.orderDetailMeta}> — {t.messages[0].body.length > 50 ? t.messages[0].body.slice(0, 50) + '…' : t.messages[0].body}</span>
+                        )}
+                      </summary>
+                      <div className={styles.orderDetails}>
+                        <p><strong>Пользователь:</strong> {getFeedbackAuthorLabel(t)}</p>
+                        <p><strong>Переписка:</strong></p>
+                        <ul style={{ listStyle: 'none', padding: 0, margin: '8px 0 16px' }}>
+                          {t.messages?.map((msg) => (
+                            <li key={msg.id} style={{ marginBottom: 12, padding: '10px 12px', background: msg.author === 'admin' ? '#f1f5f9' : '#fff7ed', borderRadius: 8 }}>
+                              <span style={{ fontSize: 12, color: '#64748b' }}>{msg.author === 'user' ? getFeedbackAuthorLabel(t) : 'Поддержка'} · {formatDateTime(msg.created_at)}</span>
+                              <div style={{ marginTop: 4 }}>{msg.body}</div>
+                            </li>
+                          ))}
+                        </ul>
+                        <div style={{ marginTop: 16 }}>
+                          <textarea
+                            placeholder="Введите ответ..."
+                            value={selectedFeedbackId === t.id ? feedbackReplyBody : ''}
+                            onFocus={() => setSelectedFeedbackId(t.id)}
+                            onChange={(e) => setFeedbackReplyBody(e.target.value)}
+                            style={{ width: '100%', minHeight: 80, padding: 10, borderRadius: 8, marginBottom: 8, fontFamily: 'inherit' }}
+                          />
+                          <div className={styles.feedbackActions}>
+                            <button
+                              type="button"
+                              className={styles.feedbackReplyBtn}
+                              disabled={feedbackReplySending || !feedbackReplyBody.trim()}
+                              onClick={() => handleFeedbackReply(t.id)}
+                            >
+                              {feedbackReplySending ? 'Отправка...' : 'Ответить'}
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.feedbackCloseBtn}
+                              disabled={feedbackClosing === t.id}
+                              onClick={() => handleFeedbackClose(t.id)}
+                            >
+                              {feedbackClosing === t.id ? '...' : 'Закрыть тикет'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </details>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {tab === 'reviews' && (
+            <div className={styles.card + ' ' + styles.cardFullWidth}>
+              <h2>Отзывы о товарах</h2>
+              <p className={styles.cardHint}>Ответьте на отзыв — пользователь увидит ответ на странице товара.</p>
+              {adminReviews.length === 0 ? (
+                <p>Отзывов пока нет.</p>
+              ) : (
+                <div className={styles.tableWrap}>
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        <th>Товар</th>
+                        <th>Пользователь</th>
+                        <th>Оценка</th>
+                        <th>Текст</th>
+                        <th>Ответ</th>
+                        <th>Действие</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {adminReviews.map((r) => (
+                        <tr key={r.id}>
+                          <td>
+                            <Link to={`/product/${r.product_id}`} target="_blank" rel="noopener noreferrer" className={styles.reviewProductLink}>
+                              {r.product_name || `#${r.product_id}`}
+                            </Link>
+                          </td>
+                          <td>{r.username || `ID ${r.user_id}`}</td>
+                          <td>{'★'.repeat(r.rating)}{'☆'.repeat(5 - (r.rating || 0))}</td>
+                          <td className={styles.reviewTextCell}>{r.text || '—'}</td>
+                          <td className={styles.reviewTextCell}>{r.admin_reply ? r.admin_reply.slice(0, 80) + (r.admin_reply.length > 80 ? '…' : '') : '—'}</td>
+                          <td>
+                            <div className={styles.reviewReplyRow}>
+                              <textarea
+                                placeholder="Ответ магазина..."
+                                value={reviewReplyDrafts[r.id] ?? r.admin_reply ?? ''}
+                                onChange={(e) => setReviewReplyDrafts((prev) => ({ ...prev, [r.id]: e.target.value }))}
+                                className={styles.reviewReplyInput}
+                                rows={2}
+                              />
+                              <button
+                                type="button"
+                                className={styles.btnSmall}
+                                disabled={reviewReplySending === r.id}
+                                onClick={() => handleReviewReply(r.id)}
+                              >
+                                {reviewReplySending === r.id ? 'Сохранение...' : 'Сохранить'}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {tab === 'visits' && (
+            <div className={styles.card + ' ' + styles.cardFullWidth}>
+              <h2>Посещения по дням</h2>
+              <p className={styles.cardHint}>Уникальные посетители по IP в день. За последние 30 дней.</p>
+              {loading ? (
+                <Loader wrap />
+              ) : (
+                <>
+                  {(() => {
+                    const selectedRow = selectedVisitDate ? visitsByDay.find((r) => r.date === selectedVisitDate || (r.date && r.date.slice(0, 10) === selectedVisitDate)) : null;
+                    const selectedCount = selectedRow ? Number(selectedRow.count) : null;
+                    return (
+                      <>
+                        <p className={styles.visitsSummary}>
+                          <strong>Уникальные посетители по IP за сегодня:</strong> {visitsTodayCount}
+                        </p>
+                        <div className={styles.visitsDateRow}>
+                          <label className={styles.visitsDateLabel}>
+                            Посмотреть за день:
+                            <DatePicker
+                              selected={selectedVisitDate ? new Date(selectedVisitDate + 'T12:00:00') : null}
+                              onChange={(date) => setSelectedVisitDate(date ? date.toISOString().slice(0, 10) : '')}
+                              dateFormat="dd.MM.yyyy"
+                              placeholderText="Выберите дату"
+                              className={styles.visitsDateInput}
+                              wrapperClassName={styles.visitsDatePickerWrap}
+                            />
+                          </label>
+                          {selectedVisitDate && (
+                            <span className={styles.visitsDateResult}>
+                              Уникальные посетители по IP за {formatDate(selectedVisitDate)}: {selectedCount !== null ? selectedCount : 'Нет данных за выбранный день'}
+                            </span>
+                          )}
+                        </div>
+                        {visitsByDay.length === 0 ? (
+                          <p>Нет данных</p>
+                        ) : (
+                          <div className={styles.chartBlock}>
+                            <div className={styles.chartWrap}>
+                              <ResponsiveContainer width="100%" height={300}>
+                                <AreaChart data={visitsByDay} margin={{ top: 16, right: 24, left: 56, bottom: 24 }}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                  <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={(v) => (v ? formatDate(v, { day: '2-digit', month: '2-digit' }) : '')} />
+                                  <YAxis tick={{ fontSize: 12 }} width={52} />
+                                  <Tooltip
+                                    contentStyle={{ borderRadius: 8, border: '1px solid var(--color-light-gray)' }}
+                                    formatter={(v) => [v, 'Уник. посетителей (IP)']}
+                                    labelFormatter={(v) => (v ? formatDate(v) : '')}
+                                  />
+                                  <Area type="monotone" dataKey="count" stroke="var(--color-primary)" strokeWidth={2} fill="var(--color-primary)" fillOpacity={0.25} dot={{ r: 4 }} name="Уник. посетителей (IP)" />
+                                </AreaChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </>
+              )}
+            </div>
+          )}
+
+          {tab === 'banners' && (
+            <div className={styles.card + ' ' + styles.cardFullWidth}>
+              <h2>Баннеры главной страницы</h2>
+              <p className={styles.cardHint}>Изображения в карусели на главной. Порядок можно менять стрелками. Ссылка и подпись — по желанию.</p>
+              <div className={styles.bannersHeader}>
+                <button
+                  type="button"
+                  className={styles.addCategoryBtn}
+                  onClick={() => setShowAddBannerModal(true)}
+                >
+                  + Добавить баннер
+                </button>
+              </div>
+              {banners.length === 0 ? (
+                <p className={styles.emptyHint}>Баннеров пока нет. Добавьте первый — на главной появится карусель.</p>
+              ) : (
+                <ul className={styles.bannersList}>
+                  {banners.map((b, index) => (
+                    <li key={b.id} className={styles.bannerRow}>
+                      <div className={styles.bannerPreview}>
+                        {b.has_image ? (
+                          <img src={`/api/home/banners/${b.id}/image`} alt={b.title || ''} />
+                        ) : (
+                          <span className={styles.bannerNoImage}>Нет изображения</span>
+                        )}
+                      </div>
+                      <div className={styles.bannerMeta}>
+                        <span className={styles.bannerOrder}>#{index + 1}</span>
+                        {b.title && <span className={styles.bannerTitle}>{b.title}</span>}
+                        {b.link_url && <a href={b.link_url} target="_blank" rel="noopener noreferrer" className={styles.bannerLink}>{b.link_url}</a>}
+                      </div>
+                      <div className={styles.bannerActions}>
+                        <button
+                          type="button"
+                          className={styles.bannerMoveBtn}
+                          disabled={index === 0}
+                          onClick={() => handleBannerMove(b.id, 'up')}
+                          aria-label="Вверх"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.bannerMoveBtn}
+                          disabled={index === banners.length - 1}
+                          onClick={() => handleBannerMove(b.id, 'down')}
+                          aria-label="Вниз"
+                        >
+                          ↓
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.btnDanger}
+                          disabled={bannerDeleting === b.id}
+                          onClick={() => handleDeleteBanner(b.id)}
+                        >
+                          {bannerDeleting === b.id ? '…' : 'Удалить'}
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {showAddBannerModal && (
+                <div className={styles.modalOverlay} onClick={() => !bannerSaving && setShowAddBannerModal(false)}>
+                  <div className={styles.modalBox} onClick={(e) => e.stopPropagation()}>
+                    <div className={styles.modalHeader}>
+                      <h3>Добавить баннер</h3>
+                      <button type="button" className={styles.closeBtn} onClick={() => !bannerSaving && setShowAddBannerModal(false)} aria-label="Закрыть">×</button>
+                    </div>
+                    <form onSubmit={handleAddBanner} className={styles.form + ' ' + styles.modalForm}>
+                      <label className={styles.label}>
+                        Изображение (обязательно)
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => setAddBannerFile(e.target.files?.[0] || null)}
+                          required
+                        />
+                      </label>
+                      <label className={styles.label}>
+                        Ссылка при клике (необязательно)
+                        <input
+                          type="url"
+                          placeholder="https://..."
+                          value={addBannerLinkUrl}
+                          onChange={(e) => setAddBannerLinkUrl(e.target.value)}
+                        />
+                      </label>
+                      <label className={styles.label}>
+                        Подпись (необязательно)
+                        <input
+                          type="text"
+                          placeholder="Текст на баннере"
+                          value={addBannerTitle}
+                          onChange={(e) => setAddBannerTitle(e.target.value)}
+                        />
+                      </label>
+                      <div className={styles.formRowActions}>
+                        <button type="submit" disabled={bannerSaving}>{bannerSaving ? 'Сохранение…' : 'Добавить'}</button>
+                        <button type="button" className={styles.btnSmallSecondary} onClick={() => !bannerSaving && setShowAddBannerModal(false)}>Отмена</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {tab === 'catalog' && (
             <div className={styles.card + ' ' + styles.cardFullWidth}>
               <div className={styles.catalogHeader}>
@@ -810,10 +1593,6 @@ export default function Admin() {
                       <label className={styles.label}>
                         Название
                         <input name="name" placeholder="Название категории" required />
-                      </label>
-                      <label className={styles.label}>
-                        Slug (опционально)
-                        <input name="slug" placeholder="slug-kategorii" />
                       </label>
                       <div className={styles.formRowActions}>
                         <button type="submit">Добавить</button>
@@ -846,14 +1625,20 @@ export default function Admin() {
                             onSubmit={(e) => { handleUpdateCategory(e, c.id); }}
                           >
                             <input name="name" defaultValue={c.name} placeholder="Название" required />
-                            <input name="slug" defaultValue={c.slug} placeholder="Slug" />
                             <button type="submit" className={styles.btnSmall}>Сохранить</button>
                             <button type="button" className={styles.btnSmallSecondary} onClick={() => setEditingCategoryId(null)}>Отмена</button>
                           </form>
                         ) : (
                           <>
+                            {c.has_image && (
+                              <img src={`/api/products/categories/${c.id}/image`} alt="" className={styles.categoryThumb} />
+                            )}
                             <span className={styles.catalogCategoryName}>{c.name}</span>
                             <div className={styles.rowActions} onClick={(e) => e.stopPropagation()}>
+                              <label className={styles.btnImageUpload}>
+                                {c.has_image ? 'Изменить фото' : 'Добавить фото'}
+                                <input type="file" accept="image/*" onChange={(e) => handleCategoryImageUpload(c.id, e)} hidden />
+                              </label>
                               <button type="button" className={styles.btnEdit} onClick={() => setEditingCategoryId(c.id)}>Изменить</button>
                               <button type="button" className={styles.btnDangerSmall} onClick={() => setConfirmDeleteCategoryId(c.id)}>Удалить</button>
                             </div>
@@ -876,7 +1661,7 @@ export default function Admin() {
                               <details key={p.id} className={styles.catalogProductRow}>
                                 <summary className={styles.catalogProductSummary}>
                                   <span className={styles.catalogProductExpand}>▶</span>
-                                  <span>{p.name} — {formatPrice(p.price)}</span>
+                                  <span>{p.name} — {p.is_sale && p.sale_price != null ? <><span className={styles.priceOld}>{formatPrice(p.price)}</span> {formatPrice(p.sale_price)}</> : formatPrice(p.price)}</span>
                                   <div className={styles.rowActions} onClick={(e) => e.preventDefault()}>
                                     <button type="button" className={styles.btnEdit} onClick={(e) => { e.preventDefault(); e.stopPropagation(); const d = e.currentTarget.closest('details'); if (d) d.open = true; }}>Изменить</button>
                                     <button type="button" className={styles.btnDangerSmall} onClick={(e) => { e.preventDefault(); setConfirmDeleteProductId(p.id); }}>Удалить</button>
@@ -893,18 +1678,88 @@ export default function Admin() {
                                   </label>
                                   <label className={styles.label}>Название <input name="name" defaultValue={p.name} required /></label>
                                   <label className={styles.label}>Цена <input name="price" type="number" step="0.01" defaultValue={p.price} required /></label>
-                                  <label className={styles.label}>Вес <input name="weight" defaultValue={p.weight || ''} placeholder="Вес" /></label>
-                                  <label className={styles.fileLabel}>
-                                    Новая картинка:
+                                  <label className={styles.label}>Количество (остаток) <input name="quantity" type="number" min="0" defaultValue={p.quantity ?? 0} /></label>
+                                  <label className={styles.label}>Вес (например 150 гр) <input name="weight" defaultValue={p.weight || ''} placeholder="150 гр" /></label>
+                                  <label className={styles.label}>Описание <textarea name="description" defaultValue={p.description || ''} placeholder="Описание" rows={2} className={styles.textareaAutoResize} onInput={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} onFocus={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} /></label>
+                                  <div
+                                    className={styles.fileDropZone}
+                                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add(styles.dragOver); }}
+                                    onDragLeave={(e) => e.currentTarget.classList.remove(styles.dragOver)}
+                                    onDrop={(e) => {
+                                      e.preventDefault();
+                                      e.currentTarget.classList.remove(styles.dragOver);
+                                      const file = e.dataTransfer.files[0];
+                                      if (file && file.type.startsWith('image/')) {
+                                        const input = e.currentTarget.querySelector('input[type=file]');
+                                        if (input) { const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true })); }
+                                      }
+                                    }}
+                                    onPaste={(e) => {
+                                      const file = e.clipboardData?.files?.[0];
+                                      if (file && file.type.startsWith('image/')) {
+                                        e.preventDefault();
+                                        const input = e.currentTarget.querySelector('input[type=file]');
+                                        if (input) { const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true })); }
+                                      }
+                                    }}
+                                    tabIndex={0}
+                                  >
                                     <input name="image" type="file" accept="image/jpeg,image/png,image/webp" className={styles.fileInput} />
-                                  </label>
-                                  <input name="image_url" defaultValue={p.image_url || ''} placeholder="Или URL изображения" />
-                                  <textarea name="description" defaultValue={p.description || ''} placeholder="Описание" rows={2} />
-                                  <div className={styles.checkboxGroup}>
+                                    <span className={styles.fileDropZoneText}>Перетащите изображение или Ctrl+V</span>
+                                  </div>
+                                  <div className={styles.checkboxGroup + ' ' + styles.checkboxGroupColumn}>
                                     <label className={styles.checkLabel}>
-                                      <input type="checkbox" name="is_sale" defaultChecked={!!p.is_sale} />
+                                      <input
+                                        type="checkbox"
+                                        name="is_sale"
+                                        checked={(productSaleChecked[p.id] !== undefined ? productSaleChecked[p.id] : !!p.is_sale)}
+                                        onChange={(e) => setProductSaleChecked((prev) => ({ ...prev, [p.id]: e.target.checked }))}
+                                      />
                                       <span>Акция</span>
                                     </label>
+                                    {(productSaleChecked[p.id] !== undefined ? productSaleChecked[p.id] : !!p.is_sale) && (
+                                      <>
+                                        <label className={styles.label}>
+                                          Цена по акции
+                                          <input
+                                            name="sale_price"
+                                            type="number"
+                                            step="0.01"
+                                            placeholder="Цена по акции"
+                                            value={productSalePrice[p.id] ?? (p.sale_price != null ? String(p.sale_price) : '')}
+                                            onChange={(e) => {
+                                              const v = e.target.value;
+                                              setProductSalePrice((prev) => ({ ...prev, [p.id]: v }));
+                                              const base = parseFloat(e.target.form?.price?.value);
+                                              if (!Number.isNaN(base) && v) {
+                                                const sale = parseFloat(v);
+                                                if (!Number.isNaN(sale)) setProductSalePercent((prev) => ({ ...prev, [p.id]: String(Math.round((1 - sale / base) * 100)) }));
+                                              } else setProductSalePercent((prev) => ({ ...prev, [p.id]: '' }));
+                                            }}
+                                          />
+                                        </label>
+                                        <label className={styles.label}>
+                                          Процент скидки
+                                          <input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            step="1"
+                                            placeholder="%"
+                                            value={productSalePercent[p.id] ?? (p.price && p.sale_price != null ? Math.round((1 - p.sale_price / p.price) * 100) : '')}
+                                            onChange={(e) => {
+                                              const v = e.target.value;
+                                              setProductSalePercent((prev) => ({ ...prev, [p.id]: v }));
+                                              const base = parseFloat(e.target.form?.price?.value);
+                                              if (!Number.isNaN(base) && v) {
+                                                const pct = parseFloat(v);
+                                                if (!Number.isNaN(pct)) setProductSalePrice((prev) => ({ ...prev, [p.id]: (base * (1 - pct / 100)).toFixed(2) }));
+                                              } else setProductSalePrice((prev) => ({ ...prev, [p.id]: '' }));
+                                            }}
+                                          />
+                                        </label>
+                                      </>
+                                    )}
                                     <label className={styles.checkLabel}>
                                       <input type="checkbox" name="is_hit" defaultChecked={!!p.is_hit} />
                                       <span>Хит</span>
@@ -912,6 +1767,10 @@ export default function Admin() {
                                     <label className={styles.checkLabel}>
                                       <input type="checkbox" name="is_recommended" defaultChecked={!!p.is_recommended} />
                                       <span>Советуем</span>
+                                    </label>
+                                    <label className={styles.checkLabel}>
+                                      <input type="checkbox" name="in_stock" defaultChecked={p.in_stock !== false} />
+                                      <span>В наличии (много)</span>
                                     </label>
                                   </div>
                                   <div className={styles.formRowActions}>
@@ -963,22 +1822,106 @@ export default function Admin() {
                           <input name="price" type="number" step="0.01" placeholder="0" required />
                         </label>
                         <label className={styles.label}>
-                          Вес (опционально)
-                          <input name="weight" placeholder="Вес" />
+                          Количество (остаток)
+                          <input name="quantity" type="number" min="0" defaultValue="0" placeholder="0" />
                         </label>
-                        <label className={styles.fileLabel}>
-                          Картинка
-                          <input name="image" type="file" accept="image/jpeg,image/png,image/webp" className={styles.fileInput} />
+                        <label className={styles.label}>
+                          Вес (опционально, например 150 гр)
+                          <input name="weight" placeholder="Например: 150 гр" />
                         </label>
                         <label className={styles.label}>
                           Описание
-                          <textarea name="description" placeholder="Описание" rows={3} />
+                          <textarea
+                            name="description"
+                            placeholder="Описание"
+                            rows={3}
+                            className={styles.textareaAutoResize}
+                            onInput={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }}
+                            onFocus={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }}
+                          />
                         </label>
-                        <div className={styles.checkboxGroup}>
+                        <div
+                          className={styles.fileDropZone}
+                          onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add(styles.dragOver); }}
+                          onDragLeave={(e) => e.currentTarget.classList.remove(styles.dragOver)}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            e.currentTarget.classList.remove(styles.dragOver);
+                            const file = e.dataTransfer.files[0];
+                            if (file && file.type.startsWith('image/')) {
+                              const input = e.currentTarget.querySelector('input[type=file]');
+                              if (input) { const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true })); }
+                            }
+                          }}
+                          onPaste={(e) => {
+                            const file = e.clipboardData?.files?.[0];
+                            if (file && file.type.startsWith('image/')) {
+                              e.preventDefault();
+                              const input = e.currentTarget.querySelector('input[type=file]');
+                              if (input) { const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true })); }
+                            }
+                          }}
+                          tabIndex={0}
+                        >
+                          <input name="image" type="file" accept="image/jpeg,image/png,image/webp" className={styles.fileInput} id="add-product-image" />
+                          <span className={styles.fileDropZoneText}>Перетащите изображение сюда или вставьте из буфера (Ctrl+V)</span>
+                        </div>
+                        <div className={styles.checkboxGroup + ' ' + styles.checkboxGroupColumn}>
                           <label className={styles.checkLabel}>
-                            <input type="checkbox" name="is_sale" />
+                            <input
+                              type="checkbox"
+                              name="is_sale"
+                              checked={addProductIsSale}
+                              onChange={(e) => setAddProductIsSale(e.target.checked)}
+                            />
                             <span>Акция</span>
                           </label>
+                          {addProductIsSale && (
+                            <>
+                              <label className={styles.label}>
+                                Цена по акции
+                                <input
+                                  name="sale_price"
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="Цена по акции"
+                                  required={addProductIsSale}
+                                  value={addProductSalePrice}
+                                  onChange={(e) => {
+                                    const v = e.target.value;
+                                    setAddProductSalePrice(v);
+                                    const form = e.target.form;
+                                    const base = parseFloat(form?.price?.value);
+                                    if (!Number.isNaN(base) && v) {
+                                      const sale = parseFloat(v);
+                                      if (!Number.isNaN(sale)) setAddProductSalePercent(String(Math.round((1 - sale / base) * 100)));
+                                    } else setAddProductSalePercent('');
+                                  }}
+                                />
+                              </label>
+                              <label className={styles.label}>
+                                Процент скидки
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  step="1"
+                                  placeholder="%"
+                                  value={addProductSalePercent}
+                                  onChange={(e) => {
+                                    const v = e.target.value;
+                                    setAddProductSalePercent(v);
+                                    const form = e.target.form;
+                                    const base = parseFloat(form?.price?.value);
+                                    if (!Number.isNaN(base) && v) {
+                                      const pct = parseFloat(v);
+                                      if (!Number.isNaN(pct)) setAddProductSalePrice((base * (1 - pct / 100)).toFixed(2));
+                                    } else setAddProductSalePrice('');
+                                  }}
+                                />
+                              </label>
+                            </>
+                          )}
                           <label className={styles.checkLabel}>
                             <input type="checkbox" name="is_hit" />
                             <span>Хит</span>
@@ -986,6 +1929,10 @@ export default function Admin() {
                           <label className={styles.checkLabel}>
                             <input type="checkbox" name="is_recommended" />
                             <span>Советуем</span>
+                          </label>
+                          <label className={styles.checkLabel}>
+                            <input type="checkbox" name="in_stock" defaultChecked />
+                            <span>В наличии (много)</span>
                           </label>
                         </div>
                         <div className={styles.formRowActions}>
@@ -1026,39 +1973,39 @@ export default function Admin() {
               <h2>Статистика</h2>
               <p className={styles.cardHint}>За последние 30 дней.</p>
               {loading ? (
-                <p>Загрузка...</p>
+                <Loader wrap />
               ) : stats ? (
                 <>
-                  <div className={styles.statsSummary}>
-                    <div className={styles.statCard}>
-                      <span className={styles.statLabel}>Выручка за 30 дней</span>
-                      <code ref={statRevenueRef} className={styles.statValue}>0</code>
+                  <div className={styles.statsSummaryCharts}>
+                    <div className={styles.statChartCard}>
+                      <h3 className={styles.statChartTitle}>Выручка за 30 дней</h3>
+                      <div className={styles.statSummaryValue}>{formatPrice(totalRevenue ?? 0)}</div>
                     </div>
-                    <div className={styles.statCard}>
-                      <span className={styles.statLabel}>Заказов</span>
-                      <code ref={statOrdersRef} className={styles.statValue}>0</code>
+                    <div className={styles.statChartCard}>
+                      <h3 className={styles.statChartTitle}>Заказов</h3>
+                      <div className={styles.statSummaryValue}>{totalOrders ?? 0}</div>
                     </div>
-                    <div className={styles.statCard}>
-                      <span className={styles.statLabel}>Средний чек</span>
-                      <code ref={statAvgRef} className={styles.statValue}>0</code>
+                    <div className={styles.statChartCard}>
+                      <h3 className={styles.statChartTitle}>Средний чек</h3>
+                      <div className={styles.statSummaryValue}>{formatPrice(averageOrder ?? 0)}</div>
                     </div>
                   </div>
                 <div className={styles.statsCharts}>
                   <div className={styles.chartBlock}>
                     <h3 className={styles.chartTitle}>Продажи по дням</h3>
                     <div className={styles.chartWrap}>
-                      <ResponsiveContainer width="100%" height={280}>
-                        <LineChart data={stats.salesByDay || []} margin={{ top: 16, right: 16, left: 8, bottom: 8 }}>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <AreaChart data={stats.salesByDay || []} margin={{ top: 16, right: 24, left: 56, bottom: 24 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                          <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={(v) => v ? formatDate(v, { day: '2-digit', month: '2-digit' }) : ''} />
-                          <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `${v}`} />
+                          <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={(v) => (v ? formatDate(v, { day: '2-digit', month: '2-digit' }) : '')} />
+                          <YAxis tick={{ fontSize: 12 }} width={52} tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v))} />
                           <Tooltip
                             contentStyle={{ borderRadius: 8, border: '1px solid var(--color-light-gray)' }}
-                            formatter={(v) => [Number(v).toFixed(0) + ' ₽', 'Сумма']}
-                            labelFormatter={(v) => v ? formatDate(v) : ''}
+                            formatter={(v) => [formatPrice(Number(v)), 'Сумма']}
+                            labelFormatter={(v) => (v ? formatDate(v) : '')}
                           />
-                          <Line type="monotone" dataKey="total" stroke="var(--color-primary)" strokeWidth={2} dot={{ r: 4 }} name="Сумма" />
-                        </LineChart>
+                          <Area type="monotone" dataKey="total" stroke="var(--color-primary)" strokeWidth={2} fill="var(--color-primary)" fillOpacity={0.25} dot={{ r: 4 }} name="Сумма" />
+                        </AreaChart>
                       </ResponsiveContainer>
                     </div>
                   </div>
@@ -1094,16 +2041,17 @@ export default function Admin() {
                   <div className={styles.chartBlock}>
                     <h3 className={styles.chartTitle}>Топ товаров по выручке</h3>
                     <div className={styles.chartWrap}>
-                      <ResponsiveContainer width="100%" height={320}>
-                        <BarChart data={(stats.byProduct || []).slice(0, 10)} layout="vertical" margin={{ top: 8, right: 24, left: 8, bottom: 8 }}>
+                      <ResponsiveContainer width="100%" height={380}>
+                        <BarChart data={(stats.byProduct || []).slice(0, 10)} layout="vertical" margin={{ top: 8, right: 56, left: 8, bottom: 8 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                          <XAxis type="number" tick={{ fontSize: 12 }} tickFormatter={(v) => `${v}`} />
-                          <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 11 }} />
+                          <XAxis type="number" tick={{ fontSize: 12 }} tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v)} />
+                          <YAxis type="category" dataKey="name" width={200} tick={{ fontSize: 12 }} tickFormatter={(name) => (name && name.length > 28 ? name.slice(0, 27) + '…' : name)} />
                           <Tooltip
                             contentStyle={{ borderRadius: 8, border: '1px solid var(--color-light-gray)' }}
-                            formatter={(v) => [Number(v).toFixed(0) + ' ₽', 'Выручка']}
+                            formatter={(v) => [formatPrice(Number(v)), 'Выручка']}
+                            labelFormatter={(label) => label ?? ''}
                           />
-                          <Bar dataKey="total" fill="var(--color-primary)" name="Выручка" radius={[0, 4, 4, 0]} />
+                          <Bar dataKey="total" fill="var(--color-primary)" fillOpacity={1} name="Выручка" radius={[0, 4, 4, 0]} label={{ position: 'right', formatter: (v) => formatPrice(v), fontSize: 11 }} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>

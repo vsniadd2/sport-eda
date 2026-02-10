@@ -12,6 +12,11 @@ const migrationsDir = join(__dirname, 'migrations');
 
 export const pool = new Pool(config.db);
 
+const tz = config.timezone || 'Europe/Minsk';
+pool.on('connect', (client) => {
+  client.query(`SET timezone = '${tz}'`).catch((err) => console.error('SET timezone:', err));
+});
+
 async function ensureAdmin() {
   const client = await pool.connect();
   try {

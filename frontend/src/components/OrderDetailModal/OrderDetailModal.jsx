@@ -1,15 +1,36 @@
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { formatPrice } from '../../utils/formatPrice';
 import { formatDateTimeLong } from '../../utils/formatDate';
+import OrderStatusStepper from '../OrderStatusStepper/OrderStatusStepper';
 import styles from './OrderDetailModal.module.css';
+
+const BODY_CLASS = 'orderDetailModalOpen';
 
 export default function OrderDetailModal({ order, onClose }) {
   useEffect(() => {
-    if (order) document.body.style.overflow = 'hidden';
-    else document.body.style.overflow = '';
-    return () => { document.body.style.overflow = ''; };
+    if (order) {
+      document.body.style.overflow = 'hidden';
+      document.body.classList.add(BODY_CLASS);
+    } else {
+      document.body.style.overflow = '';
+      document.body.classList.remove(BODY_CLASS);
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.classList.remove(BODY_CLASS);
+    };
   }, [order]);
+
+  useEffect(() => {
+    if (!order) return;
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [order, onClose]);
 
   if (!order) return null;
 
@@ -17,7 +38,7 @@ export default function OrderDetailModal({ order, onClose }) {
     if (e.target === e.currentTarget) onClose();
   };
 
-  return (
+  const modalContent = (
     <div className={styles.overlay} onClick={handleBackdropClick} role="dialog" aria-modal="true" aria-labelledby="order-detail-title">
       <div className={styles.modal}>
         <div className={styles.header}>
@@ -27,8 +48,18 @@ export default function OrderDetailModal({ order, onClose }) {
           </button>
         </div>
         <div className={styles.body}>
+          <OrderStatusStepper order={order} />
           <p className={styles.date}>
             {order.created_at ? formatDateTimeLong(order.created_at) : ''}
+          </p>
+          <p className={styles.line}><strong>Статус:</strong> {order.shipped_at ? 'Получен' : 'Не получен'}</p>
+          <p className={styles.line}>
+            <strong>Оплата:</strong>{' '}
+            {order.payment_method === 'card' && order.card_last4
+              ? `Карта **** **** **** ${order.card_last4}`
+              : order.payment_method === 'card'
+                ? 'Карта'
+                : 'При получении'}
           </p>
           {(order.address || order.phone) && (
             <div className={styles.contacts}>
@@ -70,4 +101,6 @@ export default function OrderDetailModal({ order, onClose }) {
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

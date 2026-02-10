@@ -2,7 +2,7 @@
   position: fixed;
   top: 28px;
   right: 28px;
-  z-index: 9999;
+  z-index: var(--z-toast, 9999);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -14,17 +14,20 @@
   pointer-events: auto;
 }
 
-.toast {
+.card {
+  width: 330px;
+  min-height: 80px;
+  border-radius: 8px;
+  box-sizing: border-box;
+  padding: 10px 15px;
+  background-color: #ffffff;
+  box-shadow: rgba(149, 157, 165, 0.2) 0 8px 24px;
+  position: relative;
+  overflow: hidden;
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 18px 20px;
-  background: var(--color-white);
-  border: 1px solid var(--color-light-gray);
-  border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-  font-size: 15px;
-  color: var(--color-text);
+  align-items: center;
+  justify-content: flex-start;
+  gap: 15px;
   animation: slideIn 0.25s ease-out;
 }
 
@@ -39,44 +42,131 @@
   }
 }
 
-.toast.success {
-  border-left: 4px solid #16a34a;
+.wave {
+  position: absolute;
+  transform: rotate(90deg);
+  left: -31px;
+  top: 32px;
+  width: 80px;
 }
 
-.toast.error {
-  border-left: 4px solid #dc2626;
+.card.success .wave {
+  fill: rgba(4, 228, 0, 0.23);
 }
 
-.toast.info {
-  border-left: 4px solid var(--color-primary);
+.card.error .wave {
+  fill: rgba(220, 38, 38, 0.23);
 }
 
-.message {
-  flex: 1;
-  line-height: 1.45;
+.card.info .wave {
+  fill: rgba(107, 114, 128, 0.2);
 }
 
-.close {
+.iconContainer {
+  width: 35px;
+  height: 35px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  margin-left: 8px;
   flex-shrink: 0;
-  width: 24px;
-  height: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.card.success .iconContainer {
+  background-color: rgba(4, 228, 0, 0.28);
+}
+
+.card.error .iconContainer {
+  background-color: rgba(220, 38, 38, 0.2);
+}
+
+.card.info .iconContainer {
+  background-color: rgba(107, 114, 128, 0.15);
+}
+
+.iconSvg {
+  width: 17px;
+  height: 17px;
+}
+
+.card.success .iconSvg {
+  color: #269b24;
+}
+
+.card.error .iconSvg {
+  color: #dc2626;
+}
+
+.card.info .iconSvg {
+  color: #6b7280;
+}
+
+.messageTextContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  flex-grow: 1;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.messageText,
+.subText {
+  margin: 0;
+  cursor: default;
+}
+
+.messageText {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.card.success .messageText {
+  color: #269b24;
+}
+
+.card.error .messageText {
+  color: #dc2626;
+}
+
+.card.info .messageText {
+  color: var(--color-text, #1f2937);
+}
+
+.subText {
+  font-size: 14px;
+  color: #555;
+  margin-top: 2px;
+}
+
+.crossBtn {
+  flex-shrink: 0;
+  padding: 4px;
+  margin: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  font-size: 20px;
-  line-height: 1;
-  color: var(--color-gray);
-  background: none;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: color 0.15s, background 0.15s;
+  color: #555;
+  position: relative;
+  z-index: 1;
 }
 
-.close:hover {
-  color: var(--color-text);
-  background: var(--color-light-gray);
+.crossBtn:hover {
+  color: #1f2937;
+}
+
+.crossIcon {
+  width: 18px;
+  height: 18px;
 }
 
 @media (max-width: 480px) {
@@ -85,5 +175,10 @@
     right: 12px;
     top: 12px;
     max-width: none;
+  }
+
+  .card {
+    width: 100%;
+    min-width: 0;
   }
 }

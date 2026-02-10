@@ -1,3 +1,9 @@
+:root {
+  --z-header: 100;
+  --z-modal: 500;
+  --z-toast: 9999;
+}
+
 .app {
   min-height: 100vh;
   display: flex;
@@ -37,4 +43,11 @@
 .app-content > * {
   position: relative;
   z-index: 1;
+}
+
+/* При открытой модалке детали заказа — header под ней и визуально приглушён */
+body.orderDetailModalOpen header {
+  z-index: 50;
+  filter: blur(4px);
+  opacity: 0.9;
 }

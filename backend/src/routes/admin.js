@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { pool } from '../db.js';
 import { authMiddleware, adminMiddleware } from '../middleware/auth.js';
+import { getIO } from '../socket.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
@@ -107,11 +108,13 @@ router.delete('/users/:id', async (req, res) => {
 
 router.get('/callback-requests', async (req, res) => {
   try {
-    await pool.query(
-      `DELETE FROM callback_requests WHERE completed_at IS NOT NULL AND completed_at < NOW() - INTERVAL '24 hours'`
-    );
+    const archive = req.query.archive === '1';
+    const completedCondition = archive
+      ? 'completed_at IS NOT NULL'
+      : 'completed_at IS NULL';
     const result = await pool.query(
-      `SELECT id, name, phone, created_at, completed_at FROM callback_requests WHERE completed_at IS NULL ORDER BY created_at DESC LIMIT 200`
+      `SELECT id, name, phone, created_at, completed_at FROM callback_requests WHERE ${completedCondition} ORDER BY created_at DESC LIMIT 200`,
+      []
     );
     res.json(result.rows);
   } catch (err) {
@@ -137,8 +140,12 @@ router.patch('/callback-requests/:id', async (req, res) => {
 
 router.get('/orders', async (req, res) => {
   try {
+    const archive = req.query.archive === '1';
+    const archiveCondition = archive
+      ? `AND o.payment_status = 'paid' AND o.shipped_at IS NOT NULL`
+      : `AND (o.payment_status != 'paid' OR o.shipped_at IS NULL)`;
     const result = await pool.query(
-      `SELECT o.*, u.email, u.username FROM orders o LEFT JOIN users u ON o.user_id = u.id ORDER BY o.created_at DESC LIMIT 100`
+      `SELECT o.*, u.email, u.username FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE 1=1 ${archiveCondition} ORDER BY o.created_at DESC LIMIT 100`
     );
     for (const o of result.rows) {
       const items = await pool.query(
@@ -148,6 +155,210 @@ router.get('/orders', async (req, res) => {
       o.items = items.rows;
     }
     res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+async function loadFullOrder(orderId) {
+  const orderRes = await pool.query('SELECT * FROM orders WHERE id = $1', [orderId]);
+  if (!orderRes.rows[0]) return null;
+  const order = orderRes.rows[0];
+  const itemsRes = await pool.query(
+    'SELECT oi.*, p.name FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = $1',
+    [orderId]
+  );
+  order.items = itemsRes.rows;
+  return order;
+}
+
+router.patch('/orders/:id/payment', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { paid } = req.body || {};
+    const paymentStatus = paid ? 'paid' : 'pending';
+    const result = await pool.query(
+      `UPDATE orders SET payment_status = $1, paid_at = CASE WHEN $2 = true THEN NOW() ELSE NULL END WHERE id = $3 RETURNING id, payment_status, paid_at`,
+      [paymentStatus, !!paid, id]
+    );
+    if (!result.rows[0]) return res.status(404).json({ message: 'Заказ не найден' });
+    getIO().emitToAdmin('orderUpdated', result.rows[0]);
+    const fullOrder = await loadFullOrder(id);
+    if (fullOrder?.user_id) getIO().emitToUser(fullOrder.user_id, 'orderUpdated', fullOrder);
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+router.patch('/orders/:id/ship', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { shipped } = req.body || {};
+    const setShipped = shipped !== false;
+    const result = await pool.query(
+      setShipped
+        ? `UPDATE orders SET shipped_at = COALESCE(shipped_at, NOW()) WHERE id = $1 RETURNING id, shipped_at`
+        : `UPDATE orders SET shipped_at = NULL WHERE id = $1 RETURNING id, shipped_at`,
+      [id]
+    );
+    if (!result.rows[0]) return res.status(404).json({ message: 'Заказ не найден' });
+    getIO().emitToAdmin('orderUpdated', result.rows[0]);
+    const fullOrder = await loadFullOrder(id);
+    if (fullOrder?.user_id) getIO().emitToUser(fullOrder.user_id, 'orderUpdated', fullOrder);
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+router.patch('/orders/:id/process', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { processed } = req.body || {};
+    const setProcessed = processed === true;
+    const result = await pool.query(
+      setProcessed
+        ? `UPDATE orders SET processed_at = COALESCE(processed_at, NOW()) WHERE id = $1 RETURNING id, processed_at`
+        : `UPDATE orders SET processed_at = NULL WHERE id = $1 RETURNING id, processed_at`,
+      [id]
+    );
+    if (!result.rows[0]) return res.status(404).json({ message: 'Заказ не найден' });
+    getIO().emitToAdmin('orderUpdated', result.rows[0]);
+    const fullOrder = await loadFullOrder(id);
+    if (fullOrder?.user_id) getIO().emitToUser(fullOrder.user_id, 'orderUpdated', fullOrder);
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+router.get('/feedback', async (req, res) => {
+  try {
+    const ticketsRes = await pool.query(
+      `SELECT t.id, t.user_id, t.created_at, u.email, u.username
+       FROM feedback_tickets t
+       LEFT JOIN users u ON u.id = t.user_id
+       ORDER BY t.created_at DESC LIMIT 200`
+    );
+    const tickets = ticketsRes.rows;
+    for (const t of tickets) {
+      const messagesRes = await pool.query(
+        'SELECT id, ticket_id, author, body, created_at FROM feedback_messages WHERE ticket_id = $1 ORDER BY created_at ASC',
+        [t.id]
+      );
+      t.messages = messagesRes.rows;
+    }
+    res.json(tickets);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+router.post('/feedback/:id/messages', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { body } = req.body || {};
+    const bodyTrim = typeof body === 'string' ? body.trim() : '';
+    if (!bodyTrim) return res.status(400).json({ message: 'Укажите текст ответа' });
+    const ticketRow = await pool.query('SELECT id, user_id FROM feedback_tickets WHERE id = $1', [id]);
+    if (!ticketRow.rows[0]) return res.status(404).json({ message: 'Тикет не найден' });
+    const ticketUserId = ticketRow.rows[0].user_id;
+    const msgRes = await pool.query(
+      'INSERT INTO feedback_messages (ticket_id, author, body) VALUES ($1, $2, $3) RETURNING id, ticket_id, author, body, created_at',
+      [id, 'admin', bodyTrim]
+    );
+    const newMsg = msgRes.rows[0];
+    getIO().emitToUser(ticketUserId, 'feedbackSupportReplied', { ticketId: parseInt(id, 10), message: newMsg });
+    res.status(201).json(newMsg);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+router.delete('/feedback/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('DELETE FROM feedback_tickets WHERE id = $1 RETURNING id', [id]);
+    if (!result.rows[0]) return res.status(404).json({ message: 'Тикет не найден' });
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+router.get('/reviews', async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit, 10) || 100, 200);
+    const result = await pool.query(
+      `SELECT r.id, r.user_id, r.product_id, r.rating, r.text, r.created_at, r.admin_reply, r.admin_replied_at,
+              u.username, p.name AS product_name
+       FROM reviews r
+       JOIN users u ON u.id = r.user_id
+       JOIN products p ON p.id = r.product_id
+       ORDER BY r.created_at DESC
+       LIMIT $1`,
+      [limit]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+router.patch('/reviews/:id/reply', async (req, res) => {
+  try {
+    const reviewId = parseInt(req.params.id, 10);
+    if (Number.isNaN(reviewId)) {
+      return res.status(400).json({ message: 'Неверный ID отзыва' });
+    }
+    const { reply } = req.body || {};
+    const replyText = typeof reply === 'string' ? reply.trim() : null;
+    const result = await pool.query(
+      `UPDATE reviews SET admin_reply = $1::text, admin_replied_at = CASE WHEN $1::text IS NOT NULL AND trim(COALESCE($1::text, '')) <> '' THEN NOW() ELSE NULL END WHERE id = $2 RETURNING id, admin_reply, admin_replied_at`,
+      [replyText ?? null, reviewId]
+    );
+    if (!result.rows[0]) return res.status(404).json({ message: 'Отзыв не найден' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('PATCH /admin/reviews/:id/reply error:', err.message || err);
+    if (err.code === '42703') {
+      return res.status(500).json({ message: 'Колонки для ответа админа не найдены. Запустите миграции: npm run migrate' });
+    }
+    res.status(500).json({ message: err.message || 'Ошибка сервера' });
+  }
+});
+
+router.get('/visits', async (req, res) => {
+  try {
+    const [visitsByDayRes, todayRes] = await Promise.all([
+      pool.query(`
+        SELECT TO_CHAR(visit_date, 'YYYY-MM-DD') AS date, COUNT(*)::int AS count
+        FROM site_visits
+        WHERE visit_date >= CURRENT_DATE - INTERVAL '30 days'
+        GROUP BY visit_date
+        ORDER BY visit_date
+      `),
+      pool.query(`
+        SELECT
+          (SELECT COUNT(*)::int FROM site_visits WHERE visit_date = CURRENT_DATE) AS today_count,
+          TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD') AS server_date
+      `),
+    ]);
+    const todayRow = todayRes.rows[0] || {};
+    res.json({
+      visitsByDay: visitsByDayRes.rows,
+      todayCount: Number(todayRow.today_count) || 0,
+      serverDate: todayRow.server_date || null,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Ошибка сервера' });
@@ -215,6 +426,8 @@ router.post('/categories', async (req, res) => {
       'INSERT INTO categories (name, slug) VALUES ($1, $2) RETURNING *',
       [name, slug.toLowerCase().replace(/\s+/g, '-')]
     );
+    getIO().emitToAdmin('catalogChanged');
+    getIO().emitToAll('productsChanged');
     res.status(201).json(result.rows[0]);
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ message: 'Категория с таким slug уже существует' });
@@ -239,6 +452,8 @@ router.patch('/categories/:id', async (req, res) => {
       values
     );
     if (!result.rows[0]) return res.status(404).json({ message: 'Категория не найдена' });
+    getIO().emitToAdmin('catalogChanged');
+    getIO().emitToAll('productsChanged');
     res.json(result.rows[0]);
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ message: 'Категория с таким slug уже существует' });
@@ -256,7 +471,52 @@ router.delete('/categories/:id', async (req, res) => {
     }
     const result = await pool.query('DELETE FROM categories WHERE id = $1 RETURNING id', [id]);
     if (!result.rows[0]) return res.status(404).json({ message: 'Категория не найдена' });
+    getIO().emitToAdmin('catalogChanged');
+    getIO().emitToAll('productsChanged');
     res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Загрузка изображения категории
+router.put('/categories/:id/image', upload.single('image'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!req.file) {
+      return res.status(400).json({ message: 'Изображение не загружено' });
+    }
+    const result = await pool.query(
+      `UPDATE categories SET image_data = $1, image_content_type = $2 WHERE id = $3 RETURNING id, name, slug`,
+      [req.file.buffer, req.file.mimetype, id]
+    );
+    if (!result.rows[0]) {
+      return res.status(404).json({ message: 'Категория не найдена' });
+    }
+    getIO().emitToAdmin('catalogChanged');
+    getIO().emitToAll('productsChanged');
+    res.json({ ...result.rows[0], has_image: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Удаление изображения категории
+router.delete('/categories/:id/image', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      `UPDATE categories SET image_data = NULL, image_content_type = NULL WHERE id = $1 RETURNING id, name, slug`,
+      [id]
+    );
+    if (!result.rows[0]) {
+      return res.status(404).json({ message: 'Категория не найдена' });
+    }
+    getIO().emitToAdmin('catalogChanged');
+    getIO().emitToAll('productsChanged');
+    res.json({ ...result.rows[0], has_image: false });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Ошибка сервера' });
@@ -267,25 +527,32 @@ const parseBool = (v) => v === true || v === 'true' || v === '1';
 
 router.post('/products', upload.single('image'), async (req, res) => {
   try {
-    const { category_id, name, description, weight, price, image_url, is_sale, is_hit, is_recommended } = req.body || {};
+    const { category_id, name, description, weight, price, sale_price, image_url, is_sale, is_hit, is_recommended, in_stock, quantity } = req.body || {};
     if (!category_id || !name || price === undefined) return res.status(400).json({ message: 'Категория, название и цена обязательны' });
     const sale = parseBool(is_sale);
     const hit = parseBool(is_hit);
     const rec = parseBool(is_recommended);
+    const inStock = in_stock === undefined ? true : parseBool(in_stock);
+    const qty = quantity !== undefined && quantity !== '' ? Math.max(0, parseInt(quantity, 10) || 0) : 0;
+    const salePriceVal = sale_price !== undefined && sale_price !== '' ? parseFloat(sale_price) : null;
     const file = req.file;
     if (file) {
       const result = await pool.query(
-        `INSERT INTO products (category_id, name, description, weight, price, image_url, image_data, image_content_type, is_sale, is_hit, is_recommended)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id, category_id, name, description, weight, price, image_url, created_at`,
-        [category_id, name, description || null, weight || null, parseFloat(price), null, file.buffer, file.mimetype, sale, hit, rec]
+        `INSERT INTO products (category_id, name, description, weight, price, sale_price, image_url, image_data, image_content_type, is_sale, is_hit, is_recommended, in_stock, quantity)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id, category_id, name, description, weight, price, sale_price, image_url, created_at`,
+        [category_id, name, description || null, weight || null, parseFloat(price), salePriceVal, null, file.buffer, file.mimetype, sale, hit, rec, inStock, qty]
       );
+      getIO().emitToAdmin('catalogChanged');
+      getIO().emitToAll('productsChanged');
       return res.status(201).json(result.rows[0]);
     }
     const result = await pool.query(
-      `INSERT INTO products (category_id, name, description, weight, price, image_url, is_sale, is_hit, is_recommended)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-      [category_id, name, description || null, weight || null, parseFloat(price), image_url || null, sale, hit, rec]
+      `INSERT INTO products (category_id, name, description, weight, price, sale_price, image_url, is_sale, is_hit, is_recommended, in_stock, quantity)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+      [category_id, name, description || null, weight || null, parseFloat(price), salePriceVal, image_url || null, sale, hit, rec, inStock, qty]
     );
+    getIO().emitToAdmin('catalogChanged');
+    getIO().emitToAll('productsChanged');
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -297,7 +564,7 @@ router.patch('/products/:id', upload.single('image'), async (req, res) => {
   try {
     const { id } = req.params;
     const body = req.body || {};
-    const { name, description, weight, price, image_url, category_id, is_sale, is_hit, is_recommended } = body;
+    const { name, description, weight, price, sale_price, image_url, category_id, is_sale, is_hit, is_recommended, in_stock, quantity } = body;
     const updates = [];
     const values = [];
     let i = 1;
@@ -305,11 +572,14 @@ router.patch('/products/:id', upload.single('image'), async (req, res) => {
     if (description !== undefined) { updates.push(`description = $${i++}`); values.push(description); }
     if (weight !== undefined) { updates.push(`weight = $${i++}`); values.push(weight); }
     if (price !== undefined) { updates.push(`price = $${i++}`); values.push(parseFloat(price)); }
+    if (sale_price !== undefined) { updates.push(`sale_price = $${i++}`); values.push(sale_price === '' || sale_price == null ? null : parseFloat(sale_price)); }
     if (image_url !== undefined) { updates.push(`image_url = $${i++}`); values.push(image_url); }
     if (category_id !== undefined) { updates.push(`category_id = $${i++}`); values.push(category_id); }
     if (is_sale !== undefined) { updates.push(`is_sale = $${i++}`); values.push(parseBool(is_sale)); }
     if (is_hit !== undefined) { updates.push(`is_hit = $${i++}`); values.push(parseBool(is_hit)); }
     if (is_recommended !== undefined) { updates.push(`is_recommended = $${i++}`); values.push(parseBool(is_recommended)); }
+    if (in_stock !== undefined) { updates.push(`in_stock = $${i++}`); values.push(parseBool(in_stock)); }
+    if (quantity !== undefined && quantity !== '') { updates.push(`quantity = $${i++}`); values.push(Math.max(0, parseInt(quantity, 10) || 0)); }
     if (req.file) {
       updates.push(`image_data = $${i++}`); values.push(req.file.buffer);
       updates.push(`image_content_type = $${i++}`); values.push(req.file.mimetype);
@@ -317,10 +587,12 @@ router.patch('/products/:id', upload.single('image'), async (req, res) => {
     if (updates.length === 0) return res.status(400).json({ message: 'Нет данных для обновления' });
     values.push(id);
     const result = await pool.query(
-      `UPDATE products SET ${updates.join(', ')} WHERE id = $${i} RETURNING id, category_id, name, description, weight, price, image_url, created_at`,
+      `UPDATE products SET ${updates.join(', ')} WHERE id = $${i} RETURNING id, category_id, name, description, weight, price, sale_price, image_url, created_at`,
       values
     );
     if (!result.rows[0]) return res.status(404).json({ message: 'Товар не найден' });
+    getIO().emitToAdmin('catalogChanged');
+    getIO().emitToAll('productsChanged');
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -337,6 +609,109 @@ router.delete('/products/:id', async (req, res) => {
     }
     const result = await pool.query('DELETE FROM products WHERE id = $1 RETURNING id', [id]);
     if (!result.rows[0]) return res.status(404).json({ message: 'Товар не найден' });
+    getIO().emitToAdmin('catalogChanged');
+    getIO().emitToAll('productsChanged');
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// ——— Баннеры главной ———
+router.get('/banners', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, sort_order, link_url, title, (image_data IS NOT NULL) AS has_image
+       FROM home_banners ORDER BY sort_order ASC, id ASC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+router.post('/banners', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({ message: 'Загрузите изображение' });
+    }
+    const linkUrl = (req.body.link_url || '').trim() || null;
+    const title = (req.body.title || '').trim() || null;
+    const sortOrder = parseInt(req.body.sort_order, 10);
+    const order = Number.isNaN(sortOrder) ? 0 : sortOrder;
+    const result = await pool.query(
+      `INSERT INTO home_banners (sort_order, image_data, image_content_type, link_url, title)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, sort_order, link_url, title, (image_data IS NOT NULL) AS has_image`,
+      [order, req.file.buffer, req.file.mimetype || 'image/jpeg', linkUrl, title]
+    );
+    getIO().emitToAll('homeBannersChanged');
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+router.patch('/banners/:id', upload.single('image'), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (Number.isNaN(id)) return res.status(400).json({ message: 'Неверный ID' });
+    const linkUrl = req.body.link_url !== undefined ? (req.body.link_url || '').trim() || null : undefined;
+    const title = req.body.title !== undefined ? (req.body.title || '').trim() || null : undefined;
+    const sortOrderParam = req.body.sort_order;
+    const sortOrder = sortOrderParam !== undefined ? (Number.isNaN(parseInt(sortOrderParam, 10)) ? undefined : parseInt(sortOrderParam, 10)) : undefined;
+
+    const updates = [];
+    const values = [];
+    let i = 1;
+    if (req.file && req.file.buffer) {
+      updates.push(`image_data = $${i++}`, `image_content_type = $${i++}`);
+      values.push(req.file.buffer, req.file.mimetype || 'image/jpeg');
+    }
+    if (linkUrl !== undefined) {
+      updates.push(`link_url = $${i++}`);
+      values.push(linkUrl);
+    }
+    if (title !== undefined) {
+      updates.push(`title = $${i++}`);
+      values.push(title);
+    }
+    if (sortOrder !== undefined) {
+      updates.push(`sort_order = $${i++}`);
+      values.push(sortOrder);
+    }
+    if (updates.length === 0) {
+      const r = await pool.query(
+        `SELECT id, sort_order, link_url, title, (image_data IS NOT NULL) AS has_image FROM home_banners WHERE id = $1`,
+        [id]
+      );
+      if (!r.rows[0]) return res.status(404).json({ message: 'Баннер не найден' });
+      return res.json(r.rows[0]);
+    }
+    values.push(id);
+    const result = await pool.query(
+      `UPDATE home_banners SET ${updates.join(', ')} WHERE id = $${i} RETURNING id, sort_order, link_url, title, (image_data IS NOT NULL) AS has_image`,
+      values
+    );
+    if (!result.rows[0]) return res.status(404).json({ message: 'Баннер не найден' });
+    getIO().emitToAll('homeBannersChanged');
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+router.delete('/banners/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (Number.isNaN(id)) return res.status(400).json({ message: 'Неверный ID' });
+    const result = await pool.query('DELETE FROM home_banners WHERE id = $1 RETURNING id', [id]);
+    if (!result.rows[0]) return res.status(404).json({ message: 'Баннер не найден' });
+    getIO().emitToAll('homeBannersChanged');
     res.status(204).send();
   } catch (err) {
     console.error(err);

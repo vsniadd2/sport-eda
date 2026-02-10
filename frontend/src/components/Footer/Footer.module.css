@@ -2,7 +2,7 @@
   margin-top: auto;
   background: #2d2d2d;
   color: #b0b0b0;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .container {
@@ -13,21 +13,21 @@
 
 /* Top section - nav + contacts */
 .top {
-  padding: 28px 0 24px;
+  padding: 18px 0 16px;
 }
 
 .navRow {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr)) 1fr;
-  gap: 28px 24px;
+  gap: 18px 20px;
 }
 
 .col h4 {
   color: #fff;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.5px;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   text-transform: uppercase;
 }
 
@@ -36,7 +36,7 @@
 }
 
 .col li {
-  margin-bottom: 6px;
+  margin-bottom: 3px;
 }
 
 .col a {
@@ -56,21 +56,21 @@
 .contactLine {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 6px;
+  margin-bottom: 4px;
 }
 
 .icon {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   flex-shrink: 0;
   opacity: 0.9;
 }
 
 .addressBlock {
   display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 6px;
+  margin-bottom: 8px;
 }
 
 .addressBlock .icon {
@@ -78,26 +78,26 @@
 }
 
 .addressBlock p {
-  margin-bottom: 2px;
+  margin-bottom: 1px;
 }
 
 .hours {
-  font-size: 12px;
+  font-size: 11px;
   opacity: 0.85;
-  margin-bottom: 6px !important;
+  margin-bottom: 2px !important;
 }
 
 .social {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .socialBtn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   background: #3d3d3d;
   color: #b0b0b0;
   border-radius: 50%;
@@ -117,39 +117,39 @@
 /* Legal section */
 .legal {
   border-top: 1px solid #404040;
-  padding: 14px 0;
+  padding: 10px 0;
 }
 
 .legal p {
-  margin-bottom: 4px;
-  font-size: 11px;
-  line-height: 1.5;
+  margin-bottom: 2px;
+  font-size: 10px;
+  line-height: 1.45;
   color: #a0a0a0;
 }
 
 .copyright {
   color: #fff !important;
-  font-size: 13px !important;
-  margin-bottom: 8px !important;
+  font-size: 12px !important;
+  margin-bottom: 4px !important;
 }
 
 /* Payments section */
 .payments {
   border-top: 1px solid #404040;
-  padding: 12px 0 16px;
+  padding: 8px 0 12px;
 }
 
 .payRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 16px;
+  gap: 8px 12px;
   align-items: center;
 }
 
 .payImg {
-  height: 32px;
+  height: 26px;
   width: auto;
-  max-width: 48px;
+  max-width: 40px;
   object-fit: contain;
   display: block;
 }
@@ -157,11 +157,11 @@
 .payBadge {
   display: inline-flex;
   align-items: center;
-  height: 32px;
-  padding: 0 10px;
+  height: 26px;
+  padding: 0 8px;
   background: transparent;
   color: #9a9a9a;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.5px;
 }
@@ -183,7 +183,7 @@
 
   .navRow {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 14px;
   }
 
   .contacts {
@@ -191,6 +191,6 @@
   }
 
   .top {
-    padding: 20px 0 18px;
+    padding: 14px 0 12px;
   }
 }
