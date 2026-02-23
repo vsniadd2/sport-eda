@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNotifications } from '../../contexts/NotificationContext';
 import styles from './CallbackModal.module.css';
 
@@ -60,7 +61,7 @@ export default function CallbackModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className={styles.overlay} onClick={handleBackdropClick} role="dialog" aria-modal="true" aria-labelledby="callback-title">
       <div className={styles.modal}>
         <div className={styles.header}>
@@ -103,6 +104,7 @@ export default function CallbackModal({ isOpen, onClose }) {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

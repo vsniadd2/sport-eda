@@ -106,14 +106,12 @@ export default function ProfileOrders() {
                     </div>
                     <p className={styles.orderWho}>Оформил: {displayName}</p>
                     <p className={styles.orderStatus}>
-                      {order.shipped_at ? 'Получен' : 'Не получен'}
+                      {order.processed_at ? 'Готов к выдаче' : 'В обработке'}
                     </p>
                     <p className={styles.orderPayment}>
-                      Оплата: {order.payment_method === 'card' && order.card_last4
-                        ? `Карта **** **** **** ${order.card_last4}`
-                        : order.payment_method === 'card'
-                          ? 'Карта'
-                          : 'При получении'}
+                      {order.payment_method === 'card'
+                        ? (order.payment_status === 'paid' ? 'Оплачено' : 'Оплата картой')
+                        : 'Оплата при получении'}
                     </p>
                     <p className={styles.orderPreview}>
                       {order.items?.length ? `${order.items.length} ${order.items.length === 1 ? 'товар' : 'товара'}` : ''} · {formatPrice(order.total)}

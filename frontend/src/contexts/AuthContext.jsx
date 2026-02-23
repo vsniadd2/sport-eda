@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const AuthContext = createContext(null);
 
@@ -30,7 +30,7 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  const login = (token, userData) => {
+  const login = useCallback((token, userData) => {
     localStorage.setItem(TOKEN_KEY, token);
     const payload = JSON.parse(atob(token.split('.')[1]));
     setUser(userData || {
@@ -39,17 +39,17 @@ export function AuthProvider({ children }) {
       username: payload.username,
       role: payload.role || 'user',
     });
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
     setUser(null);
-  };
+  }, []);
 
-  const updateUser = (updated) => {
+  const updateUser = useCallback((updated) => {
     if (!updated) return;
     setUser((prev) => (prev ? { ...prev, ...updated } : null));
-  };
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, login, logout, updateUser, loading }}>

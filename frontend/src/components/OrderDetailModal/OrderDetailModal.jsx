@@ -52,19 +52,12 @@ export default function OrderDetailModal({ order, onClose }) {
           <p className={styles.date}>
             {order.created_at ? formatDateTimeLong(order.created_at) : ''}
           </p>
-          <p className={styles.line}><strong>Статус:</strong> {order.shipped_at ? 'Получен' : 'Не получен'}</p>
-          <p className={styles.line}>
-            <strong>Оплата:</strong>{' '}
-            {order.payment_method === 'card' && order.card_last4
-              ? `Карта **** **** **** ${order.card_last4}`
-              : order.payment_method === 'card'
-                ? 'Карта'
-                : 'При получении'}
-          </p>
+          <p className={styles.line}><strong>Статус:</strong> {order.processed_at ? 'Готов к выдаче' : 'В обработке'}</p>
+          <p className={styles.line}><strong>Оплата:</strong> при получении (самовывоз)</p>
           {(order.address || order.phone) && (
             <div className={styles.contacts}>
-              {order.address && <p className={styles.line}><strong>Адрес доставки:</strong> {order.address}</p>}
               {order.phone && <p className={styles.line}><strong>Телефон:</strong> {order.phone}</p>}
+              {order.address && <p className={styles.line}><strong>Комментарий:</strong> {order.address}</p>}
             </div>
           )}
           <table className={styles.table}>

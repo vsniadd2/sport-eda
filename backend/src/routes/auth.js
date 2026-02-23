@@ -25,7 +25,7 @@ async function sendPasswordResetEmail(to, resetUrl) {
       text: `Перейдите по ссылке для сброса пароля: ${resetUrl}\n\nСсылка действительна 1 час.`,
       html: `<p>Перейдите по ссылке для сброса пароля:</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>Ссылка действительна 1 час.</p>`,
     });
-  } else {
+  } else if (process.env.NODE_ENV !== 'production') {
     console.log('[Password reset] Link (no SMTP configured):', resetUrl);
   }
 }
@@ -44,7 +44,7 @@ router.post('/register', async (req, res) => {
     const result = await pool.query(
       `INSERT INTO users (email, password_hash, role, username, first_name, last_name, patronymic)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id, email, username, role, first_name, last_name, patronymic`,
+       RETURNING id, email, username, role, first_name, last_name, patronymic, created_at`,
       [
         emailVal,
         passwordHash,
@@ -61,7 +61,19 @@ router.post('/register', async (req, res) => {
       config.jwt.secret,
       { expiresIn: config.jwt.expiresIn }
     );
-    res.status(201).json({ token, user: { id: user.id, email: user.email, username: user.username, role: user.role || 'user', first_name: user.first_name, last_name: user.last_name, patronymic: user.patronymic } });
+    res.status(201).json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role || 'user',
+        first_name: user.first_name,
+        last_name: user.last_name,
+        patronymic: user.patronymic,
+        created_at: user.created_at,
+      },
+    });
   } catch (err) {
     if (err.code === '23505') {
       const msg = err.constraint?.includes('username') ? 'Имя пользователя уже занято' : 'Пользователь с таким email уже существует';
@@ -163,7 +175,7 @@ router.get('/me', authMiddleware, async (req, res) => {
   try {
     const id = req.user.userId;
     const result = await pool.query(
-      'SELECT id, email, username, role, first_name, last_name, patronymic FROM users WHERE id = $1',
+      'SELECT id, email, username, role, first_name, last_name, patronymic, created_at FROM users WHERE id = $1',
       [id]
     );
     if (!result.rows[0]) return res.status(404).json({ message: 'Пользователь не найден' });
@@ -203,7 +215,7 @@ router.patch('/me', authMiddleware, async (req, res) => {
     if (updates.length === 0) return res.status(400).json({ message: 'Нет данных для обновления' });
     values.push(id);
     const result = await pool.query(
-      `UPDATE users SET ${updates.join(', ')} WHERE id = $${i} RETURNING id, email, username, role, first_name, last_name, patronymic`,
+      `UPDATE users SET ${updates.join(', ')} WHERE id = $${i} RETURNING id, email, username, role, first_name, last_name, patronymic, created_at`,
       values
     );
     if (!result.rows[0]) return res.status(404).json({ message: 'Пользователь не найден' });

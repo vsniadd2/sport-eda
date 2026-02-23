@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import { FavoritesProvider } from './contexts/FavoritesContext';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import MainLayout from './layouts/MainLayout';
 import AdminLayout from './layouts/AdminLayout';
 import Home from './pages/Home/Home';
@@ -21,6 +22,7 @@ import Favorites from './pages/Favorites/Favorites';
 import Profile from './pages/Profile/Profile';
 import ProfileOrders from './pages/Profile/ProfileOrders';
 import ProfileFeedback from './pages/Profile/ProfileFeedback';
+import NotFound from './pages/NotFound/NotFound';
 import './App.css';
 
 function ScrollToTop() {
@@ -37,6 +39,7 @@ function ScrollToTop() {
 
 function App() {
   return (
+    <ThemeProvider>
     <AuthProvider>
       <CartProvider>
         <FavoritesProvider>
@@ -67,15 +70,15 @@ function App() {
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<Admin />} />
               </Route>
+              <Route path="*" element={<NotFound />} />
             </Route>
-
-            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
         </NotificationProvider>
         </FavoritesProvider>
       </CartProvider>
     </AuthProvider>
+    </ThemeProvider>
   );
 }
 

@@ -20,13 +20,32 @@ npm run migrate
 
 ## Запуск
 
-### 1. PostgreSQL (Docker)
+### Вариант «одна кнопка» (Docker)
+
+Установите [Docker Desktop](https://www.docker.com/products/docker-desktop/). Скопируйте проект на ПК, откройте терминал в корне проекта и выполните:
+
+```bash
+docker compose up --build
+```
+
+Когда в логе появится что-то вроде «Server running on port 5000», откройте в браузере **http://localhost:5000**.  
+Логин админа: **admin@gmail.com** / пароль: **1**.
+
+Остановка: `Ctrl+C` или в другом терминале `docker compose down`.
+
+Для продакшена (свой JWT, домен): создайте `backend/config.local.js` по образцу `backend/config.local.example.js` и при необходимости смонтируйте его в контейнер.
+
+---
+
+### Ручной запуск (разработка)
+
+#### 1. PostgreSQL (Docker)
 
 ```bash
 docker-compose up -d
 ```
 
-### 2. Backend
+#### 2. Backend
 
 ```bash
 cd backend
@@ -34,7 +53,7 @@ npm install
 npm run dev
 ```
 
-### 3. Frontend
+#### 3. Frontend
 
 ```bash
 cd frontend
@@ -43,6 +62,16 @@ npm run dev
 ```
 
 Откройте http://localhost:5173
+
+### Сборка и запуск как продакшен (без Docker)
+
+```bash
+npm run build          # собрать фронтенд
+# Скопируйте frontend/dist в backend/public, затем:
+npm run start          # запуск бэкенда (отдаёт статику из public)
+```
+
+Или используйте Docker; для прода задайте свои настройки в `backend/config.local.js` (или смонтируйте файл в контейнер).
 
 ## Структура
 

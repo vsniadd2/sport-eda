@@ -1,7 +1,21 @@
 .main {
   min-height: 100vh;
+  min-height: 100dvh;
   padding: 28px 24px 56px;
+  padding-bottom: max(56px, env(safe-area-inset-bottom));
   background: #f9fafb;
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding: 24px 16px 48px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main {
+    padding: 20px 12px 40px;
+  }
 }
 
 .container {

@@ -1,196 +1,256 @@
 .footer {
   margin-top: auto;
-  background: #2d2d2d;
-  color: #b0b0b0;
-  font-size: 12px;
+  background: #181411;
+  color: #fff;
+  padding: 64px 0 32px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 40px;
 }
 
-/* Top section - nav + contacts */
-.top {
-  padding: 18px 0 16px;
-}
-
-.navRow {
+.footerContent {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) 1fr;
-  gap: 18px 20px;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr;
+  gap: 48px;
+  margin-bottom: 48px;
 }
 
-.col h4 {
-  color: #fff;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  margin-bottom: 6px;
-  text-transform: uppercase;
+.brandSection {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.col ul {
-  list-style: none;
-}
-
-.col li {
-  margin-bottom: 3px;
-}
-
-.col a {
-  color: #b0b0b0;
-  transition: color 0.2s;
-}
-
-.col a:hover {
-  color: #fff;
-}
-
-/* Contacts column */
-.contacts {
-  min-width: 0;
-}
-
-.contactLine {
+.logoBlock {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
+  gap: 12px;
 }
 
-.icon {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-  opacity: 0.9;
+.logoIcon {
+  width: 32px;
+  height: 32px;
+  color: #fa6f05;
 }
 
-.addressBlock {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 8px;
+.logoIcon svg {
+  width: 100%;
+  height: 100%;
 }
 
-.addressBlock .icon {
-  margin-top: 2px;
+.logoText {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+  margin: 0;
 }
 
-.addressBlock p {
-  margin-bottom: 1px;
-}
-
-.hours {
-  font-size: 11px;
-  opacity: 0.85;
-  margin-bottom: 2px !important;
+.description {
+  color: #9ca3af;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
 }
 
 .social {
   display: flex;
-  gap: 6px;
+  gap: 16px;
 }
 
 .socialBtn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: #3d3d3d;
-  color: #b0b0b0;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #9ca3af;
   border-radius: 50%;
-  transition: background 0.2s, color 0.2s;
+  transition: all 0.2s;
+  text-decoration: none;
 }
 
 .socialBtn svg {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
 }
 
 .socialBtn:hover {
-  background: #4d4d4d;
+  background: #fa6f05;
   color: #fff;
 }
 
-/* Legal section */
-.legal {
-  border-top: 1px solid #404040;
-  padding: 10px 0;
+.col h3 {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 24px 0;
 }
 
-.legal p {
-  margin-bottom: 2px;
-  font-size: 10px;
-  line-height: 1.45;
-  color: #a0a0a0;
+.col ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.col li {
+  margin: 0;
+}
+
+.col a {
+  color: #9ca3af;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.col a:hover {
+  color: #fa6f05;
+}
+
+.contactsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px !important;
+}
+
+.contactsList li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.contactIcon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: #fa6f05;
+}
+
+.contactsList a {
+  color: #9ca3af;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.contactsList a:hover {
+  color: #fff;
+}
+
+.footerBottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 32px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .copyright {
-  color: #fff !important;
-  font-size: 12px !important;
-  margin-bottom: 4px !important;
+  color: #6b7280;
+  font-size: 12px;
+  margin: 0;
 }
 
-/* Payments section */
-.payments {
-  border-top: 1px solid #404040;
-  padding: 8px 0 12px;
-}
-
-.payRow {
+.paymentIcons {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px 12px;
   align-items: center;
+  gap: 16px;
 }
 
-.payImg {
-  height: 26px;
+.payIcon {
+  height: 24px;
   width: auto;
-  max-width: 40px;
-  object-fit: contain;
-  display: block;
+  opacity: 0.5;
+  filter: grayscale(1);
+  transition: all 0.2s;
 }
 
-.payBadge {
-  display: inline-flex;
-  align-items: center;
-  height: 26px;
-  padding: 0 8px;
-  background: transparent;
-  color: #9a9a9a;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+.payIcon:hover {
+  opacity: 1;
+  filter: grayscale(0);
 }
 
-@media (max-width: 900px) {
-  .navRow {
+@media (max-width: 1024px) {
+  .footerContent {
     grid-template-columns: repeat(2, 1fr);
+    gap: 32px;
   }
 
-  .contacts {
+  .brandSection {
     grid-column: span 2;
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .container {
     padding: 0 16px;
   }
 
-  .navRow {
-    grid-template-columns: 1fr;
-    gap: 14px;
+  .footer {
+    padding: 48px 0 24px;
   }
 
-  .contacts {
+  .footerContent {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .brandSection {
     grid-column: span 1;
   }
 
-  .top {
-    padding: 14px 0 12px;
+  .footerBottom {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 12px;
+  }
+
+  .footer {
+    padding: 40px 0 20px;
+  }
+
+  .footerContent {
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+
+  .logoIcon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .logoText {
+    font-size: 18px;
+  }
+
+  .col h3 {
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+
+  .paymentIcons {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .payIcon {
+    height: 20px;
   }
 }

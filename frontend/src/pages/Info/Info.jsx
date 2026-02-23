@@ -70,12 +70,11 @@ const SITEMAP_SECTIONS = [
   {
     id: 'info',
     title: 'Информация',
-    description: 'О магазине, оплата, доставка и карта сайта.',
+    description: 'О магазине, самовывоз и карта сайта.',
     icon: ICON_INFO,
     links: [
       { to: '/about', label: 'О магазине' },
-      { to: '/payment', label: 'Оплата' },
-      { to: '/delivery', label: 'Доставка' },
+      { to: '/payment', label: 'Самовывоз' },
       { to: '/sitemap', label: 'Карта сайта' },
     ],
   },
@@ -113,12 +112,33 @@ export default function Info({ page }) {
           <nav className={styles.breadcrumb}>
             <Link to="/">Главная</Link>
             <span className={styles.breadcrumbSep}> / </span>
-            <span>Оплата и доставка</span>
+            <span>Самовывоз</span>
           </nav>
-          <h1 className={styles.paymentDeliveryTitle}>Оплата и доставка</h1>
+          <h1 className={styles.paymentDeliveryTitle}>Самовывоз и оплата</h1>
           <p className={styles.paymentDeliveryIntro}>
-            Удобные способы оплаты и быстрая доставка по всей Беларуси. Мы работаем с физическими и юридическими лицами. Оформите заказ на сайте — менеджер свяжется для уточнения деталей, после чего мы соберём и отправим заказ в кратчайшие сроки. Ниже вы найдёте подробную информацию о способах оплаты, сроках доставки и условиях возврата.
+            Пока мы работаем только в режиме самовывоза. Оформите заказ на сайте — укажите телефон, менеджер свяжется и сообщит, когда заказ будет готов к выдаче. Оплата при получении.
           </p>
+
+          <section className={styles.paymentDeliverySection}>
+            <div className={styles.paymentDeliverySectionHeader}>
+              <span className={styles.paymentDeliveryIcon}>{ICON_TRUCK}</span>
+              <h2 className={styles.paymentDeliverySectionTitle}>Самовывоз</h2>
+            </div>
+            <div className={styles.paymentDeliveryCards}>
+              <div className={styles.paymentDeliveryCard}>
+                <h3 className={styles.paymentDeliveryCardTitle}>Как оформить заказ</h3>
+                <p className={styles.paymentDeliveryCardText}>
+                  Добавьте товары в корзину, перейдите в корзину и нажмите «Оформить заказ». Укажите телефон (обязательно) и при необходимости комментарий. После оформления менеджер свяжется с вами и сообщит, когда заказ можно забрать.
+                </p>
+              </div>
+              <div className={styles.paymentDeliveryCard}>
+                <h3 className={styles.paymentDeliveryCardTitle}>Адрес и время выдачи</h3>
+                <p className={styles.paymentDeliveryCardText}>
+                  Точный адрес точки самовывоза и удобное время выдачи менеджер уточнит при звонке. Заказ резервируется после подтверждения.
+                </p>
+              </div>
+            </div>
+          </section>
 
           <section className={styles.paymentDeliverySection}>
             <div className={styles.paymentDeliverySectionHeader}>
@@ -127,68 +147,14 @@ export default function Info({ page }) {
             </div>
             <div className={styles.paymentDeliveryCards}>
               <div className={styles.paymentDeliveryCard}>
-                <h3 className={styles.paymentDeliveryCardTitle}>Картой онлайн</h3>
-                <p className={styles.paymentDeliveryCardText}>
-                  Оплата банковской картой Visa или Mastercard при оформлении заказа. Безопасное проведение платежа через защищённый канал. Списание средств обычно происходит в течение нескольких минут; в редких случаях банк может обрабатывать платёж до 1–2 рабочих дней.
-                </p>
-              </div>
-              <div className={styles.paymentDeliveryCard}>
                 <h3 className={styles.paymentDeliveryCardTitle}>При получении</h3>
                 <p className={styles.paymentDeliveryCardText}>
-                  Наличными или картой курьеру при получении заказа. Удобно, если вы предпочитаете оплатить после проверки товара. Возможность оплаты картой при получении уточняйте у менеджера при подтверждении заказа.
-                </p>
-              </div>
-              <div className={styles.paymentDeliveryCard}>
-                <h3 className={styles.paymentDeliveryCardTitle}>Безопасность платежей</h3>
-                <p className={styles.paymentDeliveryCardText}>
-                  Мы не храним и не имеем доступа к полным данным вашей карты. Все операции проходят через платёжного провайдера с соблюдением стандартов безопасности. Рекомендуем не передавать данные карты третьим лицам и не оплачивать заказы по сомнительным ссылкам.
-                </p>
-              </div>
-              <div className={styles.paymentDeliveryCard}>
-                <h3 className={styles.paymentDeliveryCardTitle}>Возврат средств</h3>
-                <p className={styles.paymentDeliveryCardText}>
-                  При отмене заказа или возврате товара средства возвращаются на ту же карту, с которой была произведена оплата. Срок зачисления — до 10 рабочих дней в зависимости от банка. При оплате при получении возврат обсуждается индивидуально.
+                  Оплата наличными или картой в точке самовывоза при получении заказа. Удобно оплатить после проверки товара.
                 </p>
               </div>
             </div>
             <p className={styles.paymentDeliveryNote}>
-              По любым вопросам, связанным с оплатой, свяжитесь с нами через раздел «Заказать звонок» в шапке сайта или через «Обратную связь» в личном кабинете.
-            </p>
-          </section>
-
-          <section className={styles.paymentDeliverySection}>
-            <div className={styles.paymentDeliverySectionHeader}>
-              <span className={styles.paymentDeliveryIcon}>{ICON_TRUCK}</span>
-              <h2 className={styles.paymentDeliverySectionTitle}>Доставка</h2>
-            </div>
-            <div className={styles.paymentDeliveryCards}>
-              <div className={styles.paymentDeliveryCard}>
-                <h3 className={styles.paymentDeliveryCardTitle}>По Минску и регионам РБ</h3>
-                <p className={styles.paymentDeliveryCardText}>
-                  Доставка по Минску — в течение 1–2 рабочих дней после подтверждения заказа. По территории Беларуси — 2–4 рабочих дня в зависимости от региона. Для отдалённых населённых пунктов срок может быть увеличен; точные сроки и стоимость менеджер сообщит при подтверждении.
-                </p>
-              </div>
-              <div className={styles.paymentDeliveryCard}>
-                <h3 className={styles.paymentDeliveryCardTitle}>Бесплатная доставка</h3>
-                <p className={styles.paymentDeliveryCardText}>
-                  При заказе от 100 BYN доставка по Минску — бесплатно. Для других регионов порог бесплатной доставки уточняйте при оформлении. Самовывоз возможен по предварительной договорённости — укажите это в комментарии к заказу или при общении с менеджером.
-                </p>
-              </div>
-              <div className={styles.paymentDeliveryCard}>
-                <h3 className={styles.paymentDeliveryCardTitle}>Упаковка и сохранность</h3>
-                <p className={styles.paymentDeliveryCardText}>
-                  Все товары упаковываются аккуратно: банки и пакеты со спортивным питанием дополнительно фиксируются, хрупкие аксессуары защищаются. Мы заботимся о том, чтобы заказ дошёл до вас в идеальном состоянии. При получении рекомендуем проверить целостность упаковки.
-                </p>
-              </div>
-              <div className={styles.paymentDeliveryCard}>
-                <h3 className={styles.paymentDeliveryCardTitle}>Отслеживание заказа</h3>
-                <p className={styles.paymentDeliveryCardText}>
-                  После отправки заказа мы сообщим вам номер отправления и ссылку для отслеживания (если перевозчик поддерживает трекинг). Вы сможете видеть статус доставки в личном кабинете и по ссылке из SMS или email.
-                </p>
-              </div>
-            </div>
-            <p className={styles.paymentDeliveryNote}>
-              После отправки заказа вы получите информацию для отслеживания. Если у вас остались вопросы по доставке — напишите в раздел «Обратная связь» или закажите звонок.
+              По вопросам заказа и самовывоза используйте «Заказать звонок» в шапке сайта или «Обратную связь» в личном кабинете.
             </p>
           </section>
 
@@ -198,9 +164,27 @@ export default function Info({ page }) {
               <h2 className={styles.paymentDeliverySectionTitle}>Контакты и поддержка</h2>
             </div>
             <p className={styles.paymentDeliveryCardText}>
-              Нужна помощь с выбором товара, оформлением заказа или уточнением условий доставки? Используйте кнопку «Заказать звонок» в шапке сайта — мы перезвоним в удобное время. Либо войдите в личный кабинет и создайте обращение в разделе «Обратная связь» — мы ответим в течение рабочего дня.
+              Нужна помощь с выбором товара или оформлением заказа? Используйте кнопку «Заказать звонок» в шапке сайта — мы перезвоним в удобное время. Либо создайте обращение в разделе «Обратная связь» в личном кабинете — мы ответим в течение рабочего дня.
             </p>
           </section>
+        </div>
+      </main>
+    );
+  }
+
+  if (page === 'delivery') {
+    return (
+      <main className={styles.main}>
+        <div className={`${styles.container} ${styles.containerWide}`}>
+          <nav className={styles.breadcrumb}>
+            <Link to="/">Главная</Link>
+            <span className={styles.breadcrumbSep}> / </span>
+            <Link to="/payment">Самовывоз</Link>
+          </nav>
+          <h1 className={styles.paymentDeliveryTitle}>Самовывоз</h1>
+          <p className={styles.paymentDeliveryIntro}>
+            Сейчас доступен только самовывоз. Подробности — на странице <Link to="/payment">Самовывоз и оплата</Link>.
+          </p>
         </div>
       </main>
     );

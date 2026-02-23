@@ -1,7 +1,22 @@
 .main {
   min-height: calc(100vh - 180px);
+  min-height: calc(100dvh - 180px);
   padding: 24px 24px 64px;
+  padding-bottom: max(64px, env(safe-area-inset-bottom));
   background: #fff;
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding: 20px 16px;
+    padding-bottom: max(80px, calc(env(safe-area-inset-bottom) + 60px));
+  }
+}
+
+@media (max-width: 480px) {
+  .main {
+    padding: 16px 12px;
+  }
 }
 
 .container {
@@ -421,8 +436,14 @@
   font-size: 18px;
   font-weight: 700;
   color: var(--color-dark);
-  margin-bottom: 24px;
+  margin-bottom: 8px;
   letter-spacing: -0.01em;
+}
+
+.checkoutSubtitle {
+  font-size: 14px;
+  color: var(--color-gray);
+  margin-bottom: 20px;
 }
 
 .form {
@@ -514,59 +535,62 @@
 }
 
 .submitBtn {
-  --submit-primary: var(--color-dark, #111);
-  --submit-hover: var(--color-primary, #c84747);
-  padding: 0;
-  margin: 0;
-  margin-top: 8px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  position: relative;
-  display: inline-flex;
-  font-weight: 600;
-  font-size: 18px;
-  gap: 0.5rem;
+  display: flex;
   align-items: center;
-  min-height: 52px;
+  justify-content: center;
+  padding: 10px 20px;
+  margin-top: 8px;
+  background-color: #006aff;
+  border: 5px solid #c0dfff;
+  color: white;
+  gap: 6px;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-family: inherit;
 }
 
 .submitBtnText {
-  position: relative;
-  color: var(--submit-primary);
-  transition: color 0.3s ease-out;
+  font-size: 1.15em;
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
-.submitBtn::after {
-  position: absolute;
-  content: "";
-  width: 0;
-  left: 0;
-  bottom: 10px;
-  background: var(--submit-hover);
-  height: 2px;
-  transition: width 0.3s ease-out;
+.submitBtnSvg {
+  padding-top: 2px;
+  height: 100%;
+  width: fit-content;
 }
 
-.submitBtn:hover:not(:disabled) .submitBtnText {
-  color: var(--submit-hover);
-}
-
-.submitBtn:hover:not(:disabled)::after {
-  width: 100%;
-}
-
-.submitBtn:hover:not(:disabled) .submitBtnArrow {
-  transform: translateX(4px);
-  color: var(--submit-hover);
-}
-
-.submitBtnArrow {
-  color: var(--submit-primary);
-  transition: transform 0.2s, color 0.3s;
-  width: 18px;
+.submitBtnSvg svg {
+  width: 32px;
   height: 18px;
-  flex-shrink: 0;
+  color: white;
+}
+
+.submitBtn:hover:not(:disabled) {
+  border-color: #b1d8ff;
+  background-color: #1b7aff;
+}
+
+.submitBtn:active:not(:disabled) {
+  border-width: 3px;
+  border-color: #c0dfff;
+}
+
+.submitBtn:hover:not(:disabled) .submitBtnSvg svg {
+  animation: submitBtnJello 0.9s both;
+  transform-origin: left;
+}
+
+@keyframes submitBtnJello {
+  0% { transform: scale3d(1, 1, 1); }
+  30% { transform: scale3d(0.75, 1.25, 1); }
+  40% { transform: scale3d(1.25, 0.75, 1); }
+  50% { transform: scale3d(0.85, 1.15, 1); }
+  65% { transform: scale3d(1.05, 0.95, 1); }
+  75% { transform: scale3d(0.95, 1.05, 1); }
+  100% { transform: scale3d(1, 1, 1); }
 }
 
 .submitBtn:disabled {

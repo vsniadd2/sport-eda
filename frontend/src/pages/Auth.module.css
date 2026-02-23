@@ -1,36 +1,81 @@
+/* 1.txt: bg-background-light #f8f7f5, card white rounded-xl shadow-xl border #e6e0db */
 .wrapper {
   min-height: calc(100vh - 120px);
+  min-height: calc(100dvh - 120px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 56px 24px;
-  background: #fff;
+  padding: 48px 24px;
+  background: #f8f7f5;
+}
+
+@media (max-width: 768px) {
+  .wrapper {
+    padding: 40px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .wrapper {
+    padding: 24px 16px;
+    align-items: flex-start;
+    padding-top: 32px;
+  }
 }
 
 .card {
   width: 100%;
-  max-width: 450px;
+  max-width: 480px;
   background: #fff;
-  box-shadow:
-    0 187px 75px rgba(0, 0, 0, 0.01),
-    0 105px 63px rgba(0, 0, 0, 0.05),
-    0 47px 47px rgba(0, 0, 0, 0.09),
-    0 12px 26px rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(0, 0, 0, 0.1);
-  border-radius: 26px;
-  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e6e0db;
+  overflow: hidden;
 }
 
-.card h1,
-.card h2 {
-  font-size: 26px;
-  font-weight: 700;
-  margin: 0 0 24px;
-  color: #1a1a1a;
+.cardHeader {
+  height: 192px;
+  width: 100%;
+  background: linear-gradient(135deg, rgba(250, 111, 5, 0.15) 0%, rgba(230, 224, 219, 0.4) 100%);
+  position: relative;
+}
+
+.cardHeader::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, #fff, transparent 60%);
+}
+
+.cardBody {
+  padding: 8px 32px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cardTitleBlock {
   text-align: center;
+  margin-bottom: 32px;
+}
+
+.cardTitle {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #181411;
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+}
+
+.cardSubtitle {
+  font-size: 1rem;
+  color: #8c725f;
+  margin: 0;
+  line-height: 1.5;
 }
 
 .form {
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -38,62 +83,117 @@
 
 .input_container {
   width: 100%;
-  height: fit-content;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
 }
 
 .input_label {
-  font-size: 13px;
-  color: #8b8e98;
+  font-size: 14px;
+  color: #181411;
   font-weight: 600;
+}
+
+.passwordLabelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.forgotLinkInline {
+  font-size: 12px;
+  font-weight: 500;
+  color: #fa6f05;
+  text-decoration: none;
+}
+
+.forgotLinkInline:hover {
+  text-decoration: underline;
+}
+
+.passwordWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.passwordWrap .input_field {
+  padding-right: 48px;
+}
+
+.visibilityBtn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: #8c725f;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.2s;
+}
+
+.visibilityBtn:hover {
+  color: #fa6f05;
 }
 
 .input_field {
   width: 100%;
-  height: 52px;
-  padding: 0 0 0 18px;
-  border-radius: 9px;
+  min-height: 48px;
+  padding: 14px 16px;
+  border-radius: 8px;
   outline: none;
-  background-color: #f2f2f2;
-  border: 1px solid transparent;
-  transition: background 0.2s;
+  background: #fff;
+  border: 1px solid #e6e0db;
   font-family: inherit;
-  font-size: 17px;
+  font-size: 16px;
+  color: #181411;
   box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input_field::placeholder {
+  color: #8c725f;
 }
 
 .input_field:focus {
-  background-color: #eee;
+  border-color: #fa6f05;
+  box-shadow: 0 0 0 2px rgba(250, 111, 5, 0.2);
 }
 
 .input_field:invalid {
   box-shadow: none;
 }
 
-.input_field[type="password"] {
-  font-size: 17px;
-  letter-spacing: 0.08em;
-}
-
 .submitBtn {
-  height: 56px;
-  border-radius: 11px;
-  border: 0;
+  width: 100%;
+  min-height: 56px;
+  padding: 16px 24px;
+  border-radius: 8px;
+  border: none;
   outline: none;
   color: #fff;
   font-size: 16px;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  background: linear-gradient(180deg, #363636 0%, #1b1b1b 50%, #000 100%);
-  box-shadow: none;
-  transition: all 0.3s cubic-bezier(0.15, 0.83, 0.66, 1);
+  background: #fa6f05;
+  box-shadow: 0 4px 14px rgba(250, 111, 5, 0.25);
+  transition: background 0.2s, transform 0.1s;
 }
 
 .submitBtn:hover:not(:disabled) {
-  box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(0, 0, 0, 0.23);
+  background: #e06304;
+}
+
+.submitBtn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .submitBtn:disabled {
@@ -104,10 +204,34 @@
 .error {
   background: #fef2f2;
   color: #dc2626;
-  padding: 16px 18px;
-  border-radius: 9px;
-  font-size: 15px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  font-size: 14px;
   border: 1px solid #fecaca;
+}
+
+.cardFooter {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e6e0db;
+  width: 100%;
+  text-align: center;
+}
+
+.footerText {
+  font-size: 14px;
+  color: #8c725f;
+  margin: 0;
+}
+
+.footerLink {
+  color: #fa6f05;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.footerLink:hover {
+  text-decoration: underline;
 }
 
 .footer {
@@ -118,7 +242,7 @@
 }
 
 .footer a {
-  color: var(--color-primary);
+  color: #fa6f05;
   font-weight: 600;
 }
 
@@ -130,19 +254,224 @@
 }
 
 .forgotLink a {
-  color: #8b8e98;
+  color: #8c725f;
   font-weight: 500;
 }
 
 .forgotLink a:hover {
-  color: #242424;
+  color: #181411;
 }
 
 .successMessage {
   padding: 18px 20px;
-  border-radius: 9px;
+  border-radius: 8px;
   font-size: 16px;
   background: #f0fdf4;
   color: #166534;
   border: 1px solid #bbf7d0;
+}
+
+@media (max-width: 480px) {
+  .cardBody {
+    padding: 8px 20px 32px;
+  }
+
+  .cardTitle {
+    font-size: 1.5rem;
+  }
+}
+
+/* --- Register page (1.txt) --- */
+.cardRegister {
+  max-width: 640px;
+}
+
+.formHeaderRegister {
+  padding: 32px 32px 24px;
+  border-bottom: 1px solid #f5f2f0;
+}
+
+.formHeaderTitle {
+  font-size: 1.875rem;
+  font-weight: 800;
+  color: #fa6f05;
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+}
+
+.formHeaderSubtitle {
+  font-size: 1rem;
+  color: #8c725f;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.formRegister {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .formRow {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.labelOptional {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #8c725f;
+}
+
+.inputHint {
+  font-size: 10px;
+  color: #8c725f;
+  margin: 4px 0 0;
+  padding-left: 4px;
+  line-height: 1.3;
+}
+
+.submitWrapRegister {
+  padding-top: 8px;
+}
+
+.submitBtnIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.cardFooterRegister {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: none;
+}
+
+/* --- Forgot Password page (1.txt) --- */
+.cardForgot {
+  max-width: 440px;
+  padding: 32px 40px 40px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+@media (min-width: 768px) {
+  .cardForgot {
+    padding: 40px;
+  }
+}
+
+.forgotIconWrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.forgotIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(250, 111, 5, 0.1);
+  color: #fa6f05;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.forgotIcon svg {
+  flex-shrink: 0;
+}
+
+.forgotHeader {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.forgotTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #181411;
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+  .forgotTitle {
+    font-size: 1.875rem;
+  }
+}
+
+.forgotSubtitle {
+  font-size: 0.875rem;
+  color: #8c725f;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.formForgot {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.emailInputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.emailInputWrap .input_field {
+  padding-left: 48px;
+}
+
+.emailInputIcon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #8c725f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.forgotBackWrap {
+  text-align: center;
+  padding-top: 8px;
+}
+
+.forgotBackLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fa6f05;
+  text-decoration: none;
+  transition: gap 0.2s;
+}
+
+.forgotBackLink:hover {
+  text-decoration: underline;
+}
+
+.forgotBackLink:hover .forgotBackIcon {
+  transform: translateX(-2px);
+}
+
+.forgotBackIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+  transition: transform 0.2s;
 }

@@ -367,40 +367,75 @@ router.get('/visits', async (req, res) => {
 
 router.get('/stats', async (req, res) => {
   try {
-    const summary = await pool.query(`
-      SELECT
+    const year = req.query.year != null ? parseInt(req.query.year, 10) : null;
+    const month = req.query.month != null ? parseInt(req.query.month, 10) : null;
+    const useMonth = year != null && !Number.isNaN(year) && month != null && !Number.isNaN(month) && month >= 1 && month <= 12;
+    const monthStart = useMonth ? `${year}-${String(month).padStart(2, '0')}-01` : null;
+
+    const dateFilter = useMonth && monthStart
+      ? `o.created_at >= $1::date AND o.created_at < $1::date + INTERVAL '1 month'`
+      : `o.created_at >= NOW() - INTERVAL '30 days'`;
+    const params = useMonth && monthStart ? [monthStart] : [];
+
+    const summary = await pool.query(
+      `SELECT
         COALESCE(SUM(o.total), 0)::float AS total_revenue_30,
         COUNT(o.id)::int AS total_orders_30,
         CASE WHEN COUNT(o.id) > 0 THEN COALESCE(SUM(o.total), 0) / COUNT(o.id) ELSE 0 END::float AS average_check_30
       FROM orders o
-      WHERE o.created_at >= NOW() - INTERVAL '30 days'
-    `);
-    const salesByDay = await pool.query(`
-      SELECT DATE(o.created_at) AS date, COUNT(o.id)::int AS orders_count, COALESCE(SUM(o.total), 0)::float AS total
+      WHERE ${dateFilter}`,
+      params
+    );
+    const salesByDay = await pool.query(
+      `SELECT TO_CHAR(DATE(o.created_at), 'YYYY-MM-DD') AS date, COUNT(o.id)::int AS orders_count, COALESCE(SUM(o.total), 0)::float AS total
       FROM orders o
-      WHERE o.created_at >= NOW() - INTERVAL '30 days'
+      WHERE ${dateFilter}
       GROUP BY DATE(o.created_at)
-      ORDER BY date
-    `);
-    const byCategory = await pool.query(`
-      SELECT c.id, c.name, COALESCE(SUM(oi.quantity * oi.price), 0)::float AS total, SUM(oi.quantity)::int AS quantity
-      FROM categories c
-      LEFT JOIN products p ON p.category_id = c.id
-      LEFT JOIN order_items oi ON oi.product_id = p.id
-      LEFT JOIN orders o ON o.id = oi.order_id AND o.created_at >= NOW() - INTERVAL '30 days'
-      GROUP BY c.id, c.name
-      ORDER BY total DESC
-    `);
-    const byProduct = await pool.query(`
-      SELECT p.id, p.name, COALESCE(SUM(oi.quantity), 0)::int AS quantity, COALESCE(SUM(oi.quantity * oi.price), 0)::float AS total
-      FROM products p
-      LEFT JOIN order_items oi ON oi.product_id = p.id
-      LEFT JOIN orders o ON o.id = oi.order_id AND o.created_at >= NOW() - INTERVAL '30 days'
-      GROUP BY p.id, p.name
-      HAVING COALESCE(SUM(oi.quantity), 0) > 0
-      ORDER BY total DESC
-      LIMIT 20
-    `);
+      ORDER BY date`,
+      params
+    );
+    const byCategory = useMonth && monthStart
+      ? await pool.query(
+          `SELECT c.id, c.name, COALESCE(SUM(oi.quantity * oi.price), 0)::float AS total, COALESCE(SUM(oi.quantity), 0)::int AS quantity
+          FROM categories c
+          LEFT JOIN products p ON p.category_id = c.id
+          LEFT JOIN order_items oi ON oi.product_id = p.id
+          LEFT JOIN orders o ON o.id = oi.order_id AND o.created_at >= $1::date AND o.created_at < $1::date + INTERVAL '1 month'
+          GROUP BY c.id, c.name
+          ORDER BY total DESC`,
+          [monthStart]
+        )
+      : await pool.query(`
+          SELECT c.id, c.name, COALESCE(SUM(oi.quantity * oi.price), 0)::float AS total, COALESCE(SUM(oi.quantity), 0)::int AS quantity
+          FROM categories c
+          LEFT JOIN products p ON p.category_id = c.id
+          LEFT JOIN order_items oi ON oi.product_id = p.id
+          LEFT JOIN orders o ON o.id = oi.order_id AND o.created_at >= NOW() - INTERVAL '30 days'
+          GROUP BY c.id, c.name
+          ORDER BY total DESC
+        `);
+    const byProduct = useMonth && monthStart
+      ? await pool.query(
+          `SELECT p.id, p.name, COALESCE(SUM(oi.quantity), 0)::int AS quantity, COALESCE(SUM(oi.quantity * oi.price), 0)::float AS total
+          FROM products p
+          LEFT JOIN order_items oi ON oi.product_id = p.id
+          LEFT JOIN orders o ON o.id = oi.order_id AND o.created_at >= $1::date AND o.created_at < $1::date + INTERVAL '1 month'
+          GROUP BY p.id, p.name
+          HAVING COALESCE(SUM(oi.quantity), 0) > 0
+          ORDER BY total DESC
+          LIMIT 20`,
+          [monthStart]
+        )
+      : await pool.query(`
+          SELECT p.id, p.name, COALESCE(SUM(oi.quantity), 0)::int AS quantity, COALESCE(SUM(oi.quantity * oi.price), 0)::float AS total
+          FROM products p
+          LEFT JOIN order_items oi ON oi.product_id = p.id
+          LEFT JOIN orders o ON o.id = oi.order_id AND o.created_at >= NOW() - INTERVAL '30 days'
+          GROUP BY p.id, p.name
+          HAVING COALESCE(SUM(oi.quantity), 0) > 0
+          ORDER BY total DESC
+          LIMIT 20
+        `);
     const row = summary.rows[0] || {};
     res.json({
       summary: {
@@ -411,6 +446,7 @@ router.get('/stats', async (req, res) => {
       salesByDay: salesByDay.rows,
       byCategory: byCategory.rows,
       byProduct: byProduct.rows,
+      period: useMonth && monthStart ? { year, month } : null,
     });
   } catch (err) {
     console.error(err);
@@ -525,9 +561,47 @@ router.delete('/categories/:id/image', async (req, res) => {
 
 const parseBool = (v) => v === true || v === 'true' || v === '1';
 
-router.post('/products', upload.single('image'), async (req, res) => {
+/** Список товаров с настройками страницы для админки */
+router.get('/products', async (req, res) => {
   try {
-    const { category_id, name, description, weight, price, sale_price, image_url, is_sale, is_hit, is_recommended, in_stock, quantity } = req.body || {};
+    const result = await pool.query(`
+      SELECT p.id, p.category_id, p.name, p.description, p.weight, p.price, p.sale_price, p.image_url, p.article, p.manufacturer,
+        (p.image_data IS NOT NULL OR (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) > 0) AS has_image,
+        (SELECT COUNT(*)::int FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
+        COALESCE(p.in_stock, true) AS in_stock, COALESCE(p.quantity, 0)::int AS quantity,
+        COALESCE(p.is_sale, false) AS is_sale, COALESCE(p.is_hit, false) AS is_hit, COALESCE(p.is_recommended, false) AS is_recommended,
+        p.short_description, p.trust_badges, p.how_to_use_intro, p.how_to_use_step1, p.how_to_use_step2, p.how_to_use_step3,
+        COALESCE(p.show_how_to_use, true) AS show_how_to_use, COALESCE(p.show_related, true) AS show_related
+      FROM products p
+      ORDER BY p.category_id, p.id
+    `);
+    const rows = result.rows.map((r) => {
+      const row = { ...r };
+      if (row.trust_badges && typeof row.trust_badges === 'string') {
+        try {
+          row.trust_badges = JSON.parse(row.trust_badges);
+        } catch {
+          row.trust_badges = null;
+        }
+      }
+      if (!Array.isArray(row.trust_badges)) row.trust_badges = null;
+      return row;
+    });
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+const productImageFields = [
+  { name: 'image', maxCount: 1 },
+  { name: 'images', maxCount: 4 },
+];
+
+router.post('/products', upload.fields(productImageFields), async (req, res) => {
+  try {
+    const { category_id, name, description, short_description, weight, price, sale_price, image_url, is_sale, is_hit, is_recommended, in_stock, quantity, article, manufacturer } = req.body || {};
     if (!category_id || !name || price === undefined) return res.status(400).json({ message: 'Категория, название и цена обязательны' });
     const sale = parseBool(is_sale);
     const hit = parseBool(is_hit);
@@ -535,22 +609,25 @@ router.post('/products', upload.single('image'), async (req, res) => {
     const inStock = in_stock === undefined ? true : parseBool(in_stock);
     const qty = quantity !== undefined && quantity !== '' ? Math.max(0, parseInt(quantity, 10) || 0) : 0;
     const salePriceVal = sale_price !== undefined && sale_price !== '' ? parseFloat(sale_price) : null;
-    const file = req.file;
-    if (file) {
-      const result = await pool.query(
-        `INSERT INTO products (category_id, name, description, weight, price, sale_price, image_url, image_data, image_content_type, is_sale, is_hit, is_recommended, in_stock, quantity)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id, category_id, name, description, weight, price, sale_price, image_url, created_at`,
-        [category_id, name, description || null, weight || null, parseFloat(price), salePriceVal, null, file.buffer, file.mimetype, sale, hit, rec, inStock, qty]
-      );
-      getIO().emitToAdmin('catalogChanged');
-      getIO().emitToAll('productsChanged');
-      return res.status(201).json(result.rows[0]);
-    }
+    const shortDescVal = short_description !== undefined && short_description !== '' ? String(short_description).trim() : null;
+    const articleVal = article !== undefined && article !== '' && !Number.isNaN(parseInt(article, 10)) ? parseInt(article, 10) : null;
+    const manufacturerVal = manufacturer !== undefined && String(manufacturer).trim() !== '' ? String(manufacturer).trim() : null;
     const result = await pool.query(
-      `INSERT INTO products (category_id, name, description, weight, price, sale_price, image_url, is_sale, is_hit, is_recommended, in_stock, quantity)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
-      [category_id, name, description || null, weight || null, parseFloat(price), salePriceVal, image_url || null, sale, hit, rec, inStock, qty]
+      `INSERT INTO products (category_id, name, description, short_description, weight, price, sale_price, image_url, is_sale, is_hit, is_recommended, in_stock, quantity, article, manufacturer)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id, category_id, name, description, short_description, weight, price, sale_price, image_url, created_at`,
+      [category_id, name, description || null, shortDescVal, weight || null, parseFloat(price), salePriceVal, image_url || null, sale, hit, rec, inStock, qty, articleVal, manufacturerVal]
     );
+    const productId = result.rows[0].id;
+    const files = req.files?.images?.length ? req.files.images : (req.files?.image?.length ? req.files.image : []);
+    for (let i = 0; i < Math.min(files.length, 4); i++) {
+      const file = files[i];
+      if (file?.buffer) {
+        await pool.query(
+          'INSERT INTO product_images (product_id, sort_order, image_data, image_content_type) VALUES ($1, $2, $3, $4)',
+          [productId, i, file.buffer, file.mimetype]
+        );
+      }
+    }
     getIO().emitToAdmin('catalogChanged');
     getIO().emitToAll('productsChanged');
     res.status(201).json(result.rows[0]);
@@ -560,16 +637,20 @@ router.post('/products', upload.single('image'), async (req, res) => {
   }
 });
 
-router.patch('/products/:id', upload.single('image'), async (req, res) => {
+router.patch('/products/:id', upload.fields(productImageFields), async (req, res) => {
   try {
     const { id } = req.params;
     const body = req.body || {};
-    const { name, description, weight, price, sale_price, image_url, category_id, is_sale, is_hit, is_recommended, in_stock, quantity } = body;
+    const {
+      name, description, weight, price, sale_price, image_url, category_id, is_sale, is_hit, is_recommended, in_stock, quantity,
+      short_description, trust_badges, how_to_use_intro, how_to_use_step1, how_to_use_step2, how_to_use_step3, show_how_to_use, show_related,
+      article, manufacturer,
+    } = body;
     const updates = [];
     const values = [];
     let i = 1;
     if (name !== undefined) { updates.push(`name = $${i++}`); values.push(name); }
-    if (description !== undefined) { updates.push(`description = $${i++}`); values.push(description); }
+    if (description !== undefined) { updates.push(`description = $${i++}`); values.push(description === '' ? null : description); }
     if (weight !== undefined) { updates.push(`weight = $${i++}`); values.push(weight); }
     if (price !== undefined) { updates.push(`price = $${i++}`); values.push(parseFloat(price)); }
     if (sale_price !== undefined) { updates.push(`sale_price = $${i++}`); values.push(sale_price === '' || sale_price == null ? null : parseFloat(sale_price)); }
@@ -580,15 +661,54 @@ router.patch('/products/:id', upload.single('image'), async (req, res) => {
     if (is_recommended !== undefined) { updates.push(`is_recommended = $${i++}`); values.push(parseBool(is_recommended)); }
     if (in_stock !== undefined) { updates.push(`in_stock = $${i++}`); values.push(parseBool(in_stock)); }
     if (quantity !== undefined && quantity !== '') { updates.push(`quantity = $${i++}`); values.push(Math.max(0, parseInt(quantity, 10) || 0)); }
-    if (req.file) {
-      updates.push(`image_data = $${i++}`); values.push(req.file.buffer);
-      updates.push(`image_content_type = $${i++}`); values.push(req.file.mimetype);
+    if (short_description !== undefined) { updates.push(`short_description = $${i++}`); values.push(short_description === '' ? null : short_description); }
+    if (trust_badges !== undefined) {
+      const val = typeof trust_badges === 'string' ? trust_badges : (Array.isArray(trust_badges) ? JSON.stringify(trust_badges) : null);
+      updates.push(`trust_badges = $${i++}`);
+      values.push(val === '' ? null : val);
     }
-    if (updates.length === 0) return res.status(400).json({ message: 'Нет данных для обновления' });
-    values.push(id);
+    if (how_to_use_intro !== undefined) { updates.push(`how_to_use_intro = $${i++}`); values.push(how_to_use_intro === '' ? null : how_to_use_intro); }
+    if (how_to_use_step1 !== undefined) { updates.push(`how_to_use_step1 = $${i++}`); values.push(how_to_use_step1 === '' ? null : how_to_use_step1); }
+    if (how_to_use_step2 !== undefined) { updates.push(`how_to_use_step2 = $${i++}`); values.push(how_to_use_step2 === '' ? null : how_to_use_step2); }
+    if (how_to_use_step3 !== undefined) { updates.push(`how_to_use_step3 = $${i++}`); values.push(how_to_use_step3 === '' ? null : how_to_use_step3); }
+    if (show_how_to_use !== undefined) { updates.push(`show_how_to_use = $${i++}`); values.push(parseBool(show_how_to_use)); }
+    if (show_related !== undefined) { updates.push(`show_related = $${i++}`); values.push(parseBool(show_related)); }
+    if (article !== undefined) {
+      const articleVal = article === '' || article == null ? null : (Number.isNaN(parseInt(article, 10)) ? null : parseInt(article, 10));
+      updates.push(`article = $${i++}`);
+      values.push(articleVal);
+    }
+    if (manufacturer !== undefined) {
+      updates.push(`manufacturer = $${i++}`);
+      values.push(typeof manufacturer === 'string' && manufacturer.trim() !== '' ? manufacturer.trim() : null);
+    }
+    if (updates.length === 0 && !req.files?.images?.length && !req.files?.image?.length) return res.status(400).json({ message: 'Нет данных для обновления' });
+    if (updates.length > 0) {
+      values.push(id);
+      await pool.query(
+        `UPDATE products SET ${updates.join(', ')} WHERE id = $${i}`,
+        values
+      );
+    }
+    const files = req.files?.images?.length ? req.files.images : (req.files?.image?.length ? req.files.image : []);
+    if (files.length > 0) {
+      await pool.query('DELETE FROM product_images WHERE product_id = $1', [id]);
+      for (let j = 0; j < Math.min(files.length, 4); j++) {
+        const file = files[j];
+        if (file?.buffer) {
+          await pool.query(
+            'INSERT INTO product_images (product_id, sort_order, image_data, image_content_type) VALUES ($1, $2, $3, $4)',
+            [id, j, file.buffer, file.mimetype]
+          );
+        }
+      }
+    }
     const result = await pool.query(
-      `UPDATE products SET ${updates.join(', ')} WHERE id = $${i} RETURNING id, category_id, name, description, weight, price, sale_price, image_url, created_at`,
-      values
+      `SELECT p.id, p.category_id, p.name, p.description, p.weight, p.price, p.sale_price, p.image_url, p.created_at,
+              (p.image_data IS NOT NULL OR (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) > 0) AS has_image,
+              (SELECT COUNT(*)::int FROM product_images pi WHERE pi.product_id = p.id) AS image_count
+       FROM products p WHERE p.id = $1`,
+      [id]
     );
     if (!result.rows[0]) return res.status(404).json({ message: 'Товар не найден' });
     getIO().emitToAdmin('catalogChanged');

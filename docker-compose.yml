@@ -1,18 +1,38 @@
-# База данных: том postgres_data сохраняет данные при перезапуске контейнера.
-# Не используйте «docker compose down -v» — флаг -v удалит том и все данные.
+# Локальная разработка: только БД — docker compose up -d postgres; backend на хосте: npm run dev (порт 5001)
+# Полный стек в Docker: docker compose up — приложение на порту 5000
 services:
   postgres:
-    image: postgres:16
-    container_name: sport-eda-db
-    restart: unless-stopped
+    image: postgres:16-alpine
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: sport_eda
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: sport_eda
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      # Подключение к контейнеру postgres (без .env-файлов)
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: sport_eda
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   postgres_data:

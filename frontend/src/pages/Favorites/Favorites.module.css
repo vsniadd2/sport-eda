@@ -1,7 +1,21 @@
 .main {
   min-height: calc(100vh - 180px);
+  min-height: calc(100dvh - 180px);
   padding: 24px 24px 64px;
+  padding-bottom: max(64px, env(safe-area-inset-bottom));
   background: #fff;
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding: 20px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main {
+    padding: 16px 12px;
+  }
 }
 
 .container {

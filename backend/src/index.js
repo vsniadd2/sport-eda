@@ -1,4 +1,5 @@
 import path from 'path';
+import { existsSync } from 'fs';
 import { pathToFileURL } from 'url';
 import { fileURLToPath } from 'url';
 import express from 'express';
@@ -19,6 +20,7 @@ import favoritesRoutes from './routes/favorites.js';
 import feedbackRoutes from './routes/feedback.js';
 import visitRoutes from './routes/visits.js';
 import { getIO } from './socket.js';
+import { getCatalogProducts } from './routes/products.js';
 import cookieParser from 'cookie-parser';
 
 // Режим «только заполнение БД»: не запускаем сервер, только скрипт seed-mock
@@ -32,13 +34,22 @@ if (process.argv.includes('seed-mock')) {
       process.exit(1);
     });
 } else {
+  if (config.nodeEnv === 'production' && config.jwt.secret === 'sport-eda-jwt-secret-key-change-in-production') {
+    console.warn('Предупреждение: в продакшене задайте свой jwt.secret в backend/config.local.js');
+  }
   const app = express();
   const httpServer = createServer(app);
+  const corsOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    `http://localhost:${config.port}`,
+    config.frontendUrl,
+  ].filter(Boolean);
   const io = new Server(httpServer, {
-    cors: { origin: ['http://localhost:5173', 'http://localhost:3000'] },
+    cors: { origin: corsOrigins },
   });
 
-  app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:3000'], credentials: true }));
+  app.use(cors({ origin: corsOrigins, credentials: true }));
   app.use(express.json());
   app.use(cookieParser());
 
@@ -54,6 +65,22 @@ if (process.argv.includes('seed-mock')) {
         }
       } catch {}
     }
+
+    socket.on('catalog:query', async (params) => {
+      try {
+        const payload = params && typeof params === 'object' ? params : {};
+        const products = await getCatalogProducts({
+          category: payload.category || undefined,
+          search: payload.search || undefined,
+          price_min: payload.price_min != null ? payload.price_min : undefined,
+          price_max: payload.price_max != null ? payload.price_max : undefined,
+        });
+        socket.emit('catalog:results', { products });
+      } catch (err) {
+        console.error('catalog:query', err);
+        socket.emit('catalog:results', { products: [], error: true });
+      }
+    });
   });
 
   app.get('/api/health', (req, res) => {
@@ -70,6 +97,16 @@ if (process.argv.includes('seed-mock')) {
   app.use('/api/favorites', favoritesRoutes);
   app.use('/api/feedback', feedbackRoutes);
   app.use('/api/visit', visitRoutes);
+
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const publicDir = path.join(__dirname, '..', 'public');
+  if (existsSync(publicDir)) {
+    app.use(express.static(publicDir));
+    app.get('*', (req, res, next) => {
+      if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) return next();
+      res.sendFile(path.join(publicDir, 'index.html'));
+    });
+  }
 
   getIO().setInstance(io);
 

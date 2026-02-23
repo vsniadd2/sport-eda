@@ -28,7 +28,7 @@ router.get('/product/:id/can-review', authMiddleware, async (req, res) => {
       [req.user.userId, id]
     );
     const existing = await pool.query(
-      'SELECT id, rating, text, created_at FROM reviews WHERE user_id = $1 AND product_id = $2 LIMIT 1',
+      'SELECT id, rating, rating_quality, rating_convenience, text, created_at FROM reviews WHERE user_id = $1 AND product_id = $2 LIMIT 1',
       [req.user.userId, id]
     );
     const review = existing.rows[0] || null;
@@ -39,13 +39,20 @@ router.get('/product/:id/can-review', authMiddleware, async (req, res) => {
   }
 });
 
+const parseRating = (v) => {
+  const n = parseInt(v, 10);
+  return Number.isInteger(n) && n >= 1 && n <= 5 ? n : null;
+};
+
 router.post('/product/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
-    const { rating, text } = req.body;
+    const { rating, rating_quality, rating_convenience, text } = req.body;
     if (!rating || rating < 1 || rating > 5) {
       return res.status(400).json({ message: 'Рейтинг от 1 до 5' });
     }
+    const quality = parseRating(rating_quality);
+    const convenience = parseRating(rating_convenience);
     const exists = await pool.query('SELECT id FROM products WHERE id = $1', [id]);
     if (!exists.rows[0]) return res.status(404).json({ message: 'Товар не найден' });
     const bought = await pool.query(
@@ -58,10 +65,12 @@ router.post('/product/:id', authMiddleware, async (req, res) => {
       return res.status(403).json({ message: 'Оставить отзыв могут только покупатели этого товара' });
     }
     const result = await pool.query(
-      `INSERT INTO reviews (user_id, product_id, rating, text) VALUES ($1, $2, $3, $4)
-       ON CONFLICT (user_id, product_id) DO UPDATE SET rating = $3, text = $4, created_at = NOW()
+      `INSERT INTO reviews (user_id, product_id, rating, rating_quality, rating_convenience, text)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (user_id, product_id) DO UPDATE SET
+         rating = $3, rating_quality = $4, rating_convenience = $5, text = $6, created_at = NOW()
        RETURNING *`,
-      [req.user.userId, id, rating, text || null]
+      [req.user.userId, id, rating, quality, convenience, text || null]
     );
     if (!result.rows[0]) return res.status(400).json({ message: 'Ошибка сохранения отзыва' });
     const review = result.rows[0];

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams, Link } from 'react-router-dom';
 import { io } from 'socket.io-client';
@@ -28,8 +28,23 @@ function getFeedbackAuthorLabel(t) {
 }
 
 const CHART_COLORS = ['#c45c26', '#3b82f6', '#eab308', '#22c55e', '#a84d1f', '#8b5cf6'];
+const VISITS_DAY_WINDOW = 7;
 
 const ADMIN_TABS = ['users', 'orders', 'callbacks', 'feedback', 'reviews', 'catalog', 'visits', 'banners', 'stats'];
+
+function buildVisitsChartForDay(selectedVisitDate, visitsByDay) {
+  if (!selectedVisitDate || !visitsByDay.length) return [];
+  const center = new Date(selectedVisitDate + 'T12:00:00');
+  const map = new Map(visitsByDay.map((r) => [r.date, Number(r.count)]));
+  const out = [];
+  for (let i = -Math.floor(VISITS_DAY_WINDOW / 2); i <= Math.ceil(VISITS_DAY_WINDOW / 2) - 1; i++) {
+    const d = new Date(center);
+    d.setDate(d.getDate() + i);
+    const dateStr = d.toISOString().slice(0, 10);
+    out.push({ date: dateStr, count: map.get(dateStr) ?? 0 });
+  }
+  return out;
+}
 
 export default function Admin() {
   useAuth();
@@ -39,6 +54,7 @@ export default function Admin() {
   const tab = ADMIN_TABS.includes(tabParam) ? tabParam : 'users';
   const setTab = (id) => setSearchParams({ tab: id });
   const [catalogSubTab] = useState('categories'); // оставлено для стабильного размера deps, UI — дерево категорий
+  const [catalogSearchQuery, setCatalogSearchQuery] = useState('');
   const [expandedCategoryIds, setExpandedCategoryIds] = useState([]);
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [addProductModalCategoryId, setAddProductModalCategoryId] = useState(null);
@@ -61,7 +77,6 @@ export default function Admin() {
   const [callbacksSubTab, setCallbacksSubTab] = useState('active');
   const [callbackToggling, setCallbackToggling] = useState(null);
   const [orderPaymentToggling, setOrderPaymentToggling] = useState(null);
-  const [orderShipToggling, setOrderShipToggling] = useState(null);
   const [orderProcessToggling, setOrderProcessToggling] = useState(null);
   const [feedbackTickets, setFeedbackTickets] = useState([]);
   const [selectedFeedbackId, setSelectedFeedbackId] = useState(null);
@@ -71,6 +86,9 @@ export default function Admin() {
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [stats, setStats] = useState(null);
+  const [selectedStatsMonth, setSelectedStatsMonth] = useState(null);
+  const [statsCalendarOpen, setStatsCalendarOpen] = useState(false);
+  const statsCalendarRef = useRef(null);
   const [visitsByDay, setVisitsByDay] = useState([]);
   const [visitsTodayCount, setVisitsTodayCount] = useState(0);
   const [selectedVisitDate, setSelectedVisitDate] = useState('');
@@ -78,7 +96,10 @@ export default function Admin() {
   const [showAddBannerModal, setShowAddBannerModal] = useState(false);
   const [addBannerFile, setAddBannerFile] = useState(null);
   const [addBannerLinkUrl, setAddBannerLinkUrl] = useState('');
+  const [addBannerLabel, setAddBannerLabel] = useState('');
   const [addBannerTitle, setAddBannerTitle] = useState('');
+  const [addBannerSubtitle, setAddBannerSubtitle] = useState('');
+  const [addBannerButtonText, setAddBannerButtonText] = useState('');
   const [bannerSaving, setBannerSaving] = useState(false);
   const [bannerDeleting, setBannerDeleting] = useState(null);
   const [adminReviews, setAdminReviews] = useState([]);
@@ -96,9 +117,26 @@ export default function Admin() {
   const [addProductSalePercent, setAddProductSalePercent] = useState('');
   const [productSalePrice, setProductSalePrice] = useState({});
   const [productSalePercent, setProductSalePercent] = useState({});
+  const [productImagePreviewUrls, setProductImagePreviewUrls] = useState({});
+  const [addProductImagePreviewUrls, setAddProductImagePreviewUrls] = useState([]);
   const totalRevenue = stats?.summary != null ? Number(stats.summary.totalRevenue) : null;
   const totalOrders = stats?.summary != null ? Number(stats.summary.totalOrders) : null;
   const averageOrder = stats?.summary != null && stats.summary.totalOrders > 0 ? Number(stats.summary.averageCheck) : null;
+
+  const salesByDayChart = useMemo(() => {
+    const raw = stats?.salesByDay || [];
+    if (!selectedStatsMonth) return raw;
+    const year = selectedStatsMonth.year;
+    const month = selectedStatsMonth.month;
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const map = new Map(raw.map((r) => [String(r.date).slice(0, 10), { ...r, total: Number(r.total) || 0 }]));
+    const result = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      result.push(map.get(dateStr) || { date: dateStr, orders_count: 0, total: 0 });
+    }
+    return result;
+  }, [stats?.salesByDay, selectedStatsMonth]);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -194,7 +232,8 @@ export default function Admin() {
       const formData = new FormData();
       formData.append('image', addBannerFile);
       formData.append('link_url', addBannerLinkUrl.trim());
-      formData.append('title', addBannerTitle.trim());
+      const titleLines = [addBannerLabel.trim(), addBannerTitle.trim(), addBannerSubtitle.trim(), addBannerButtonText.trim()];
+      formData.append('title', titleLines.join('\n'));
       formData.append('sort_order', String(banners.length));
       const res = await fetch(`${API_URL}/admin/banners`, {
         method: 'POST',
@@ -208,7 +247,10 @@ export default function Admin() {
       setShowAddBannerModal(false);
       setAddBannerFile(null);
       setAddBannerLinkUrl('');
+      setAddBannerLabel('');
       setAddBannerTitle('');
+      setAddBannerSubtitle('');
+      setAddBannerButtonText('');
       notify('Баннер добавлен');
       fetchBanners();
     } catch (err) {
@@ -216,7 +258,7 @@ export default function Admin() {
     } finally {
       setBannerSaving(false);
     }
-  }, [addBannerFile, addBannerLinkUrl, addBannerTitle, banners.length, notify, fetchBanners]);
+  }, [addBannerFile, addBannerLinkUrl, addBannerLabel, addBannerTitle, addBannerSubtitle, addBannerButtonText, banners.length, notify, fetchBanners]);
 
   const handleDeleteBanner = useCallback(async (id) => {
     setBannerDeleting(id);
@@ -294,9 +336,9 @@ export default function Admin() {
   }, []);
 
   const fetchProducts = useCallback(async () => {
-    const res = await fetch(`${API_URL}/products`);
+    const res = await fetch(`${API_URL}/admin/products`, { headers: getAuthHeaders() });
     const data = await res.json();
-    setProducts(data);
+    setProducts(Array.isArray(data) ? data : []);
   }, []);
 
   const fetchUserDetail = useCallback(async (id) => {
@@ -325,7 +367,13 @@ export default function Admin() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${API_URL}/admin/stats`, { headers: getAuthHeaders() });
+      const params = new URLSearchParams();
+      if (selectedStatsMonth?.year != null && selectedStatsMonth?.month != null) {
+        params.set('year', String(selectedStatsMonth.year));
+        params.set('month', String(selectedStatsMonth.month));
+      }
+      const url = `${API_URL}/admin/stats${params.toString() ? `?${params.toString()}` : ''}`;
+      const res = await fetch(url, { headers: getAuthHeaders() });
       if (!res.ok) throw new Error('Ошибка загрузки');
       const data = await res.json();
       setStats(data);
@@ -334,7 +382,7 @@ export default function Admin() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedStatsMonth]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -384,8 +432,22 @@ export default function Admin() {
         .then((data) => setBanners(Array.isArray(data) ? data : []))
         .catch((e) => setError(e.message));
     }
+  }, [tab, ordersSubTab, catalogSubTab, fetchUsers, fetchOrders, fetchFeedback, fetchAdminReviews, fetchVisits, fetchCategories, fetchProducts]);
+
+  useEffect(() => {
     if (tab === 'stats') fetchStats();
-  }, [tab, ordersSubTab, catalogSubTab, fetchUsers, fetchOrders, fetchCallbacks, fetchFeedback, fetchAdminReviews, fetchVisits, fetchCategories, fetchProducts, fetchStats]);
+  }, [tab, selectedStatsMonth, fetchStats]);
+
+  useEffect(() => {
+    if (!statsCalendarOpen) return;
+    const handleClickOutside = (e) => {
+      if (statsCalendarRef.current && !statsCalendarRef.current.contains(e.target)) {
+        setStatsCalendarOpen(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [statsCalendarOpen]);
 
   useEffect(() => {
     fetchUserDetail(selectedUserId);
@@ -441,7 +503,10 @@ export default function Admin() {
       else if (confirmDeleteProductId != null) setConfirmDeleteProductId(null);
       else if (userDetail) setSelectedUserId(null);
       else if (showAddCategoryModal) setShowAddCategoryModal(false);
-      else if (addProductModalCategoryId != null) setAddProductModalCategoryId(null);
+      else if (addProductModalCategoryId != null) {
+        setAddProductImagePreviewUrls((prev) => { prev.forEach((u) => URL.revokeObjectURL(u)); return []; });
+        setAddProductModalCategoryId(null);
+      }
     };
     document.addEventListener('keydown', handleEsc);
     return () => document.removeEventListener('keydown', handleEsc);
@@ -563,9 +628,9 @@ export default function Admin() {
     const category_id = parseInt(form.category_id.value);
     const name = form.name.value.trim();
     const price = parseFloat(form.price.value);
-    const description = form.description.value.trim() || null;
+    const description = form.description?.value?.trim() || null;
+    const short_description = form.short_description?.value?.trim() || null;
     const weight = form.weight.value.trim() || null;
-    const imageFile = form.image?.files?.[0];
     if (!category_id || !name || isNaN(price)) return;
     setError('');
     try {
@@ -574,7 +639,10 @@ export default function Admin() {
       body.append('name', name);
       body.append('price', price);
       if (description) body.append('description', description);
+      if (short_description) body.append('short_description', short_description);
       if (weight) body.append('weight', weight);
+      const manufacturerVal = form.manufacturer?.value?.trim();
+      if (manufacturerVal !== undefined && manufacturerVal !== '') body.append('manufacturer', manufacturerVal);
       body.append('is_sale', form.is_sale?.checked ? 'true' : 'false');
       body.append('is_hit', form.is_hit?.checked ? 'true' : 'false');
       body.append('is_recommended', form.is_recommended?.checked ? 'true' : 'false');
@@ -583,7 +651,12 @@ export default function Admin() {
       body.append('quantity', String(qty));
       const salePriceVal = addProductIsSale ? (addProductSalePrice || form.sale_price?.value?.trim()) : '';
       if (salePriceVal && !Number.isNaN(parseFloat(salePriceVal))) body.append('sale_price', salePriceVal);
-      if (imageFile) body.append('image', imageFile);
+      const imageInput = form.images;
+      if (imageInput?.files?.length) {
+        for (let i = 0; i < Math.min(4, imageInput.files.length); i++) {
+          body.append('images', imageInput.files[i]);
+        }
+      }
       const res = await fetch(`${API_URL}/admin/products`, {
         method: 'POST',
         headers: getAuthHeaders(),
@@ -591,6 +664,10 @@ export default function Admin() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Ошибка');
+      setAddProductImagePreviewUrls((prev) => {
+        prev.forEach((u) => URL.revokeObjectURL(u));
+        return [];
+      });
       form.reset();
       setAddProductModalCategoryId(null);
       fetchProducts();
@@ -601,6 +678,21 @@ export default function Admin() {
     }
   };
 
+  const getProductPageSettingsFromForm = (form) => {
+    const short_description = form.short_description?.value?.trim() || '';
+    const trust1 = form.trust_badge_1?.value?.trim() || '';
+    const trust2 = form.trust_badge_2?.value?.trim() || '';
+    const trust3 = form.trust_badge_3?.value?.trim() || '';
+    const trust_badges = [trust1, trust2, trust3].filter(Boolean);
+    const how_to_use_intro = form.how_to_use_intro?.value?.trim() || '';
+    const how_to_use_step1 = form.how_to_use_step1?.value?.trim() || '';
+    const how_to_use_step2 = form.how_to_use_step2?.value?.trim() || '';
+    const how_to_use_step3 = form.how_to_use_step3?.value?.trim() || '';
+    const show_how_to_use = form.show_how_to_use?.checked !== false;
+    const show_related = form.show_related?.checked !== false;
+    return { short_description, trust_badges, how_to_use_intro, how_to_use_step1, how_to_use_step2, how_to_use_step3, show_how_to_use, show_related };
+  };
+
   const handleUpdateProduct = async (e, id) => {
     e.preventDefault();
     const form = e.target;
@@ -609,19 +701,24 @@ export default function Admin() {
     const description = form.description.value.trim() || null;
     const weight = form.weight.value.trim() || null;
     const category_id = form.category_id ? parseInt(form.category_id.value) : undefined;
-    const imageFile = form.image?.files?.[0];
+    const imageFiles = form.images?.files;
+    const hasNewImages = imageFiles?.length > 0;
     const is_sale = form.is_sale?.checked ?? false;
     const is_hit = form.is_hit?.checked ?? false;
     const is_recommended = form.is_recommended?.checked ?? false;
+    const pageSettings = getProductPageSettingsFromForm(form);
     setError('');
     try {
-      if (imageFile) {
+      let data;
+      if (hasNewImages) {
         const body = new FormData();
         body.append('name', name);
         body.append('price', price);
-        if (description) body.append('description', description);
+        body.append('description', description ?? '');
         if (weight) body.append('weight', weight);
         if (category_id) body.append('category_id', category_id);
+        const manufacturerVal = form.manufacturer?.value?.trim();
+        if (manufacturerVal !== undefined) body.append('manufacturer', manufacturerVal || '');
         body.append('is_sale', is_sale ? 'true' : 'false');
         body.append('is_hit', is_hit ? 'true' : 'false');
         body.append('is_recommended', is_recommended ? 'true' : 'false');
@@ -631,30 +728,50 @@ export default function Admin() {
         if (qty !== undefined) body.append('quantity', String(qty));
         const salePriceVal = (productSalePrice[id] ?? form.sale_price?.value?.trim()) || '';
         body.append('sale_price', (is_sale && salePriceVal && !Number.isNaN(parseFloat(salePriceVal))) ? salePriceVal : '');
-        body.append('image', imageFile);
+        body.append('short_description', pageSettings.short_description ?? '');
+        body.append('trust_badges', JSON.stringify(pageSettings.trust_badges));
+        body.append('how_to_use_intro', pageSettings.how_to_use_intro);
+        body.append('how_to_use_step1', pageSettings.how_to_use_step1);
+        body.append('how_to_use_step2', pageSettings.how_to_use_step2);
+        body.append('how_to_use_step3', pageSettings.how_to_use_step3);
+        body.append('show_how_to_use', pageSettings.show_how_to_use ? 'true' : 'false');
+        body.append('show_related', pageSettings.show_related ? 'true' : 'false');
+        for (let i = 0; i < Math.min(4, imageFiles.length); i++) {
+          body.append('images', imageFiles[i]);
+        }
         const res = await fetch(`${API_URL}/admin/products/${id}`, {
           method: 'PATCH',
           headers: getAuthHeaders(),
           body,
         });
-        const data = await res.json();
+        data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Ошибка');
       } else {
         const salePriceRaw = (productSalePrice[id] ?? form.sale_price?.value?.trim()) || '';
         const sale_price = salePriceRaw !== '' && !Number.isNaN(parseFloat(salePriceRaw)) ? parseFloat(salePriceRaw) : null;
-        const payload = { name, description, weight, price, sale_price, is_sale, is_hit, is_recommended };
+        const payload = { name, description, weight, price, sale_price, is_sale, is_hit, is_recommended, ...pageSettings };
         if (form.in_stock !== undefined) payload.in_stock = form.in_stock.checked;
         if (category_id) payload.category_id = category_id;
         const qtyVal = form.quantity?.value?.trim();
         if (qtyVal !== '' && !Number.isNaN(parseInt(qtyVal, 10))) payload.quantity = Math.max(0, parseInt(qtyVal, 10));
+        const manufacturerVal = form.manufacturer?.value?.trim();
+        if (manufacturerVal !== undefined) payload.manufacturer = manufacturerVal === '' ? null : manufacturerVal;
         const res = await fetch(`${API_URL}/admin/products/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
           body: JSON.stringify(payload),
         });
-        const data = await res.json();
+        data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Ошибка');
       }
+      if (data && (data.has_image !== undefined || data.image_count !== undefined)) {
+        setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, has_image: data.has_image, image_count: data.image_count } : p)));
+      }
+      setProductImagePreviewUrls((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
       fetchProducts();
       notify('Товар сохранён', 'success');
     } catch (e) {
@@ -772,27 +889,6 @@ export default function Admin() {
     }
   };
 
-  const handleOrderShip = async (orderId, currentlyShipped) => {
-    setOrderShipToggling(orderId);
-    setError('');
-    try {
-      const res = await fetch(`${API_URL}/admin/orders/${orderId}/ship`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify({ shipped: !currentlyShipped }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Ошибка');
-      notify(currentlyShipped ? 'Отметка «Отправлен» снята' : 'Заказ отмечен как отправленный', 'success');
-      await Promise.all([fetchOrders(false), fetchOrders(true)]);
-    } catch (e) {
-      setError(e.message);
-      notify(e.message, 'error');
-    } finally {
-      setOrderShipToggling(null);
-    }
-  };
-
   const handleOrderProcessToggle = async (orderId, currentlyProcessed) => {
     setOrderProcessToggling(orderId);
     setError('');
@@ -895,9 +991,72 @@ export default function Admin() {
     return map;
   }, [products]);
 
+  const catalogSearchLower = catalogSearchQuery.trim().toLowerCase();
+  const filteredCatalog = useMemo(() => {
+    if (!catalogSearchLower) {
+      return {
+        categories: categories,
+        productsByCategory,
+      };
+    }
+    const filteredCats = categories.filter((c) => {
+      const catMatch = c.name.toLowerCase().includes(catalogSearchLower);
+      const productsInCat = productsByCategory[c.id] || [];
+      const hasMatchingProduct = productsInCat.some((p) => p.name.toLowerCase().includes(catalogSearchLower));
+      return catMatch || hasMatchingProduct;
+    });
+    const filteredByCat = {};
+    filteredCats.forEach((c) => {
+      const productsInCat = productsByCategory[c.id] || [];
+      filteredByCat[c.id] = productsInCat.filter((p) => p.name.toLowerCase().includes(catalogSearchLower));
+    });
+    return { categories: filteredCats, productsByCategory: filteredByCat };
+  }, [categories, productsByCategory, catalogSearchLower]);
+
   const toggleCategoryExpand = (id) => {
     setExpandedCategoryIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
+
+  const handleProductImageInputChange = (productId, e) => {
+    const files = e.target.files;
+    setProductImagePreviewUrls((prev) => {
+      const old = prev[productId] || [];
+      old.forEach((url) => URL.revokeObjectURL(url));
+      if (!files?.length) {
+        const next = { ...prev };
+        delete next[productId];
+        return next;
+      }
+      const urls = [];
+      for (let i = 0; i < Math.min(4, files.length); i++) {
+        urls.push(URL.createObjectURL(files[i]));
+      }
+      return { ...prev, [productId]: urls };
+    });
+  };
+
+  const handleAddProductImageInputChange = (e) => {
+    const files = e.target.files;
+    setAddProductImagePreviewUrls((prev) => {
+      prev.forEach((url) => URL.revokeObjectURL(url));
+      if (!files?.length) return [];
+      const urls = [];
+      for (let i = 0; i < Math.min(4, files.length); i++) {
+        urls.push(URL.createObjectURL(files[i]));
+      }
+      return urls;
+    });
+  };
+
+  const previewUrlsRef = useRef({ product: {}, add: [] });
+  previewUrlsRef.current.product = productImagePreviewUrls;
+  previewUrlsRef.current.add = addProductImagePreviewUrls;
+  useEffect(() => {
+    return () => {
+      Object.values(previewUrlsRef.current.product).flat().forEach((url) => URL.revokeObjectURL(url));
+      previewUrlsRef.current.add.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
 
   const mainTabs = [
     { id: 'users', label: 'Клиенты' },
@@ -1122,11 +1281,10 @@ export default function Admin() {
                         <summary>
                           Заказ #{o.id} — {o.username || o.email || 'Пользователь'} — {formatPrice(o.total)} — {formatDateTime(o.created_at)}
                           {o.payment_method === 'on_delivery' && <span className={styles.orderBadge}>при получении</span>}
-                          {(o.payment_status === 'paid') ? <span className={styles.orderBadgePaid}>оплачен</span> : <span className={styles.orderBadgePending}>ожидается оплата</span>}
-                          {o.shipped_at && <span className={styles.orderBadgeShipped}>отправлен</span>}
+                          {o.payment_method === 'card' && (o.payment_status === 'paid' ? <span className={styles.orderBadgePaid}>оплачен</span> : <span className={styles.orderBadgePending}>ожидается оплата</span>)}
                         </summary>
                         <div className={styles.orderDetails}>
-                          {o.address && <p><strong>Адрес:</strong> {o.address}</p>}
+                          {o.address && <p><strong>Комментарий / контакт:</strong> {o.address}</p>}
                           {o.phone && <p><strong>Телефон:</strong> {o.phone}</p>}
                           <p><strong>Способ оплаты:</strong> {o.payment_method === 'card' ? 'Оплата картой' : 'Оплата при получении'}</p>
                           <p>
@@ -1155,28 +1313,11 @@ export default function Admin() {
                                   disabled={orderProcessToggling === o.id}
                                   onChange={() => handleOrderProcessToggle(o.id, !!o.processed_at)}
                                 />
-                                <span>Обработан</span>
+                                <span>Обработан (готов к выдаче)</span>
                                 {o.processed_at && <span className={styles.orderDetailMeta}> {formatDateTime(o.processed_at)}</span>}
                               </label>
                             ) : (
                               o.processed_at ? `Обработан ${formatDateTime(o.processed_at)}` : '—'
-                            )}
-                          </p>
-                          <p>
-                            <strong>Отправка:</strong>{' '}
-                            {ordersSubTab !== 'archive' ? (
-                              <label className={styles.checkLabel}>
-                                <input
-                                  type="checkbox"
-                                  checked={!!o.shipped_at}
-                                  disabled={orderShipToggling === o.id}
-                                  onChange={() => handleOrderShip(o.id, !!o.shipped_at)}
-                                />
-                                <span>Доставлен</span>
-                                {o.shipped_at && <span className={styles.orderDetailMeta}> {formatDateTime(o.shipped_at)}</span>}
-                              </label>
-                            ) : (
-                              o.shipped_at ? `Отправлен ${formatDateTime(o.shipped_at)}` : '—'
                             )}
                           </p>
                           <p><strong>Товары:</strong></p>
@@ -1373,6 +1514,8 @@ export default function Admin() {
                                 onChange={(e) => setReviewReplyDrafts((prev) => ({ ...prev, [r.id]: e.target.value }))}
                                 className={styles.reviewReplyInput}
                                 rows={2}
+                                onInput={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }}
+                                onFocus={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }}
                               />
                               <button
                                 type="button"
@@ -1404,6 +1547,7 @@ export default function Admin() {
                   {(() => {
                     const selectedRow = selectedVisitDate ? visitsByDay.find((r) => r.date === selectedVisitDate || (r.date && r.date.slice(0, 10) === selectedVisitDate)) : null;
                     const selectedCount = selectedRow ? Number(selectedRow.count) : null;
+                    const visitsChartForDay = buildVisitsChartForDay(selectedVisitDate, visitsByDay);
                     return (
                       <>
                         <p className={styles.visitsSummary}>
@@ -1430,23 +1574,48 @@ export default function Admin() {
                         {visitsByDay.length === 0 ? (
                           <p>Нет данных</p>
                         ) : (
-                          <div className={styles.chartBlock}>
-                            <div className={styles.chartWrap}>
-                              <ResponsiveContainer width="100%" height={300}>
-                                <AreaChart data={visitsByDay} margin={{ top: 16, right: 24, left: 56, bottom: 24 }}>
-                                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                                  <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={(v) => (v ? formatDate(v, { day: '2-digit', month: '2-digit' }) : '')} />
-                                  <YAxis tick={{ fontSize: 12 }} width={52} />
-                                  <Tooltip
-                                    contentStyle={{ borderRadius: 8, border: '1px solid var(--color-light-gray)' }}
-                                    formatter={(v) => [v, 'Уник. посетителей (IP)']}
-                                    labelFormatter={(v) => (v ? formatDate(v) : '')}
-                                  />
-                                  <Area type="monotone" dataKey="count" stroke="var(--color-primary)" strokeWidth={2} fill="var(--color-primary)" fillOpacity={0.25} dot={{ r: 4 }} name="Уник. посетителей (IP)" />
-                                </AreaChart>
-                              </ResponsiveContainer>
+                          <>
+                            <div className={styles.chartBlock}>
+                              <h3 className={styles.visitsChartTitle}>Посещения за последние 30 дней</h3>
+                              <div className={styles.chartWrap}>
+                                <ResponsiveContainer width="100%" height={300}>
+                                  <AreaChart data={visitsByDay} margin={{ top: 16, right: 24, left: 56, bottom: 24 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                    <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={(v) => (v ? formatDate(v, { day: '2-digit', month: '2-digit' }) : '')} />
+                                    <YAxis tick={{ fontSize: 12 }} width={52} />
+                                    <Tooltip
+                                      contentStyle={{ borderRadius: 8, border: '1px solid var(--color-light-gray)' }}
+                                      formatter={(v) => [v, 'Уник. посетителей (IP)']}
+                                      labelFormatter={(v) => (v ? formatDate(v) : '')}
+                                    />
+                                    <Area type="monotone" dataKey="count" stroke="var(--color-primary)" strokeWidth={2} fill="var(--color-primary)" fillOpacity={0.25} dot={{ r: 4 }} name="Уник. посетителей (IP)" />
+                                  </AreaChart>
+                                </ResponsiveContainer>
+                              </div>
                             </div>
-                          </div>
+                            {selectedVisitDate && visitsChartForDay.length > 0 && (
+                              <div className={styles.chartBlock}>
+                                <h3 className={styles.visitsChartTitle}>
+                                  График за выбранный день: {formatDate(selectedVisitDate)} (неделя вокруг даты)
+                                </h3>
+                                <div className={styles.chartWrap}>
+                                  <ResponsiveContainer width="100%" height={260}>
+                                    <BarChart data={visitsChartForDay} margin={{ top: 16, right: 24, left: 56, bottom: 24 }}>
+                                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                      <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={(v) => (v ? formatDate(v, { day: '2-digit', month: '2-digit' }) : '')} />
+                                      <YAxis tick={{ fontSize: 12 }} width={52} />
+                                      <Tooltip
+                                        contentStyle={{ borderRadius: 8, border: '1px solid var(--color-light-gray)' }}
+                                        formatter={(v) => [v, 'Уник. посетителей (IP)']}
+                                        labelFormatter={(v) => (v ? formatDate(v) : '')}
+                                      />
+                                      <Bar dataKey="count" fill="var(--color-primary)" radius={[4, 4, 0, 0]} name="Уник. посетителей (IP)" />
+                                    </BarChart>
+                                  </ResponsiveContainer>
+                                </div>
+                              </div>
+                            )}
+                          </>
                         )}
                       </>
                     );
@@ -1520,8 +1689,14 @@ export default function Admin() {
                 </ul>
               )}
 
-              {showAddBannerModal && (
-                <div className={styles.modalOverlay} onClick={() => !bannerSaving && setShowAddBannerModal(false)}>
+              {showAddBannerModal && createPortal(
+                <div
+                className={styles.modalOverlay}
+                onMouseDown={(e) => {
+                  if (e.target !== e.currentTarget) return;
+                  if (!bannerSaving) setShowAddBannerModal(false);
+                }}
+              >
                   <div className={styles.modalBox} onClick={(e) => e.stopPropagation()}>
                     <div className={styles.modalHeader}>
                       <h3>Добавить баннер</h3>
@@ -1530,6 +1705,7 @@ export default function Admin() {
                     <form onSubmit={handleAddBanner} className={styles.form + ' ' + styles.modalForm}>
                       <label className={styles.label}>
                         Изображение (обязательно)
+                        <span className={styles.labelHint}>Рекомендуемый размер: 1920×520 px</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -1538,21 +1714,48 @@ export default function Admin() {
                         />
                       </label>
                       <label className={styles.label}>
-                        Ссылка при клике (необязательно)
+                        Метка (необязательно)
+                        <input
+                          type="text"
+                          placeholder="Напр. КАТАЛОГ ТОВАРОВ"
+                          value={addBannerLabel}
+                          onChange={(e) => setAddBannerLabel(e.target.value)}
+                        />
+                      </label>
+                      <label className={styles.label}>
+                        Заголовок (необязательно)
+                        <input
+                          type="text"
+                          placeholder="Заголовок баннера"
+                          value={addBannerTitle}
+                          onChange={(e) => setAddBannerTitle(e.target.value)}
+                        />
+                      </label>
+                      <label className={styles.label}>
+                        Описание / подзаголовок (необязательно)
+                        <input
+                          type="text"
+                          placeholder="Описание"
+                          value={addBannerSubtitle}
+                          onChange={(e) => setAddBannerSubtitle(e.target.value)}
+                        />
+                      </label>
+                      <label className={styles.label}>
+                        Текст кнопки (необязательно)
+                        <input
+                          type="text"
+                          placeholder="Напр. В каталог"
+                          value={addBannerButtonText}
+                          onChange={(e) => setAddBannerButtonText(e.target.value)}
+                        />
+                      </label>
+                      <label className={styles.label}>
+                        Ссылка (куда ведёт баннер)
                         <input
                           type="url"
                           placeholder="https://..."
                           value={addBannerLinkUrl}
                           onChange={(e) => setAddBannerLinkUrl(e.target.value)}
-                        />
-                      </label>
-                      <label className={styles.label}>
-                        Подпись (необязательно)
-                        <input
-                          type="text"
-                          placeholder="Текст на баннере"
-                          value={addBannerTitle}
-                          onChange={(e) => setAddBannerTitle(e.target.value)}
                         />
                       </label>
                       <div className={styles.formRowActions}>
@@ -1561,7 +1764,8 @@ export default function Admin() {
                       </div>
                     </form>
                   </div>
-                </div>
+                </div>,
+                document.body
               )}
             </div>
           )}
@@ -1581,9 +1785,25 @@ export default function Admin() {
               <p className={styles.catalogHint}>
                 Нажмите на категорию — откроются товары. У каждой записи есть кнопки «Изменить» и «Удалить».
               </p>
+              <div className={styles.catalogSearchWrap}>
+                <input
+                  type="search"
+                  className={styles.catalogSearchInput}
+                  placeholder="Поиск по категориям и товарам..."
+                  value={catalogSearchQuery}
+                  onChange={(e) => setCatalogSearchQuery(e.target.value)}
+                  aria-label="Поиск по категориям и товарам"
+                />
+              </div>
 
               {showAddCategoryModal && (
-                <div className={styles.modalOverlay} onClick={() => setShowAddCategoryModal(false)}>
+                <div
+                className={styles.modalOverlay}
+                onMouseDown={(e) => {
+                  if (e.target !== e.currentTarget) return;
+                  setShowAddCategoryModal(false);
+                }}
+              >
                   <div className={styles.modalBox} onClick={(e) => e.stopPropagation()}>
                     <div className={styles.modalHeader}>
                       <h3>Добавить категорию</h3>
@@ -1604,9 +1824,9 @@ export default function Admin() {
               )}
 
               <div className={styles.catalogTree}>
-                {categories.map((c) => {
+                {filteredCatalog.categories.map((c) => {
                   const isExpanded = expandedCategoryIds.includes(c.id);
-                  const categoryProducts = productsByCategory[c.id] || [];
+                  const categoryProducts = filteredCatalog.productsByCategory[c.id] || [];
                   return (
                     <div key={c.id} className={styles.catalogCategoryBlock}>
                       <div
@@ -1663,6 +1883,7 @@ export default function Admin() {
                                   <span className={styles.catalogProductExpand}>▶</span>
                                   <span>{p.name} — {p.is_sale && p.sale_price != null ? <><span className={styles.priceOld}>{formatPrice(p.price)}</span> {formatPrice(p.sale_price)}</> : formatPrice(p.price)}</span>
                                   <div className={styles.rowActions} onClick={(e) => e.preventDefault()}>
+                                    <Link to={`/product/${p.id}`} target="_blank" rel="noopener noreferrer" className={styles.btnSmallSecondary} onClick={(e) => e.stopPropagation()}>Перейти на товар</Link>
                                     <button type="button" className={styles.btnEdit} onClick={(e) => { e.preventDefault(); e.stopPropagation(); const d = e.currentTarget.closest('details'); if (d) d.open = true; }}>Изменить</button>
                                     <button type="button" className={styles.btnDangerSmall} onClick={(e) => { e.preventDefault(); setConfirmDeleteProductId(p.id); }}>Удалить</button>
                                   </div>
@@ -1676,37 +1897,36 @@ export default function Admin() {
                                       ))}
                                     </select>
                                   </label>
+                                  <label className={styles.label}>Бренд <input name="manufacturer" defaultValue={p.manufacturer ?? ''} placeholder="Например: Optimum Nutrition" /></label>
                                   <label className={styles.label}>Название <input name="name" defaultValue={p.name} required /></label>
                                   <label className={styles.label}>Цена <input name="price" type="number" step="0.01" defaultValue={p.price} required /></label>
-                                  <label className={styles.label}>Количество (остаток) <input name="quantity" type="number" min="0" defaultValue={p.quantity ?? 0} /></label>
                                   <label className={styles.label}>Вес (например 150 гр) <input name="weight" defaultValue={p.weight || ''} placeholder="150 гр" /></label>
-                                  <label className={styles.label}>Описание <textarea name="description" defaultValue={p.description || ''} placeholder="Описание" rows={2} className={styles.textareaAutoResize} onInput={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} onFocus={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} /></label>
-                                  <div
-                                    className={styles.fileDropZone}
-                                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add(styles.dragOver); }}
-                                    onDragLeave={(e) => e.currentTarget.classList.remove(styles.dragOver)}
-                                    onDrop={(e) => {
-                                      e.preventDefault();
-                                      e.currentTarget.classList.remove(styles.dragOver);
-                                      const file = e.dataTransfer.files[0];
-                                      if (file && file.type.startsWith('image/')) {
-                                        const input = e.currentTarget.querySelector('input[type=file]');
-                                        if (input) { const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true })); }
-                                      }
-                                    }}
-                                    onPaste={(e) => {
-                                      const file = e.clipboardData?.files?.[0];
-                                      if (file && file.type.startsWith('image/')) {
-                                        e.preventDefault();
-                                        const input = e.currentTarget.querySelector('input[type=file]');
-                                        if (input) { const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true })); }
-                                      }
-                                    }}
-                                    tabIndex={0}
-                                  >
-                                    <input name="image" type="file" accept="image/jpeg,image/png,image/webp" className={styles.fileInput} />
-                                    <span className={styles.fileDropZoneText}>Перетащите изображение или Ctrl+V</span>
-                                  </div>
+                                  <label className={styles.label}>Краткое описание товара <textarea name="short_description" defaultValue={p.short_description || ''} placeholder="Краткое содержание под названием на странице товара" rows={2} className={styles.textareaAutoResize} onInput={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} onFocus={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} /></label>
+                                  <label className={styles.label}>Подробное описание товара <textarea name="description" defaultValue={p.description || ''} placeholder="Полное описание для карточки и блока под фотками" rows={4} className={styles.textareaAutoResize} onInput={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} onFocus={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} /></label>
+                                  {(p.image_count ?? (p.has_image ? 1 : 0)) > 0 && (
+                                    <div className={styles.productImagesRow}>
+                                      <span className={styles.label}>Текущие фото:</span>
+                                      <div className={styles.productThumbs}>
+                                        {Array.from({ length: p.image_count ?? (p.has_image ? 1 : 0) }).map((_, i) => (
+                                          <img key={i} src={`${API_URL}/products/${p.id}/images/${i}`} alt="" className={styles.productThumb} />
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                  <label className={styles.fileInputButton}>
+                                    <input name="images" type="file" accept="image/jpeg,image/png,image/webp" className={styles.fileInputHidden} multiple onChange={(e) => handleProductImageInputChange(p.id, e)} />
+                                    Выбрать фото (до 4, заменят текущие)
+                                  </label>
+                                  {(productImagePreviewUrls[p.id]?.length ?? 0) > 0 && (
+                                    <div className={styles.productImagesRow}>
+                                      <span className={styles.label}>Будут загружены:</span>
+                                      <div className={styles.productThumbs}>
+                                        {productImagePreviewUrls[p.id].map((url, i) => (
+                                          <img key={i} src={url} alt="" className={styles.productThumb} />
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                   <div className={styles.checkboxGroup + ' ' + styles.checkboxGroupColumn}>
                                     <label className={styles.checkLabel}>
                                       <input
@@ -1770,9 +1990,55 @@ export default function Admin() {
                                     </label>
                                     <label className={styles.checkLabel}>
                                       <input type="checkbox" name="in_stock" defaultChecked={p.in_stock !== false} />
-                                      <span>В наличии (много)</span>
+                                      <span>В наличии</span>
+                                    </label>
+                                    <label className={styles.label}>
+                                      Количество (шт)
+                                      <input name="quantity" type="number" min="0" defaultValue={p.quantity ?? 0} placeholder="0" />
                                     </label>
                                   </div>
+                                  <details className={styles.pageSettingsDetails}>
+                                    <summary className={styles.pageSettingsSummary}>Настройка страницы товара</summary>
+                                    <div className={styles.pageSettingsFields}>
+                                      <div className={styles.label}>Бейджи доверия (до 3, по одному в строке)</div>
+                                      <label className={styles.label}>
+                                        Бейдж 1
+                                        <input name="trust_badge_1" defaultValue={Array.isArray(p.trust_badges) ? (p.trust_badges[0] || '') : ''} placeholder="Например: Лабораторно проверено" />
+                                      </label>
+                                      <label className={styles.label}>
+                                        Бейдж 2
+                                        <input name="trust_badge_2" defaultValue={Array.isArray(p.trust_badges) ? (p.trust_badges[1] || '') : ''} placeholder="Например: Гарантия качества" />
+                                      </label>
+                                      <label className={styles.label}>
+                                        Бейдж 3
+                                        <input name="trust_badge_3" defaultValue={Array.isArray(p.trust_badges) ? (p.trust_badges[2] || '') : ''} placeholder="Например: 100% Оригинал" />
+                                      </label>
+                                      <label className={styles.checkLabel}>
+                                        <input type="checkbox" name="show_how_to_use" defaultChecked={p.show_how_to_use !== false} />
+                                        <span>Показывать блок «Как использовать»</span>
+                                      </label>
+                                      <label className={styles.label}>
+                                        Текст над шагами (Как использовать)
+                                        <input name="how_to_use_intro" defaultValue={p.how_to_use_intro || ''} placeholder="Например: Для лучшего результата следуйте рекомендациям." />
+                                      </label>
+                                      <label className={styles.label}>
+                                        Шаг 1
+                                        <input name="how_to_use_step1" defaultValue={p.how_to_use_step1 || ''} placeholder="Текст первого шага" />
+                                      </label>
+                                      <label className={styles.label}>
+                                        Шаг 2
+                                        <input name="how_to_use_step2" defaultValue={p.how_to_use_step2 || ''} placeholder="Текст второго шага" />
+                                      </label>
+                                      <label className={styles.label}>
+                                        Шаг 3
+                                        <input name="how_to_use_step3" defaultValue={p.how_to_use_step3 || ''} placeholder="Текст третьего шага" />
+                                      </label>
+                                      <label className={styles.checkLabel}>
+                                        <input type="checkbox" name="show_related" defaultChecked={p.show_related !== false} />
+                                        <span>Показывать блок «Рекомендуемые товары»</span>
+                                      </label>
+                                    </div>
+                                  </details>
                                   <div className={styles.formRowActions}>
                                     <button type="submit">Сохранить</button>
                                     <button type="button" className={styles.btnDanger} onClick={() => setConfirmDeleteProductId(p.id)}>Удалить товар</button>
@@ -1805,11 +2071,21 @@ export default function Admin() {
               {addProductModalCategoryId != null && (() => {
                 const cat = categories.find((x) => x.id === addProductModalCategoryId);
                 return (
-                  <div className={styles.modalOverlay} onClick={() => setAddProductModalCategoryId(null)}>
+                  <div
+                    className={styles.modalOverlay}
+                    onMouseDown={(e) => {
+                      if (e.target !== e.currentTarget) return;
+                      setAddProductImagePreviewUrls((prev) => {
+                        prev.forEach((u) => URL.revokeObjectURL(u));
+                        return [];
+                      });
+                      setAddProductModalCategoryId(null);
+                    }}
+                  >
                     <div className={styles.modalBox + ' ' + styles.modalBoxWide} onClick={(e) => e.stopPropagation()}>
                       <div className={styles.modalHeader}>
                         <h3>Добавить товар{cat ? ` в «${cat.name}»` : ''}</h3>
-                        <button type="button" className={styles.closeBtn} onClick={() => setAddProductModalCategoryId(null)} aria-label="Закрыть">×</button>
+                        <button type="button" className={styles.closeBtn} onClick={() => { setAddProductImagePreviewUrls((prev) => { prev.forEach((u) => URL.revokeObjectURL(u)); return []; }); setAddProductModalCategoryId(null); }} aria-label="Закрыть">×</button>
                       </div>
                       <form onSubmit={handleCreateProduct} className={styles.form + ' ' + styles.modalForm}>
                         <input name="category_id" type="hidden" value={addProductModalCategoryId} readOnly />
@@ -1822,50 +2098,49 @@ export default function Admin() {
                           <input name="price" type="number" step="0.01" placeholder="0" required />
                         </label>
                         <label className={styles.label}>
-                          Количество (остаток)
-                          <input name="quantity" type="number" min="0" defaultValue="0" placeholder="0" />
-                        </label>
-                        <label className={styles.label}>
                           Вес (опционально, например 150 гр)
                           <input name="weight" placeholder="Например: 150 гр" />
                         </label>
                         <label className={styles.label}>
-                          Описание
+                          Бренд (опционально)
+                          <input name="manufacturer" placeholder="Например: Optimum Nutrition" />
+                        </label>
+                        <label className={styles.label}>
+                          Краткое описание (краткое содержание под названием на странице товара)
                           <textarea
-                            name="description"
-                            placeholder="Описание"
-                            rows={3}
+                            name="short_description"
+                            placeholder="Необязательно. Если пусто — на странице товара показывается начало подробного описания."
+                            rows={2}
                             className={styles.textareaAutoResize}
                             onInput={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }}
                             onFocus={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }}
                           />
                         </label>
-                        <div
-                          className={styles.fileDropZone}
-                          onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add(styles.dragOver); }}
-                          onDragLeave={(e) => e.currentTarget.classList.remove(styles.dragOver)}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            e.currentTarget.classList.remove(styles.dragOver);
-                            const file = e.dataTransfer.files[0];
-                            if (file && file.type.startsWith('image/')) {
-                              const input = e.currentTarget.querySelector('input[type=file]');
-                              if (input) { const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true })); }
-                            }
-                          }}
-                          onPaste={(e) => {
-                            const file = e.clipboardData?.files?.[0];
-                            if (file && file.type.startsWith('image/')) {
-                              e.preventDefault();
-                              const input = e.currentTarget.querySelector('input[type=file]');
-                              if (input) { const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true })); }
-                            }
-                          }}
-                          tabIndex={0}
-                        >
-                          <input name="image" type="file" accept="image/jpeg,image/png,image/webp" className={styles.fileInput} id="add-product-image" />
-                          <span className={styles.fileDropZoneText}>Перетащите изображение сюда или вставьте из буфера (Ctrl+V)</span>
-                        </div>
+                        <label className={styles.label}>
+                          Подробное описание (текст в блоке под фотографиями на странице товара)
+                          <textarea
+                            name="description"
+                            placeholder="Полное описание товара для блока под галереей и деталей."
+                            rows={4}
+                            className={styles.textareaAutoResize}
+                            onInput={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }}
+                            onFocus={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }}
+                          />
+                        </label>
+                        <label className={styles.fileInputButton}>
+                          <input name="images" type="file" accept="image/jpeg,image/png,image/webp" className={styles.fileInputHidden} id="add-product-image" multiple onChange={handleAddProductImageInputChange} />
+                          Выбрать фото (до 4)
+                        </label>
+                        {addProductImagePreviewUrls.length > 0 && (
+                          <div className={styles.productImagesRow}>
+                            <span className={styles.label}>Будут загружены:</span>
+                            <div className={styles.productThumbs}>
+                              {addProductImagePreviewUrls.map((url, i) => (
+                                <img key={i} src={url} alt="" className={styles.productThumb} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
                         <div className={styles.checkboxGroup + ' ' + styles.checkboxGroupColumn}>
                           <label className={styles.checkLabel}>
                             <input
@@ -1932,12 +2207,16 @@ export default function Admin() {
                           </label>
                           <label className={styles.checkLabel}>
                             <input type="checkbox" name="in_stock" defaultChecked />
-                            <span>В наличии (много)</span>
+                            <span>В наличии</span>
+                          </label>
+                          <label className={styles.label}>
+                            Количество (шт)
+                            <input name="quantity" type="number" min="0" defaultValue="0" placeholder="0" />
                           </label>
                         </div>
                         <div className={styles.formRowActions}>
                           <button type="submit" className={styles.addProductBtn}>Добавить товар</button>
-                          <button type="button" className={styles.btnSmallSecondary} onClick={() => setAddProductModalCategoryId(null)}>Отмена</button>
+                          <button type="button" className={styles.btnSmallSecondary} onClick={() => { setAddProductImagePreviewUrls((prev) => { prev.forEach((u) => URL.revokeObjectURL(u)); return []; }); setAddProductModalCategoryId(null); }}>Отмена</button>
                         </div>
                       </form>
                     </div>
@@ -1971,14 +2250,76 @@ export default function Admin() {
           {tab === 'stats' && (
             <div className={styles.card + ' ' + styles.cardFullWidth}>
               <h2>Статистика</h2>
-              <p className={styles.cardHint}>За последние 30 дней.</p>
+              <div className={styles.statsMonthPicker} ref={statsCalendarRef}>
+                <span className={styles.statsMonthPickerLabel}>Период:</span>
+                <button
+                  type="button"
+                  className={styles.statsCalendarTrigger}
+                  onClick={() => setStatsCalendarOpen((v) => !v)}
+                  aria-expanded={statsCalendarOpen}
+                  aria-haspopup="true"
+                >
+                  <span className={styles.statsCalendarTriggerText}>
+                    {selectedStatsMonth
+                      ? `${['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'][selectedStatsMonth.month - 1]} ${selectedStatsMonth.year}`
+                      : 'Последние 30 дней'}
+                  </span>
+                  <svg className={styles.statsCalendarTriggerIcon} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+                  </svg>
+                </button>
+                {statsCalendarOpen && (
+                  <div className={styles.statsMonthDropdown}>
+                    <button
+                      type="button"
+                      className={styles.statsMonthOption + (selectedStatsMonth == null ? ' ' + styles.statsMonthOptionActive : '')}
+                      onClick={() => { setSelectedStatsMonth(null); setStatsCalendarOpen(false); }}
+                    >
+                      Последние 30 дней
+                    </button>
+                    <div className={styles.statsMonthCalendar}>
+                      {[new Date().getFullYear(), new Date().getFullYear() - 1, new Date().getFullYear() - 2].map((y) => (
+                        <div key={y} className={styles.statsMonthYearRow}>
+                          <span className={styles.statsMonthYearLabel}>{y}</span>
+                          <div className={styles.statsMonthGrid}>
+                            {[
+                              'Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн',
+                              'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек',
+                            ].map((label, i) => {
+                              const m = i + 1;
+                              const isActive = selectedStatsMonth?.year === y && selectedStatsMonth?.month === m;
+                              return (
+                                <button
+                                  key={m}
+                                  type="button"
+                                  className={styles.statsMonthCell + (isActive ? ' ' + styles.statsMonthCellActive : '')}
+                                  onClick={() => { setSelectedStatsMonth({ year: y, month: m }); setStatsCalendarOpen(false); }}
+                                >
+                                  {label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
               {loading ? (
                 <Loader wrap />
               ) : stats ? (
                 <>
+                  <p className={styles.cardHint}>
+                    {selectedStatsMonth
+                      ? `За ${['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'][selectedStatsMonth.month - 1]} ${selectedStatsMonth.year}`
+                      : 'За последние 30 дней.'}
+                  </p>
                   <div className={styles.statsSummaryCharts}>
                     <div className={styles.statChartCard}>
-                      <h3 className={styles.statChartTitle}>Выручка за 30 дней</h3>
+                      <h3 className={styles.statChartTitle}>
+                        {selectedStatsMonth ? 'Выручка за месяц' : 'Выручка за 30 дней'}
+                      </h3>
                       <div className={styles.statSummaryValue}>{formatPrice(totalRevenue ?? 0)}</div>
                     </div>
                     <div className={styles.statChartCard}>
@@ -1995,7 +2336,7 @@ export default function Admin() {
                     <h3 className={styles.chartTitle}>Продажи по дням</h3>
                     <div className={styles.chartWrap}>
                       <ResponsiveContainer width="100%" height={300}>
-                        <AreaChart data={stats.salesByDay || []} margin={{ top: 16, right: 24, left: 56, bottom: 24 }}>
+                        <AreaChart data={salesByDayChart} margin={{ top: 16, right: 24, left: 56, bottom: 24 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                           <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={(v) => (v ? formatDate(v, { day: '2-digit', month: '2-digit' }) : '')} />
                           <YAxis tick={{ fontSize: 12 }} width={52} tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v))} />
@@ -2017,7 +2358,7 @@ export default function Admin() {
                           <Legend layout="horizontal" verticalAlign="top" align="center" wrapperStyle={{ paddingBottom: 16 }} />
                           <Tooltip
                             contentStyle={{ borderRadius: 8, border: '1px solid var(--color-light-gray)' }}
-                            formatter={(value, name) => [Number(value).toFixed(0) + ' ₽', name]}
+                            formatter={(value, name) => [Number(value).toFixed(0) + ' BYN', name]}
                             itemStyle={{ padding: '4px 0' }}
                           />
                           <Pie

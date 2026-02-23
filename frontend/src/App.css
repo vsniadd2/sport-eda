@@ -1,19 +1,33 @@
 :root {
   --z-header: 100;
-  --z-modal: 500;
-  --z-toast: 9999;
+  --z-modal: 10050;
+  --z-toast: 10060;
 }
 
 .app {
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   background: #fff;
+  width: 100%;
+  max-width: 100vw;
+  overflow: hidden;
+}
+
+/* Контейнер кастомного скроллбара (OverlayScrollbars) */
+.app-scrollbars {
+  flex: 1;
+  min-height: 0;
 }
 
 .app-content {
   flex: 1;
   position: relative;
+  width: 100%;
+  max-width: 100%;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* Фоновый паттерн в стиле водяного знака (как на макете) */
@@ -43,6 +57,11 @@
 .app-content > * {
   position: relative;
   z-index: 1;
+}
+
+/* Админка: контент и модалки выше шапки */
+.app--admin .app-content > * {
+  z-index: 101;
 }
 
 /* При открытой модалке детали заказа — header под ней и визуально приглушён */

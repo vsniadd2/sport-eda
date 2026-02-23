@@ -1,7 +1,29 @@
 .main {
   min-height: calc(100vh - 120px);
+  min-height: calc(100dvh - 120px);
   padding: 32px 24px 64px;
+  padding-bottom: max(64px, env(safe-area-inset-bottom));
   background: #f5f5f5;
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding: 24px 16px 48px;
+  }
+
+  .header {
+    padding: 12px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main {
+    padding: 20px 12px 40px;
+  }
+
+  .header {
+    padding: 12px;
+  }
 }
 
 .dashboard {
@@ -119,6 +141,25 @@
   line-height: 1.5;
 }
 
+.catalogSearchWrap {
+  margin-bottom: 20px;
+}
+
+.catalogSearchInput {
+  width: 100%;
+  max-width: 400px;
+  padding: 10px 14px;
+  font-size: 15px;
+  border: 1px solid var(--color-light-gray, #e0e0e0);
+  border-radius: 8px;
+  outline: none;
+}
+
+.catalogSearchInput:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(250, 111, 5, 0.2);
+}
+
 .bannersHeader {
   margin-bottom: 20px;
 }
@@ -207,6 +248,15 @@
   text-decoration: underline;
 }
 
+.bannerDescTextarea {
+  min-height: 80px;
+  resize: vertical;
+  font-size: 15px;
+  padding: 10px 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .bannerActions {
   display: flex;
   align-items: center;
@@ -244,10 +294,10 @@
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  z-index: var(--z-modal, 500);
-  padding: 24px;
+  z-index: 10000;
+  padding: 100px 24px 24px;
   overflow-y: auto;
   animation: adminOverlayFadeIn 0.2s ease-out;
 }
@@ -274,7 +324,7 @@
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
   width: 100%;
   max-width: 440px;
-  max-height: calc(100vh - 48px);
+  max-height: calc(100vh - 124px);
   overflow: auto;
   flex-shrink: 0;
   animation: adminModalSlideIn 0.25s ease-out;
@@ -306,6 +356,14 @@
 
 .modalForm .label,
 .modalForm .fileLabel {
+  margin-bottom: 4px;
+}
+
+.labelHint {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-gray, #666);
   margin-bottom: 4px;
 }
 
@@ -682,6 +740,13 @@
   color: #1a1a1a;
 }
 
+.visitsChartTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 12px 0;
+}
+
 .visitsDateRow {
   display: flex;
   flex-wrap: wrap;
@@ -780,7 +845,12 @@
 
 :global(.react-datepicker__day--today) {
   font-weight: 600;
-  color: var(--color-primary);
+  color: #1a1a1a;
+}
+
+:global(.react-datepicker__day--today.react-datepicker__day--selected),
+:global(.react-datepicker__day--today.react-datepicker__day--keyboard-selected) {
+  color: #fff;
 }
 
 :global(.react-datepicker__navigation) {
@@ -832,7 +902,7 @@
   font-family: inherit;
   border: 1px solid var(--color-light-gray);
   border-radius: 6px;
-  resize: vertical;
+  resize: none;
 }
 
 .reviewReplyInput:focus {
@@ -938,20 +1008,21 @@
 }
 
 .userDetailForm .label {
-  gap: 4px;
+  gap: 6px;
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   color: #374151;
 }
 
 .userDetailForm input,
 .userDetailForm .select {
-  min-height: 34px;
-  padding: 6px 10px;
-  font-size: 14px;
+  min-height: 40px;
+  padding: 8px 12px;
+  font-size: 15px;
   border-radius: 6px;
   border: 1px solid #e5e7eb;
+  box-sizing: border-box;
 }
 
 .userDetailForm input:focus,
@@ -1030,13 +1101,13 @@
     gap: 6px 12px;
   }
   .userDetailForm .label {
-    font-size: 12px;
+    font-size: 14px;
   }
   .userDetailForm input,
   .userDetailForm .select {
-    min-height: 32px;
-    padding: 5px 8px;
-    font-size: 13px;
+    min-height: 38px;
+    padding: 6px 10px;
+    font-size: 15px;
   }
   .userDetailForm .userDetailActions {
     margin-top: 10px;
@@ -1303,6 +1374,163 @@
 
 .phoneLink:hover {
   text-decoration: underline;
+}
+
+.statsMonthPicker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.statsMonthPickerLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-gray);
+}
+
+.statsCalendarTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+  background: #fff;
+  border: 1px solid var(--color-light-gray);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  font-family: inherit;
+}
+
+.statsCalendarTrigger:hover {
+  background: #fafafa;
+  border-color: var(--color-border);
+}
+
+.statsCalendarTrigger[aria-expanded="true"] {
+  border-color: var(--color-primary);
+  background: #fff;
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.statsCalendarTriggerText {
+  min-width: 140px;
+  text-align: left;
+}
+
+.statsCalendarTriggerIcon {
+  flex-shrink: 0;
+  color: var(--color-gray);
+}
+
+.statsMonthDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  min-width: 320px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--color-light-gray);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+}
+
+.statsMonthOption {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  margin-bottom: 12px;
+  transition: background 0.2s;
+}
+
+.statsMonthOption:hover {
+  background: #f0f0f0;
+}
+
+.statsMonthOptionActive {
+  background: rgba(196, 92, 38, 0.12);
+  color: var(--color-primary);
+}
+
+.statsMonthOptionActive:hover {
+  background: rgba(196, 92, 38, 0.18);
+}
+
+.statsMonthCalendar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-light-gray);
+}
+
+.statsMonthYearRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.statsMonthYearLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-gray);
+  min-width: 40px;
+}
+
+.statsMonthGrid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 6px;
+}
+
+.statsMonthCell {
+  padding: 8px 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text);
+  background: #fff;
+  border: 1px solid var(--color-light-gray);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.statsMonthCell:hover {
+  background: #f0f0f0;
+  border-color: var(--color-border);
+}
+
+.statsMonthCellActive {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.statsMonthCellActive:hover {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  color: #fff;
+}
+
+@media (max-width: 900px) {
+  .statsMonthGrid {
+    grid-template-columns: repeat(6, 1fr);
+  }
 }
 
 .statsSummary,
@@ -1917,6 +2145,36 @@
   background: var(--color-primary-dark, #b85c2a);
 }
 
+.fileInputButton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  background: var(--color-primary);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+
+.fileInputButton:hover {
+  background: var(--color-primary-dark, #b85c2a);
+}
+
+.fileInputHidden {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
 .fileDropZone {
   position: relative;
   padding: 20px;
@@ -1948,6 +2206,30 @@
   font-size: 13px;
   color: #6b7280;
   pointer-events: none;
+}
+
+.productImagesRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.productImagesRow .label {
+  margin-bottom: 0;
+}
+
+.productThumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.productThumb {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--color-light-gray);
 }
 
 .checkboxGroupColumn {
@@ -2101,6 +2383,43 @@
 
 .btnDangerSmall:hover {
   background: #fef2f2;
+}
+
+.pageSettingsDetails {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.pageSettingsSummary {
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  list-style: none;
+}
+
+.pageSettingsSummary::-webkit-details-marker {
+  display: none;
+}
+
+.pageSettingsSummary::before {
+  content: '▶ ';
+  font-size: 0.75em;
+}
+
+.pageSettingsDetails[open] .pageSettingsSummary::before {
+  content: '▼ ';
+}
+
+.pageSettingsFields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.pageSettingsFields .label {
+  margin-bottom: 0;
 }
 
 .formRowActions {

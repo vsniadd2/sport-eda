@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
           GROUP BY product_id
         )
         SELECT p.id, p.name, p.description, p.weight, p.price, p.sale_price, p.image_url, p.article, p.manufacturer,
-               (p.image_data IS NOT NULL) AS has_image,
+               (p.image_data IS NOT NULL OR (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) > 0) AS has_image,
                COALESCE(p.in_stock, true) AS in_stock,
                COALESCE(p.quantity, 0)::int AS quantity,
                COALESCE(p.is_sale, false) AS is_sale,

@@ -14,6 +14,15 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
+.cardCatalog {
+  border-radius: 12px;
+  transition: box-shadow 0.3s;
+}
+
+.cardCatalog:hover {
+  box-shadow: 0 10px 25px -5px rgba(196, 92, 38, 0.1), 0 8px 10px -6px rgba(196, 92, 38, 0.1);
+}
+
 .cardList {
   flex-direction: row;
 }
@@ -117,11 +126,18 @@
   left: 12px;
   z-index: 1;
   padding: 4px 10px;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   background: var(--color-primary);
   color: #fff;
   border-radius: 6px;
+}
+
+.cardCatalog .tag {
+  top: 12px;
+  left: 12px;
 }
 
 
@@ -132,6 +148,11 @@
   align-items: center;
   justify-content: center;
   padding: 16px;
+}
+
+/* На главной — картинка почти на всю рамку */
+.cardHome .imageWrap {
+  padding: 6px;
 }
 
 .image {
@@ -145,6 +166,16 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+}
+
+.brand {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--color-gray);
+  margin-bottom: 8px;
 }
 
 .name {
@@ -203,6 +234,23 @@
   border-radius: 50%;
 }
 
+.availabilityLow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #ea580c;
+  margin-bottom: 8px;
+}
+
+.availabilityDotLow {
+  width: 6px;
+  height: 6px;
+  background: #ea580c;
+  border-radius: 50%;
+}
+
 .rating {
   font-size: 12px;
   color: var(--color-gray);
@@ -238,6 +286,13 @@
   color: #2d2d2d;
 }
 
+.priceSale {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-primary);
+  line-height: 1.2;
+}
+
 .btn {
   margin-top: auto;
   padding: 14px 20px;
@@ -260,6 +315,62 @@
   background: #16a34a;
   border-color: #16a34a;
   cursor: default;
+}
+
+.btnIcon {
+  margin-top: auto;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: var(--color-primary);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btnIcon:hover:not(:disabled) {
+  background: var(--color-primary-dark, #a84d1f);
+}
+
+.btnIcon:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* В каталоге — кнопка «В корзину» на всю ширину карточки */
+.btnIconFull {
+  margin-top: auto;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #fff;
+  background: var(--color-primary);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.btnIconFull:hover:not(:disabled) {
+  background: var(--color-primary-dark, #a84d1f);
+}
+
+.btnIconFull:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* Счётчик количества в стиле WB */
@@ -299,12 +410,36 @@
   background: rgba(196, 92, 38, 0.15);
 }
 
+.qtyBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .qtyValue {
   min-width: 40px;
+  width: 44px;
   text-align: center;
   font-size: 16px;
   font-weight: 600;
   color: #1a1a1a;
+  border: none;
+  background: transparent;
+  padding: 0 4px;
+  box-sizing: border-box;
+  -moz-appearance: textfield;
+  outline: none;
+  box-shadow: none;
+}
+
+.qtyValue:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.qtyValue::-webkit-outer-spin-button,
+.qtyValue::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .cardCompact .quantityControl {
@@ -319,6 +454,7 @@
 
 .cardCompact .qtyValue {
   min-width: 32px;
+  width: 36px;
   font-size: 14px;
 }
 

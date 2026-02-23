@@ -10,9 +10,14 @@ export default function Catalog() {
   const [searchParams, setSearchParams] = useSearchParams();
   const categoryParam = searchParams.get('category');
   const urlSearch = searchParams.get('search') || '';
+  const priceMaxParam = searchParams.get('price_max');
+  const priceMinParam = searchParams.get('price_min');
   const [searchInput, setSearchInput] = useState(urlSearch);
   const [categories, setCategories] = useState([]);
   const debounceRef = useRef(null);
+
+  const priceMin = priceMinParam != null && priceMinParam !== '' ? Number(priceMinParam) : null;
+  const priceMax = priceMaxParam != null && priceMaxParam !== '' ? Number(priceMaxParam) : null;
 
   useEffect(() => {
     setSearchInput(urlSearch);
@@ -60,14 +65,30 @@ export default function Catalog() {
     }, SEARCH_DEBOUNCE_MS);
   };
 
+  const handlePriceChange = (minVal, maxVal) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (minVal != null && !Number.isNaN(minVal) && minVal > 0) next.set('price_min', String(minVal));
+      else next.delete('price_min');
+      if (maxVal != null && !Number.isNaN(maxVal) && maxVal < 2000) next.set('price_max', String(maxVal));
+      else next.delete('price_max');
+      return next;
+    });
+  };
+
+  const handleResetFilters = () => {
+    setSearchParams(new URLSearchParams());
+    setSearchInput('');
+  };
+
   return (
     <main className={styles.main}>
       <div className={styles.container}>
-        <h1 className={styles.pageTitle}>Каталог</h1>
+        <h1 className={styles.pageTitle}>Каталог товаров</h1>
         <nav className={styles.breadcrumb}>
-          <Link to="/">ГЛАВНАЯ</Link>
-          <span className={styles.sep}> &gt; </span>
-          <span>КАТАЛОГ</span>
+          <Link to="/">Главная</Link>
+          <span className={styles.sep}>/</span>
+          <span className={styles.breadcrumbCurrent}>Каталог товаров</span>
         </nav>
         <div className={styles.layout}>
           <aside className={styles.sidebar}>
@@ -78,6 +99,10 @@ export default function Catalog() {
               searchQuery={searchInput}
               onSearchChange={handleSearchChange}
               onCategorySelect={handleCategorySelect}
+              priceMin={priceMin}
+              priceMax={priceMax}
+              onPriceChange={handlePriceChange}
+              onReset={handleResetFilters}
             />
           </aside>
           <div className={styles.content}>

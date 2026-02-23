@@ -3,11 +3,79 @@ import { pool } from '../db.js';
 
 const router = Router();
 
+/**
+ * Возвращает список товаров для каталога по параметрам (для HTTP и WS).
+ * @param {{ category?: string, search?: string, price_min?: number, price_max?: number }} params
+ * @returns {Promise<Array>}
+ */
+export async function getCatalogProducts(params = {}) {
+  const categorySlug = params.category || null;
+  const searchTerm = (params.search && String(params.search).trim()) || '';
+  const priceMin = params.price_min != null && params.price_min !== '' ? parseFloat(params.price_min) : null;
+  const priceMax = params.price_max != null && params.price_max !== '' ? parseFloat(params.price_max) : null;
+  const hasPriceFilter = (priceMin != null && !Number.isNaN(priceMin)) || (priceMax != null && !Number.isNaN(priceMax));
+
+  let query = `
+    SELECT p.id, p.name, p.description, p.weight, p.price, p.sale_price, p.image_url, p.article, p.manufacturer,
+           (p.image_data IS NOT NULL OR (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) > 0) AS has_image,
+           (SELECT COUNT(*)::int FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
+           COALESCE(p.in_stock, true) AS in_stock,
+           COALESCE(p.quantity, 0)::int AS quantity,
+           COALESCE(p.is_sale, false) AS is_sale,
+           COALESCE(p.is_hit, false) AS is_hit,
+           COALESCE(p.is_recommended, false) AS is_recommended,
+           c.id as category_id, c.name as category_name, c.slug as category_slug
+    FROM products p
+    JOIN categories c ON p.category_id = c.id
+  `;
+  const queryParams = [];
+  let paramIndex = 1;
+  const conditions = [];
+
+  if (categorySlug) {
+    conditions.push(`c.slug = $${paramIndex++}`);
+    queryParams.push(categorySlug);
+  }
+  if (searchTerm) {
+    const term = `%${searchTerm}%`;
+    const isNumeric = /^\d+$/.test(searchTerm);
+    if (isNumeric) {
+      conditions.push(`(p.name ILIKE $${paramIndex} OR p.description ILIKE $${paramIndex} OR p.article = $${paramIndex + 1})`);
+      queryParams.push(term);
+      queryParams.push(parseInt(searchTerm, 10));
+      paramIndex += 2;
+    } else {
+      conditions.push(`(p.name ILIKE $${paramIndex} OR p.description ILIKE $${paramIndex} OR c.name ILIKE $${paramIndex})`);
+      queryParams.push(term);
+      paramIndex += 1;
+    }
+  }
+  if (hasPriceFilter) {
+    const effectivePrice = '(CASE WHEN COALESCE(p.is_sale, false) AND p.sale_price IS NOT NULL THEN p.sale_price ELSE p.price END)';
+    if (priceMin != null && !Number.isNaN(priceMin)) {
+      conditions.push(`${effectivePrice} >= $${paramIndex++}`);
+      queryParams.push(priceMin);
+    }
+    if (priceMax != null && !Number.isNaN(priceMax)) {
+      conditions.push(`${effectivePrice} <= $${paramIndex++}`);
+      queryParams.push(priceMax);
+    }
+  }
+  if (conditions.length) query += ' WHERE ' + conditions.join(' AND ');
+  query += ' ORDER BY c.id, p.id';
+
+  const result = await pool.query(query, queryParams);
+  return result.rows;
+}
+
 router.get('/', async (req, res) => {
   try {
-    const { category: categorySlug, search: searchTerm, ids: idsParam, sort: sortParam, limit: limitParam } = req.query;
+    const { category: categorySlug, search: searchTerm, ids: idsParam, sort: sortParam, limit: limitParam, price_min: priceMinParam, price_max: priceMaxParam } = req.query;
     const sortBySales = sortParam === 'sales';
     const limitNum = limitParam ? Math.min(Math.max(parseInt(limitParam, 10) || 0, 1), 100) : null;
+    const priceMin = priceMinParam != null && priceMinParam !== '' ? parseFloat(priceMinParam) : null;
+    const priceMax = priceMaxParam != null && priceMaxParam !== '' ? parseFloat(priceMaxParam) : null;
+    const hasPriceFilter = (priceMin != null && !Number.isNaN(priceMin)) || (priceMax != null && !Number.isNaN(priceMax));
 
     let query;
     const params = [];
@@ -21,7 +89,8 @@ router.get('/', async (req, res) => {
           GROUP BY oi.product_id
         )
         SELECT p.id, p.name, p.description, p.weight, p.price, p.sale_price, p.image_url, p.article, p.manufacturer,
-               (p.image_data IS NOT NULL) AS has_image,
+               (p.image_data IS NOT NULL OR (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) > 0) AS has_image,
+               (SELECT COUNT(*)::int FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
                COALESCE(p.in_stock, true) AS in_stock,
                COALESCE(p.quantity, 0)::int AS quantity,
                COALESCE(p.is_sale, false) AS is_sale,
@@ -34,6 +103,17 @@ router.get('/', async (req, res) => {
         WHERE c.slug = $${paramIndex++}
       `;
       params.push(categorySlug);
+      if (hasPriceFilter) {
+        const effectivePrice = '(CASE WHEN COALESCE(p.is_sale, false) AND p.sale_price IS NOT NULL THEN p.sale_price ELSE p.price END)';
+        if (priceMin != null && !Number.isNaN(priceMin)) {
+          query += ` AND ${effectivePrice} >= $${paramIndex++}`;
+          params.push(priceMin);
+        }
+        if (priceMax != null && !Number.isNaN(priceMax)) {
+          query += ` AND ${effectivePrice} <= $${paramIndex++}`;
+          params.push(priceMax);
+        }
+      }
       if (searchTerm && String(searchTerm).trim()) {
         const term = `%${String(searchTerm).trim()}%`;
         const trimmedSearch = String(searchTerm).trim();
@@ -58,7 +138,8 @@ router.get('/', async (req, res) => {
     } else {
       query = `
         SELECT p.id, p.name, p.description, p.weight, p.price, p.sale_price, p.image_url, p.article, p.manufacturer,
-               (p.image_data IS NOT NULL) AS has_image,
+               (p.image_data IS NOT NULL OR (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) > 0) AS has_image,
+               (SELECT COUNT(*)::int FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
                COALESCE(p.in_stock, true) AS in_stock,
                COALESCE(p.quantity, 0)::int AS quantity,
                COALESCE(p.is_sale, false) AS is_sale,
@@ -96,6 +177,17 @@ router.get('/', async (req, res) => {
           conditions.push(`(p.name ILIKE $${paramIndex} OR p.description ILIKE $${paramIndex} OR c.name ILIKE $${paramIndex})`);
           params.push(term);
           paramIndex += 1;
+        }
+      }
+      if (hasPriceFilter) {
+        const effectivePrice = '(CASE WHEN COALESCE(p.is_sale, false) AND p.sale_price IS NOT NULL THEN p.sale_price ELSE p.price END)';
+        if (priceMin != null && !Number.isNaN(priceMin)) {
+          conditions.push(`${effectivePrice} >= $${paramIndex++}`);
+          params.push(priceMin);
+        }
+        if (priceMax != null && !Number.isNaN(priceMax)) {
+          conditions.push(`${effectivePrice} <= $${paramIndex++}`);
+          params.push(priceMax);
         }
       }
       if (conditions.length) query += ' WHERE ' + conditions.join(' AND ');
@@ -218,17 +310,63 @@ router.get('/search', async (req, res) => {
 router.get('/:id/image', async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query(
+    const fromPi = await pool.query(
+      'SELECT image_data, image_content_type FROM product_images WHERE product_id = $1 ORDER BY sort_order ASC LIMIT 1',
+      [id]
+    );
+    if (fromPi.rows[0]?.image_data) {
+      const { image_data, image_content_type } = fromPi.rows[0];
+      res.set('Content-Type', image_content_type || 'image/jpeg');
+      res.set('Cache-Control', 'public, max-age=86400');
+      return res.send(image_data);
+    }
+    const fromProd = await pool.query(
       'SELECT image_data, image_content_type FROM products WHERE id = $1',
       [id]
     );
-    if (!result.rows[0] || !result.rows[0].image_data) {
+    if (!fromProd.rows[0] || !fromProd.rows[0].image_data) {
       return res.status(404).json({ message: 'Изображение не найдено' });
     }
-    const { image_data, image_content_type } = result.rows[0];
+    const { image_data, image_content_type } = fromProd.rows[0];
     res.set('Content-Type', image_content_type || 'image/jpeg');
     res.set('Cache-Control', 'public, max-age=86400');
     res.send(image_data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+router.get('/:id/images/:index', async (req, res) => {
+  try {
+    const { id, index } = req.params;
+    const idx = parseInt(index, 10);
+    if (Number.isNaN(idx) || idx < 0 || idx > 3) {
+      return res.status(400).json({ message: 'Индекс изображения от 0 до 3' });
+    }
+    const fromPi = await pool.query(
+      'SELECT image_data, image_content_type FROM product_images WHERE product_id = $1 ORDER BY sort_order ASC OFFSET $2 LIMIT 1',
+      [id, idx]
+    );
+    if (fromPi.rows[0]?.image_data) {
+      const { image_data, image_content_type } = fromPi.rows[0];
+      res.set('Content-Type', image_content_type || 'image/jpeg');
+      res.set('Cache-Control', 'public, max-age=86400');
+      return res.send(image_data);
+    }
+    if (idx === 0) {
+      const fromProd = await pool.query(
+        'SELECT image_data, image_content_type FROM products WHERE id = $1',
+        [id]
+      );
+      if (fromProd.rows[0]?.image_data) {
+        const { image_data, image_content_type } = fromProd.rows[0];
+        res.set('Content-Type', image_content_type || 'image/jpeg');
+        res.set('Cache-Control', 'public, max-age=86400');
+        return res.send(image_data);
+      }
+    }
+    return res.status(404).json({ message: 'Изображение не найдено' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Ошибка сервера' });
@@ -240,18 +378,31 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params;
     const result = await pool.query(
       `SELECT p.id, p.category_id, p.name, p.description, p.weight, p.price, p.sale_price, p.image_url, p.article, p.manufacturer,
-              (p.image_data IS NOT NULL) AS has_image,
+              (p.image_data IS NOT NULL OR (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) > 0) AS has_image,
+              (SELECT COUNT(*)::int FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
               COALESCE(p.in_stock, true) AS in_stock,
               COALESCE(p.quantity, 0)::int AS quantity,
               COALESCE(p.is_sale, false) AS is_sale,
               COALESCE(p.is_hit, false) AS is_hit,
               COALESCE(p.is_recommended, false) AS is_recommended,
-              c.name as category_name, c.slug as category_slug
+              c.name as category_name, c.slug as category_slug,
+              p.short_description, p.trust_badges, p.how_to_use_intro, p.how_to_use_step1, p.how_to_use_step2, p.how_to_use_step3,
+              COALESCE(p.show_how_to_use, true) AS show_how_to_use,
+              COALESCE(p.show_related, true) AS show_related
        FROM products p JOIN categories c ON p.category_id = c.id WHERE p.id = $1`,
       [id]
     );
     if (!result.rows[0]) return res.status(404).json({ message: 'Товар не найден' });
-    res.json(result.rows[0]);
+    const row = result.rows[0];
+    if (row.trust_badges && typeof row.trust_badges === 'string') {
+      try {
+        row.trust_badges = JSON.parse(row.trust_badges);
+      } catch {
+        row.trust_badges = null;
+      }
+    }
+    if (!Array.isArray(row.trust_badges)) row.trust_badges = null;
+    res.json(row);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Ошибка сервера' });

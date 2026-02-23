@@ -1,21 +1,114 @@
-<div class="bg-white border border-slate-200 grid grid-cols-6 gap-2 rounded-xl p-2 text-sm">
-    <h1 class="text-center text-slate-200 text-xl font-bold col-span-6">Send Feedback</h1>
-    <textarea placeholder="Your feedback..." class="bg-slate-100 text-slate-600 h-28 placeholder:text-slate-600 placeholder:opacity-50 border border-slate-200 col-span-6 resize-none outline-none rounded-lg p-2 duration-300 focus:border-slate-600"></textarea>
-    <button class="fill-slate-600 col-span-1 flex justify-center items-center rounded-lg p-2 duration-300 bg-slate-100 hover:border-slate-600 focus:fill-blue-200 focus:bg-blue-400 border border-slate-200">
-<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 512 512">
-<path d="M464 256A208 208 0 1 0 48 256a208 208 0 1 0 416 0zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zm177.6 62.1C192.8 334.5 218.8 352 256 352s63.2-17.5 78.4-33.9c9-9.7 24.2-10.4 33.9-1.4s10.4 24.2 1.4 33.9c-22 23.8-60 49.4-113.6 49.4s-91.7-25.5-113.6-49.4c-9-9.7-8.4-24.9 1.4-33.9s24.9-8.4 33.9 1.4zM144.4 208a32 32 0 1 1 64 0 32 32 0 1 1 -64 0zm192-32a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"></path>
-</svg>
-</button>
-    <button class="fill-slate-600 col-span-1 flex justify-center items-center rounded-lg p-2 duration-300 bg-slate-100 hover:border-slate-600 focus:fill-blue-200 focus:bg-blue-400 border border-slate-200">
-            <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 0 512 512">
-<path d="M464 256A208 208 0 1 0 48 256a208 208 0 1 0 416 0zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zM174.6 384.1c-4.5 12.5-18.2 18.9-30.7 14.4s-18.9-18.2-14.4-30.7C146.9 319.4 198.9 288 256 288s109.1 31.4 126.6 79.9c4.5 12.5-2 26.2-14.4 30.7s-26.2-2-30.7-14.4C328.2 358.5 297.2 336 256 336s-72.2 22.5-81.4 48.1zM144.4 208a32 32 0 1 1 64 0 32 32 0 1 1 -64 0zm192-32a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"></path></svg>
-        </button>
-    <span class="col-span-2"></span>
-    <button class="bg-slate-100 stroke-slate-600 border border-slate-200 col-span-2 flex justify-center rounded-lg p-2 duration-300 hover:border-slate-600 hover:text-white focus:stroke-blue-200 focus:bg-blue-400">
-            <svg fill="none" viewBox="0 0 24 24" height="30px" width="30px" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linejoin="round" stroke-linecap="round" stroke-width="1.5" d="M7.39999 6.32003L15.89 3.49003C19.7 2.22003 21.77 4.30003 20.51 8.11003L17.68 16.6C15.78 22.31 12.66 22.31 10.76 16.6L9.91999 14.08L7.39999 13.24C1.68999 11.34 1.68999 8.23003 7.39999 6.32003Z"></path>
-                <path stroke-linejoin="round" stroke-linecap="round" stroke-width="1.5" d="M10.11 13.6501L13.69 10.0601"></path>
-            </svg>
-        </button>
+<!DOCTYPE html>
 
+<html lang="ru"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Восстановление пароля - Sport EDA</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#fa6f05",
+                        "background-light": "#f8f7f5",
+                        "background-dark": "#23180f",
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Lexend', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-[#181411] min-h-screen flex flex-col">
+<!-- Top Navigation Bar -->
+<header class="w-full bg-white dark:bg-background-dark border-b border-[#e6e0db] dark:border-[#3d2e24] px-6 lg:px-40 py-4">
+<div class="max-w-[1280px] mx-auto flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="text-primary size-8">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M24 45.8096C19.6865 45.8096 15.4698 44.5305 11.8832 42.134C8.29667 39.7376 5.50128 36.3314 3.85056 32.3462C2.19985 28.361 1.76794 23.9758 2.60947 19.7452C3.451 15.5145 5.52816 11.6284 8.57829 8.5783C11.6284 5.52817 15.5145 3.45101 19.7452 2.60948C23.9758 1.76795 28.361 2.19986 32.3462 3.85057C36.3314 5.50129 39.7376 8.29668 42.134 11.8833C44.5305 15.4698 45.8096 19.6865 45.8096 24L24 24L24 45.8096Z" fill="currentColor"></path>
+</svg>
 </div>
+<h2 class="text-lg font-bold tracking-tight">Sport EDA</h2>
+</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Главная</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Аналитика</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Спорт</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="bg-primary text-white text-sm font-bold px-6 py-2 rounded-lg hover:bg-opacity-90 transition-all">
+                    Войти
+                </button>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-grow flex items-center justify-center px-4 py-12">
+<div class="w-full max-w-[440px] bg-white dark:bg-[#2d2218] rounded-xl shadow-sm border border-[#e6e0db] dark:border-[#3d2e24] p-8 md:p-10">
+<!-- Icon/Branding -->
+<div class="flex justify-center mb-6">
+<div class="size-16 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+<span class="material-symbols-outlined !text-4xl">lock_reset</span>
+</div>
+</div>
+<!-- Header Text -->
+<div class="text-center mb-8">
+<h1 class="text-2xl md:text-3xl font-bold mb-3 tracking-tight">Восстановление пароля</h1>
+<p class="text-[#8c725f] dark:text-[#b0a196] text-sm leading-relaxed">
+                    Введите адрес электронной почты, связанный с вашим аккаунтом, и мы отправим вам ссылку для сброса пароля.
+                </p>
+</div>
+<!-- Recovery Form -->
+<form action="#" class="space-y-6">
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-[#181411] dark:text-white" for="email">Email</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#8c725f] !text-xl">mail</span>
+<input class="w-full bg-white dark:bg-[#3d2e24] border border-[#e6e0db] dark:border-[#524134] rounded-lg py-3.5 pl-12 pr-4 text-base focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all placeholder:text-[#8c725f]/60" id="email" name="email" placeholder="example@sporteda.com" required="" type="email"/>
+</div>
+</div>
+<button class="w-full bg-primary text-white font-bold py-4 rounded-lg hover:bg-opacity-95 transform active:scale-[0.98] transition-all shadow-lg shadow-primary/20" type="submit">
+                    Отправить ссылку
+                </button>
+<div class="text-center pt-2">
+<a class="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline group" href="#">
+<span class="material-symbols-outlined !text-lg transition-transform group-hover:-translate-x-1">arrow_back</span>
+                        Вернуться к входу
+                    </a>
+</div>
+</form>
+</div>
+</main>
+<!-- Simple Footer -->
+<footer class="w-full border-t border-[#e6e0db] dark:border-[#3d2e24] py-8 bg-white dark:bg-background-dark">
+<div class="max-w-[1280px] mx-auto px-6 lg:px-40 flex flex-col md:flex-row justify-between items-center gap-4">
+<p class="text-sm text-[#8c725f] dark:text-[#b0a196]">
+                © 2024 Sport EDA. Все права защищены.
+            </p>
+<div class="flex gap-6">
+<a class="text-sm text-[#8c725f] dark:text-[#b0a196] hover:text-primary" href="#">Конфиденциальность</a>
+<a class="text-sm text-[#8c725f] dark:text-[#b0a196] hover:text-primary" href="#">Условия</a>
+<a class="text-sm text-[#8c725f] dark:text-[#b0a196] hover:text-primary" href="#">Поддержка</a>
+</div>
+</div>
+</footer>
+</body></html>

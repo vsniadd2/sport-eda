@@ -7,6 +7,8 @@ import styles from './ProductFilters.module.css';
 const DEBOUNCE_MS = 300;
 const SEARCH_LIMIT = 10;
 
+const PRICE_MAX = 2000;
+
 export default function ProductFilters({
   categories,
   selectedCategory,
@@ -14,6 +16,10 @@ export default function ProductFilters({
   searchQuery = '',
   onSearchChange,
   onCategorySelect,
+  priceMin = null,
+  priceMax = null,
+  onPriceChange,
+  onReset,
 }) {
   const [results, setResults] = useState({ products: [], categories: [] });
   const [loading, setLoading] = useState(false);
@@ -99,6 +105,17 @@ export default function ProductFilters({
     dropdownOpen &&
     (searchQuery || '').trim() &&
     (loading || hasResults);
+
+  const categoryIcon = (
+    <svg className={styles.categoriesIcon} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path d="M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z" />
+    </svg>
+  );
+  const chevronRight = (
+    <svg className={styles.chevron} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path d="M9 18l6-6-6-6" />
+    </svg>
+  );
 
   return (
     <div className={styles.wrapper} ref={wrapRef}>
@@ -251,8 +268,10 @@ export default function ProductFilters({
           </div>
         )}
       </div>
-      <h3 className={styles.categoriesTitle}>КАТЕГОРИИ</h3>
-      <div className={styles.line} />
+      <h2 className={styles.categoriesTitle}>
+        {categoryIcon}
+        Категории
+      </h2>
       <ul className={styles.categoryList}>
         <li>
           <button
@@ -260,7 +279,8 @@ export default function ProductFilters({
             className={`${styles.categoryBtn} ${!selectedCategory ? styles.active : ''}`}
             onClick={() => onFilterChange('')}
           >
-            Все товары
+            <span>Все товары</span>
+            {chevronRight}
           </button>
         </li>
         {categories.map((cat) => (
@@ -270,11 +290,84 @@ export default function ProductFilters({
               className={`${styles.categoryBtn} ${selectedCategory === cat.slug ? styles.active : ''}`}
               onClick={() => onFilterChange(cat.slug)}
             >
-              {cat.name}
+              <span>{cat.name}</span>
+              {chevronRight}
             </button>
           </li>
         ))}
       </ul>
+      <div className={styles.priceFilter}>
+        <h3 className={styles.priceFilterTitle}>Фильтр по цене</h3>
+        <input
+          type="range"
+          className={styles.priceFilterRange}
+          min={0}
+          max={PRICE_MAX}
+          value={priceMax != null && !Number.isNaN(priceMax) ? Number(priceMax) : PRICE_MAX}
+          onChange={(e) => onPriceChange?.(priceMin, Number(e.target.value))}
+          aria-label="Максимальная цена"
+        />
+        <div className={styles.priceFilterRow}>
+          <div className={styles.priceFilterInputWrap}>
+            <label className={styles.priceFilterInputLabel} htmlFor="price-min-input">от</label>
+            <input
+              id="price-min-input"
+              type="number"
+              min={0}
+              max={PRICE_MAX}
+              step={1}
+              className={styles.priceFilterInput}
+              value={priceMin != null && !Number.isNaN(priceMin) && priceMin > 0 ? Number(priceMin) : ''}
+              placeholder="0"
+              onChange={(e) => {
+                const raw = e.target.value;
+                if (raw === '') {
+                  onPriceChange?.(null, priceMax != null && !Number.isNaN(priceMax) ? priceMax : PRICE_MAX);
+                  return;
+                }
+                const v = parseInt(raw, 10);
+                if (!Number.isNaN(v)) {
+                  const clamped = Math.min(PRICE_MAX, Math.max(0, v));
+                  onPriceChange?.(clamped, priceMax != null && !Number.isNaN(priceMax) ? priceMax : PRICE_MAX);
+                }
+              }}
+              aria-label="Минимальная цена (ввести вручную)"
+            />
+            <span className={styles.priceFilterInputSuffix}>BYN</span>
+          </div>
+          <div className={styles.priceFilterInputWrap}>
+            <label className={styles.priceFilterInputLabel} htmlFor="price-max-input">до</label>
+            <input
+              id="price-max-input"
+              type="number"
+              min={0}
+              max={PRICE_MAX}
+              step={1}
+              className={styles.priceFilterInput}
+              value={priceMax != null && !Number.isNaN(priceMax) ? Number(priceMax) : PRICE_MAX}
+              onChange={(e) => {
+                const raw = e.target.value;
+                if (raw === '') {
+                  onPriceChange?.(priceMin, PRICE_MAX);
+                  return;
+                }
+                const v = parseInt(raw, 10);
+                if (!Number.isNaN(v)) {
+                  const clamped = Math.min(PRICE_MAX, Math.max(0, v));
+                  onPriceChange?.(priceMin != null && !Number.isNaN(priceMin) ? priceMin : null, clamped);
+                }
+              }}
+              aria-label="Максимальная цена (ввести вручную)"
+            />
+            <span className={styles.priceFilterInputSuffix}>BYN</span>
+          </div>
+        </div>
+        {onReset && (
+          <button type="button" className={styles.resetBtn} onClick={onReset}>
+            Сбросить
+          </button>
+        )}
+      </div>
     </div>
   );
 }

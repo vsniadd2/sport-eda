@@ -25,18 +25,31 @@ function getAuthHeaders() {
   return { Authorization: `Bearer ${token}` };
 }
 
+function isTokenExpired(token) {
+  if (!token) return true;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return !payload.exp || payload.exp * 1000 <= Date.now();
+  } catch {
+    return true;
+  }
+}
+
 export function FavoritesProvider({ children }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [favoriteIds, setFavoriteIds] = useState([]);
   const [synced, setSynced] = useState(false);
   const mergedRef = useRef(false);
+  const logoutRef = useRef(logout);
+  logoutRef.current = logout;
 
   const idsSet = new Set(favoriteIds);
   const totalCount = favoriteIds.length;
 
   const fetchFavorites = useCallback(async () => {
     const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) {
+    if (!token || isTokenExpired(token)) {
+      if (token) localStorage.removeItem(TOKEN_KEY);
       setFavoriteIds(loadGuestFavorites());
       setSynced(true);
       return;
@@ -47,6 +60,10 @@ export function FavoritesProvider({ children }) {
         const data = await res.json();
         setFavoriteIds(Array.isArray(data) ? data : []);
       } else {
+        if (res.status === 401) {
+          localStorage.removeItem(TOKEN_KEY);
+          logoutRef.current();
+        }
         setFavoriteIds(loadGuestFavorites());
       }
     } catch {
@@ -75,6 +92,12 @@ export function FavoritesProvider({ children }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
           body: JSON.stringify({ product_id: id }),
+        }).then((res) => {
+          if (res.status === 401) {
+            localStorage.removeItem(TOKEN_KEY);
+            logoutRef.current();
+          }
+          return res;
         })
       )
     ).finally(() => {

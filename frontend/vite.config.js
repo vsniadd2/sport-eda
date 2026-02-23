@@ -6,9 +6,19 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': 'http://localhost:5000',
+      '/api': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+        configure(proxy) {
+          const origEmit = proxy.emit.bind(proxy)
+          proxy.emit = function (event, ...args) {
+            if (event === 'error' && (args[0]?.code === 'ECONNRESET' || args[0]?.code === 'ECONNREFUSED')) return true
+            return origEmit.apply(this, [event, ...args])
+          }
+        },
+      },
       '/socket.io': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:5001',
         ws: true,
         changeOrigin: true,
         configure(proxy) {

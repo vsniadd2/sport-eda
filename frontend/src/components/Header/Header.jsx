@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
@@ -17,6 +18,9 @@ export default function Header() {
   const [callbackOpen, setCallbackOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const triggerRef = useRef(null);
+  const dropdownPanelRef = useRef(null);
+  const [dropdownRect, setDropdownRect] = useState(null);
 
   const openCallback = () => {
     setCallbackOpen(true);
@@ -24,10 +28,16 @@ export default function Header() {
   };
 
   useEffect(() => {
+    if (!open || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    setDropdownRect({ top: rect.bottom + 8, left: rect.right - 180, width: 180 });
+  }, [open]);
+
+  useEffect(() => {
     const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setOpen(false);
-      }
+      const inTrigger = triggerRef.current?.contains(e.target);
+      const inPanel = dropdownPanelRef.current?.contains(e.target);
+      if (!inTrigger && !inPanel) setOpen(false);
     };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
@@ -48,52 +58,56 @@ export default function Header() {
 
   return (
     <header className={styles.header}>
-      <div className={styles.topRow}>
-        <div className={styles.container}>
+      <div className={styles.container}>
+        <div className={styles.leftSection}>
           <Link to="/" className={styles.logo}>
-            <span className={styles.logoTitle}>
-              <span className={styles.logoAccent}>SPORT</span>
-              <span className={styles.logoDark}> EDA</span>
-            </span>
-            <span className={styles.logoSub}>Интернет-магазин спортивных товаров</span>
-          </Link>
-          <div className={styles.contactsBlock}>
-            <div className={styles.phones}>
-              <a href="tel:+375257802345">+375 25 780-23-45</a>
-              <a href="tel:+375259057976">+375 25 905-79-76</a>
+            <div className={styles.logoIcon}>
+              <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M24 4C25.7818 14.2173 33.7827 22.2182 44 24C33.7827 25.7818 25.7818 33.7827 24 44C22.2182 33.7827 14.2173 25.7818 4 24C14.2173 22.2182 22.2182 14.2173 24 4Z" fill="currentColor"/>
+              </svg>
             </div>
-            <button type="button" className={styles.callbackBtn} onClick={() => setCallbackOpen(true)}>Заказать звонок</button>
-          </div>
-          <div className={styles.navWrap}>
+            <h2 className={styles.logoText}>SPORT EDA</h2>
+          </Link>
           <nav className={styles.nav}>
-            <Link to="/" className={isActive('/') && location.pathname === '/' ? styles.navLinkActive : styles.navLink}>
-              ГЛАВНАЯ
-            </Link>
             <Link to="/catalog" className={isActive('/catalog') ? styles.navLinkActive : styles.navLink}>
               КАТАЛОГ
             </Link>
-            <Link to="/payment" className={isActive('/payment') ? styles.navLinkActive : styles.navLink}>
-              ОПЛАТА И ДОСТАВКА
-            </Link>
             <Link to="/about" className={isActive('/about') ? styles.navLinkActive : styles.navLink}>
-              О НАС
+              БРЕНДЫ
             </Link>
-            <Link to="/sitemap" className={isActive('/sitemap') ? styles.navLinkActive : styles.navLink}>
-              КАРТА САЙТА
+            <Link to="/catalog?sale=true" className={isActive('/catalog?sale=true') ? styles.navLinkActive : styles.navLink}>
+              АКЦИИ
+            </Link>
+            <Link to="/payment" className={isActive('/payment') ? styles.navLinkActive : styles.navLink}>
+              ДОСТАВКА
             </Link>
           </nav>
-          </div>
+        </div>
+        <div className={styles.rightSection}>
+          <button
+            type="button"
+            className={styles.callbackLink}
+            onClick={() => setCallbackOpen(true)}
+          >
+            Заказать звонок
+          </button>
           <div className={styles.icons}>
             <button type="button" className={styles.iconBtn} onClick={() => setSearchOpen(true)} aria-label="Поиск">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.35-4.35"/>
+              </svg>
             </button>
             {user ? (
               <div className={styles.userDropdown} ref={dropdownRef}>
-                <button type="button" className={styles.iconBtn} onClick={() => setOpen(!open)} aria-label="Профиль">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <button ref={triggerRef} type="button" className={styles.iconBtn} onClick={() => setOpen(!open)} aria-label="Профиль">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
                 </button>
-                {open && (
-                  <div className={styles.dropdown}>
+                {open && dropdownRect && createPortal(
+                  <div ref={dropdownPanelRef} className={styles.dropdownPortal} style={{ top: dropdownRect.top, left: dropdownRect.left, minWidth: dropdownRect.width }}>
                     <span className={styles.dropdownName}>{displayName}</span>
                     <Link to="/profile" className={styles.dropdownLink} onClick={() => setOpen(false)}>Профиль</Link>
                     <Link to="/profile/orders" className={styles.dropdownLink} onClick={() => setOpen(false)}>Мои заказы</Link>
@@ -102,25 +116,27 @@ export default function Header() {
                       <Link to="/admin" className={styles.dropdownLink} onClick={() => setOpen(false)}>Админ панель</Link>
                     )}
                     <button type="button" onClick={() => { logout(); setOpen(false); }} className={styles.logoutBtn}>Выйти</button>
-                  </div>
+                  </div>,
+                  document.body
                 )}
               </div>
             ) : (
               <Link to="/login" className={styles.iconBtn} aria-label="Вход">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
               </Link>
             )}
-            <Link to="/favorites" className={styles.cartWrap} aria-label="Избранное">
-              <span className={styles.iconBtn}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-              </span>
-              {favoritesCount > 0 && <span className={styles.cartBadge}>{favoritesCount}</span>}
-            </Link>
-            <Link to="/cart" className={styles.cartWrap}>
-              <span className={styles.iconBtn}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-              </span>
-              {totalItems > 0 && <span className={styles.cartBadge}>{totalItems}</span>}
+            <Link to="/cart" className={styles.cartWrap} aria-label="Корзина">
+              <button className={styles.iconBtn}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="9" cy="21" r="1"/>
+                  <circle cx="20" cy="21" r="1"/>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
+                {totalItems > 0 && <span className={styles.cartBadge}>{totalItems}</span>}
+              </button>
             </Link>
             <button
               type="button"
@@ -129,7 +145,9 @@ export default function Header() {
               onClick={() => setMobileMenuOpen((v) => !v)}
               aria-expanded={mobileMenuOpen}
             >
-              <span /><span /><span />
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 12h18M3 6h18M3 18h18"/>
+              </svg>
             </button>
           </div>
         </div>
@@ -144,13 +162,13 @@ export default function Header() {
               Каталог
             </Link>
             <Link to="/payment" className={isActive('/payment') ? styles.mobileNavActive : styles.mobileNavLink} onClick={() => setMobileMenuOpen(false)}>
-              Оплата и доставка
+              Доставка
             </Link>
             <Link to="/about" className={isActive('/about') ? styles.mobileNavActive : styles.mobileNavLink} onClick={() => setMobileMenuOpen(false)}>
-              О нас
+              Бренды
             </Link>
-            <Link to="/sitemap" className={isActive('/sitemap') ? styles.mobileNavActive : styles.mobileNavLink} onClick={() => setMobileMenuOpen(false)}>
-              Карта сайта
+            <Link to="/catalog?sale=true" className={isActive('/catalog?sale=true') ? styles.mobileNavActive : styles.mobileNavLink} onClick={() => setMobileMenuOpen(false)}>
+              Акции
             </Link>
           </nav>
           <div className={styles.mobileContacts}>

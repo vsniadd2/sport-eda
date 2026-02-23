@@ -10,11 +10,11 @@ router.post('/', authMiddleware, async (req, res) => {
     const { items, address, phone, payment_method: paymentMethod, card_last4: cardLast4 } = req.body;
     if (!items?.length) return res.status(400).json({ message: 'Корзина пуста' });
     const method = paymentMethod === 'card' ? 'card' : 'on_delivery';
-    if (method === 'on_delivery' && (!address || !String(address).trim())) {
-      return res.status(400).json({ message: 'Укажите адрес доставки для оплаты при получении' });
-    }
     if (method === 'on_delivery' && (!phone || !String(phone).trim())) {
       return res.status(400).json({ message: 'Укажите телефон для оплаты при получении' });
+    }
+    if (method === 'card' && (!phone || !String(phone).trim())) {
+      return res.status(400).json({ message: 'Укажите телефон для оплаты картой' });
     }
     const last4 = method === 'card' && cardLast4 != null ? String(cardLast4).replace(/\D/g, '').slice(0, 4) : null;
     const paymentStatus = method === 'card' ? 'paid' : 'pending';

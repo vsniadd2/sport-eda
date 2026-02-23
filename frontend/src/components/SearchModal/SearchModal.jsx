@@ -11,8 +11,7 @@ const DEBOUNCE_MS = 300;
 const SITE_PAGES = [
   { title: 'Главная', path: '/', keywords: 'главная home' },
   { title: 'Каталог', path: '/catalog', keywords: 'каталог товары catalog' },
-  { title: 'Оплата и доставка', path: '/payment', keywords: 'оплата доставка payment' },
-  { title: 'Доставка', path: '/delivery', keywords: 'доставка delivery' },
+  { title: 'Самовывоз', path: '/payment', keywords: 'самовывоз оплата при получении' },
   { title: 'О нас', path: '/about', keywords: 'о нас about контакты' },
   { title: 'Карта сайта', path: '/sitemap', keywords: 'карта сайта sitemap навигация' },
 ];

@@ -2,13 +2,6 @@ import { useMemo } from 'react';
 import { formatDateTimeLong } from '../../utils/formatDate';
 import styles from './OrderStatusStepper.module.css';
 
-const STEP_LABELS = {
-  placed: 'Заказ оформлен',
-  payment: 'Оплата',
-  processing: 'Обработка',
-  shipping: 'Отправка',
-};
-
 const STATUS_LABELS = {
   completed: 'Выполнено',
   active: 'В процессе',
@@ -26,42 +19,45 @@ function CheckIcon() {
 export default function OrderStatusStepper({ order }) {
   const steps = useMemo(() => {
     if (!order) return [];
-    const paid = order.payment_status === 'paid';
     const processed = !!order.processed_at;
-    const shipped = !!order.shipped_at;
+    const isCard = order.payment_method === 'card';
+    const isPaid = order.payment_status === 'paid';
 
     const step1 = {
       key: 'placed',
       status: 'completed',
-      title: STEP_LABELS.placed,
+      title: 'Заказ оформлен',
       time: order.created_at,
     };
 
-    const step2 = {
-      key: 'payment',
-      status: paid ? 'completed' : 'active',
-      title: STEP_LABELS.payment,
-      time: paid ? (order.paid_at || order.created_at) : null,
-      timeLabel: !paid && order.payment_method === 'on_delivery' ? 'При получении' : null,
-    };
+    // Оплата картой: шаг "Оплата" (ожидание/выполнено). Бронирование: шаг "Бронирование" (всегда выполнено).
+    const step2 = isCard
+      ? {
+          key: 'payment',
+          status: isPaid ? 'completed' : 'active',
+          title: 'Оплата',
+          time: isPaid ? (order.paid_at || order.created_at) : null,
+          timeLabel: isPaid ? null : 'Ожидается оплата',
+        }
+      : {
+          key: 'booking',
+          status: 'completed',
+          title: 'Бронирование',
+          time: order.created_at,
+          timeLabel: 'Оплата при получении',
+        };
 
+    // После оплаты (или при «оплата при получении») показываем «Обработка» сразу выполненной
+    const processingDone = processed || isPaid || !isCard;
     const step3 = {
       key: 'processing',
-      status: processed ? 'completed' : paid || order.payment_method === 'on_delivery' ? 'active' : 'pending',
-      title: STEP_LABELS.processing,
-      time: processed ? order.processed_at : null,
-      timeLabel: !processed && (paid || order.payment_method === 'on_delivery') ? 'В обработке' : null,
+      status: processingDone ? 'completed' : 'pending',
+      title: 'Обработка',
+      time: processed ? order.processed_at : (isPaid || !isCard) ? (order.paid_at || order.created_at) : null,
+      timeLabel: !processingDone ? 'Ожидается' : null,
     };
 
-    const step4 = {
-      key: 'shipping',
-      status: shipped ? 'completed' : 'pending',
-      title: STEP_LABELS.shipping,
-      time: shipped ? order.shipped_at : null,
-      timeLabel: !shipped ? 'Ожидается' : null,
-    };
-
-    return [step1, step2, step3, step4];
+    return [step1, step2, step3];
   }, [order]);
 
   if (!order || steps.length === 0) return null;
