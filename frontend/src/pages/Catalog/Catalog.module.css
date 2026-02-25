@@ -5,9 +5,9 @@
 }
 
 .container {
-  max-width: 1280px;
+  max-width: 1520px;
   margin: 0 auto;
-  padding: 0 16px;
+  padding: 0 24px;
 }
 
 .pageTitle {
@@ -70,7 +70,7 @@
 
 @media (min-width: 1024px) {
   .sidebar {
-    width: 256px;
+    width: 300px;
     position: sticky;
     top: 100px;
   }

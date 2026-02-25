@@ -901,4 +901,106 @@ router.delete('/banners/:id', async (req, res) => {
   }
 });
 
+// ——— Бренды (страница «Бренды» / О магазине) ———
+router.get('/brands', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, sort_order, name, description, (image_data IS NOT NULL) AS has_image
+       FROM brands ORDER BY sort_order ASC, id ASC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+router.post('/brands', upload.single('image'), async (req, res) => {
+  try {
+    const name = (req.body.name || '').trim();
+    if (!name) return res.status(400).json({ message: 'Укажите название бренда' });
+    const description = (req.body.description || '').trim() || null;
+    const countResult = await pool.query('SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order FROM brands');
+    const sortOrder = countResult.rows[0]?.next_order ?? 0;
+    const imageBuffer = req.file?.buffer ?? null;
+    const imageContentType = req.file?.mimetype || (imageBuffer ? 'image/jpeg' : null);
+    const result = await pool.query(
+      `INSERT INTO brands (sort_order, name, description, image_data, image_content_type)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, sort_order, name, description, (image_data IS NOT NULL) AS has_image`,
+      [sortOrder, name, description, imageBuffer, imageContentType]
+    );
+    getIO().emitToAll('brandsChanged');
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+router.patch('/brands/:id', upload.single('image'), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (Number.isNaN(id)) return res.status(400).json({ message: 'Неверный ID' });
+    const name = req.body.name !== undefined ? (req.body.name || '').trim() : undefined;
+    const description = req.body.description !== undefined ? ((req.body.description || '').trim() || null) : undefined;
+    const sortOrderParam = req.body.sort_order;
+    const sortOrder = sortOrderParam !== undefined ? (Number.isNaN(parseInt(sortOrderParam, 10)) ? undefined : parseInt(sortOrderParam, 10)) : undefined;
+    if (name !== undefined && !name) return res.status(400).json({ message: 'Название не может быть пустым' });
+
+    const updates = [];
+    const values = [];
+    let i = 1;
+    if (req.file && req.file.buffer) {
+      updates.push('image_data = $' + i++, 'image_content_type = $' + i++);
+      values.push(req.file.buffer, req.file.mimetype || 'image/jpeg');
+    }
+    if (name !== undefined) {
+      updates.push('name = $' + i++);
+      values.push(name);
+    }
+    if (description !== undefined) {
+      updates.push('description = $' + i++);
+      values.push(description);
+    }
+    if (sortOrder !== undefined) {
+      updates.push('sort_order = $' + i++);
+      values.push(sortOrder);
+    }
+    if (updates.length === 0) {
+      const r = await pool.query(
+        `SELECT id, sort_order, name, description, (image_data IS NOT NULL) AS has_image FROM brands WHERE id = $1`,
+        [id]
+      );
+      if (!r.rows[0]) return res.status(404).json({ message: 'Бренд не найден' });
+      return res.json(r.rows[0]);
+    }
+    values.push(id);
+    const result = await pool.query(
+      `UPDATE brands SET ${updates.join(', ')} WHERE id = $${i} RETURNING id, sort_order, name, description, (image_data IS NOT NULL) AS has_image`,
+      values
+    );
+    if (!result.rows[0]) return res.status(404).json({ message: 'Бренд не найден' });
+    getIO().emitToAll('brandsChanged');
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+router.delete('/brands/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (Number.isNaN(id)) return res.status(400).json({ message: 'Неверный ID' });
+    const result = await pool.query('DELETE FROM brands WHERE id = $1 RETURNING id', [id]);
+    if (!result.rows[0]) return res.status(404).json({ message: 'Бренд не найден' });
+    getIO().emitToAll('brandsChanged');
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
 export default router;

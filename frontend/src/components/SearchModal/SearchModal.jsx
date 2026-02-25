@@ -12,7 +12,8 @@ const SITE_PAGES = [
   { title: 'Главная', path: '/', keywords: 'главная home' },
   { title: 'Каталог', path: '/catalog', keywords: 'каталог товары catalog' },
   { title: 'Самовывоз', path: '/payment', keywords: 'самовывоз оплата при получении' },
-  { title: 'О нас', path: '/about', keywords: 'о нас about контакты' },
+  { title: 'О магазине', path: '/about', keywords: 'о магазине о компании about' },
+  { title: 'Бренды', path: '/brands', keywords: 'бренды brands производители' },
   { title: 'Карта сайта', path: '/sitemap', keywords: 'карта сайта sitemap навигация' },
 ];
 

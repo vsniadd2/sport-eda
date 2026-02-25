@@ -14,6 +14,7 @@ import ForgotPassword from './pages/ForgotPassword/ForgotPassword';
 import ResetPassword from './pages/ResetPassword/ResetPassword';
 import Info from './pages/Info/Info';
 import About from './pages/About/About';
+import Brands from './pages/Brands/Brands';
 import Catalog from './pages/Catalog/Catalog';
 import Admin from './pages/Admin/Admin';
 import ProductDetail from './pages/ProductDetail/ProductDetail';
@@ -55,6 +56,7 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/about" element={<About />} />
+              <Route path="/brands" element={<Brands />} />
               <Route path="/payment" element={<Info page="payment" />} />
               <Route path="/delivery" element={<Info page="delivery" />} />
               <Route path="/sitemap" element={<Info page="sitemap" />} />

@@ -3,10 +3,9 @@
 <html lang="ru"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Восстановление пароля - Sport EDA</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <script id="tailwind-config">
         tailwind.config = {
@@ -14,100 +13,337 @@
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#fa6f05",
-                        "background-light": "#f8f7f5",
-                        "background-dark": "#23180f",
+                        "primary": "#ec5b13",
+                        "background-light": "#f8f6f6",
+                        "background-dark": "#221610",
                     },
                     fontFamily: {
-                        "display": ["Lexend", "sans-serif"]
+                        "display": ["Public Sans"]
                     },
-                    borderRadius: {
-                        "DEFAULT": "0.25rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "full": "9999px"
-                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
                 },
             },
         }
     </script>
-<style>
-        body {
-            font-family: 'Lexend', sans-serif;
-        }
-    </style>
+<title>C4 Original - Спорт-Еда</title>
 </head>
-<body class="bg-background-light dark:bg-background-dark text-[#181411] min-h-screen flex flex-col">
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
 <!-- Top Navigation Bar -->
-<header class="w-full bg-white dark:bg-background-dark border-b border-[#e6e0db] dark:border-[#3d2e24] px-6 lg:px-40 py-4">
-<div class="max-w-[1280px] mx-auto flex items-center justify-between">
-<div class="flex items-center gap-3">
-<div class="text-primary size-8">
-<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-<path d="M24 45.8096C19.6865 45.8096 15.4698 44.5305 11.8832 42.134C8.29667 39.7376 5.50128 36.3314 3.85056 32.3462C2.19985 28.361 1.76794 23.9758 2.60947 19.7452C3.451 15.5145 5.52816 11.6284 8.57829 8.5783C11.6284 5.52817 15.5145 3.45101 19.7452 2.60948C23.9758 1.76795 28.361 2.19986 32.3462 3.85057C36.3314 5.50129 39.7376 8.29668 42.134 11.8833C44.5305 15.4698 45.8096 19.6865 45.8096 24L24 24L24 45.8096Z" fill="currentColor"></path>
-</svg>
+<header class="sticky top-0 z-50 w-full bg-white dark:bg-background-dark border-b border-slate-200 dark:border-slate-800">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex items-center justify-between h-20">
+<!-- Logo & Search -->
+<div class="flex items-center gap-8 flex-1">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-4xl fill-1">bolt</span>
+<h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Спорт-Еда</h1>
 </div>
-<h2 class="text-lg font-bold tracking-tight">Sport EDA</h2>
+<div class="hidden md:flex flex-1 max-w-md">
+<div class="relative w-full">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+<span class="material-symbols-outlined">search</span>
 </div>
-<nav class="hidden md:flex items-center gap-8">
-<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Главная</a>
-<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Аналитика</a>
-<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Спорт</a>
+<input class="block w-full pl-10 pr-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm" placeholder="Поиск спортивного питания..." type="text"/>
+</div>
+</div>
+</div>
+<!-- Nav Links -->
+<nav class="hidden lg:flex items-center gap-6 mx-8">
+<a class="text-sm font-semibold hover:text-primary transition-colors" href="#">Протеины</a>
+<a class="text-sm font-semibold text-primary border-b-2 border-primary" href="#">Предтреники</a>
+<a class="text-sm font-semibold hover:text-primary transition-colors" href="#">Аминокислоты</a>
+<a class="text-sm font-semibold hover:text-primary transition-colors" href="#">Витамины</a>
+<a class="text-sm font-semibold hover:text-primary transition-colors" href="#">Аксессуары</a>
 </nav>
-<div class="flex items-center gap-4">
-<button class="bg-primary text-white text-sm font-bold px-6 py-2 rounded-lg hover:bg-opacity-90 transition-all">
-                    Войти
-                </button>
+<!-- Actions -->
+<div class="flex items-center gap-3">
+<button class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all">
+<span class="material-symbols-outlined">favorite</span>
+</button>
+<button class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all relative">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white leading-none">0</span>
+</button>
+<button class="flex items-center gap-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-4 py-2 rounded-xl font-bold text-sm hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-lg">person</span>
+<span class="hidden sm:inline">Войти</span>
+</button>
+</div>
 </div>
 </div>
 </header>
-<!-- Main Content Area -->
-<main class="flex-grow flex items-center justify-center px-4 py-12">
-<div class="w-full max-w-[440px] bg-white dark:bg-[#2d2218] rounded-xl shadow-sm border border-[#e6e0db] dark:border-[#3d2e24] p-8 md:p-10">
-<!-- Icon/Branding -->
-<div class="flex justify-center mb-6">
-<div class="size-16 bg-primary/10 rounded-full flex items-center justify-center text-primary">
-<span class="material-symbols-outlined !text-4xl">lock_reset</span>
+<main class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+<!-- Breadcrumbs -->
+<nav class="flex items-center gap-2 text-sm text-slate-500 mb-8 overflow-x-auto whitespace-nowrap">
+<a class="hover:text-primary" href="#">Главная</a>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<a class="hover:text-primary" href="#">Предтренировочные комплексы</a>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="text-slate-900 dark:text-slate-300 font-medium">Cellucor C4 Original</span>
+</nav>
+<!-- Product Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+<!-- Left Side: Product Images -->
+<div class="space-y-4">
+<div class="aspect-square w-full bg-white dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center p-8">
+<img alt="Cellucor C4 Original Pre-workout jar" class="w-full h-full object-contain" data-alt="Yellow and black C4 Original pre-workout supplement jar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8iVDcJlSZKPsTN0B3D5WUNX-YV3zKX9QkoOJ_k0V1ojR_4s6frsrNagMGcgCICM13DgLOr_evePiCndafq4j0spIExx5pyvCJfcY5lr_FOj6xJzqNlLzguvQPXweVrSSertqR57wYN5XjRF_eTKbJO5LQqunFVDObVjYlQv-I0-Lwi-vvQWj6YUEMrYzWOReOmvk9Jc468y-uTpllw8WMEo36cJUW2gN85XqQKMtkcSSZfLQr_y-henVUAvcCm-UgPtQbAYvG6EPT"/>
+</div>
+<div class="grid grid-cols-4 gap-4">
+<div class="aspect-square bg-white dark:bg-slate-800 rounded-lg border-2 border-primary p-2">
+<img alt="C4 Front" class="w-full h-full object-contain" data-alt="Front view of C4 pre-workout container" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWtTWL9s7g4Iw5BhqBP6ujSxcDhJoZfbR3rNQuto2OFQ3HPQK-L9972qdR1mfd-lcBkdpXeiaPC3o-7P1ly2z1OIMzhBVQwRfUQeptqeQE9MnHnH6z3OY29HbHsJ1T8Kt7txvj44NjW2cjAay9jQIepoCCOC_65cQWQ5UOQVkPqj3Utqo1SbWu5RyMbUzdk6X_JV_8kXqAW3IbWOrsahH-ZEqeSYkWXd7OIJEbl8G9Cr3Kh96pBFfxztn0hMShKyOpG8dKF7HNphtv"/>
+</div>
+<div class="aspect-square bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-2 opacity-60 hover:opacity-100 cursor-pointer transition-opacity">
+<div class="w-full h-full bg-slate-100 dark:bg-slate-700 rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-400">nutrition</span>
 </div>
 </div>
-<!-- Header Text -->
-<div class="text-center mb-8">
-<h1 class="text-2xl md:text-3xl font-bold mb-3 tracking-tight">Восстановление пароля</h1>
-<p class="text-[#8c725f] dark:text-[#b0a196] text-sm leading-relaxed">
-                    Введите адрес электронной почты, связанный с вашим аккаунтом, и мы отправим вам ссылку для сброса пароля.
-                </p>
-</div>
-<!-- Recovery Form -->
-<form action="#" class="space-y-6">
-<div class="flex flex-col gap-2">
-<label class="text-sm font-semibold text-[#181411] dark:text-white" for="email">Email</label>
-<div class="relative">
-<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#8c725f] !text-xl">mail</span>
-<input class="w-full bg-white dark:bg-[#3d2e24] border border-[#e6e0db] dark:border-[#524134] rounded-lg py-3.5 pl-12 pr-4 text-base focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all placeholder:text-[#8c725f]/60" id="email" name="email" placeholder="example@sporteda.com" required="" type="email"/>
+<div class="aspect-square bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-2 opacity-60 hover:opacity-100 cursor-pointer transition-opacity">
+<div class="w-full h-full bg-slate-100 dark:bg-slate-700 rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-400">fitness_center</span>
 </div>
 </div>
-<button class="w-full bg-primary text-white font-bold py-4 rounded-lg hover:bg-opacity-95 transform active:scale-[0.98] transition-all shadow-lg shadow-primary/20" type="submit">
-                    Отправить ссылку
-                </button>
-<div class="text-center pt-2">
-<a class="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline group" href="#">
-<span class="material-symbols-outlined !text-lg transition-transform group-hover:-translate-x-1">arrow_back</span>
-                        Вернуться к входу
-                    </a>
+<div class="aspect-square bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-2 opacity-60 hover:opacity-100 cursor-pointer transition-opacity">
+<div class="w-full h-full bg-slate-100 dark:bg-slate-700 rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-400">list_alt</span>
 </div>
-</form>
+</div>
+</div>
+</div>
+<!-- Right Side: Product Info -->
+<div class="flex flex-col">
+<div class="mb-2">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary uppercase tracking-wider">Top Seller</span>
+</div>
+<h1 class="text-4xl font-extrabold text-slate-900 dark:text-white mb-2 uppercase">C4 Original</h1>
+<div class="flex items-center gap-4 mb-6">
+<p class="text-lg font-medium text-slate-500 uppercase">Brand: <span class="text-slate-900 dark:text-white underline decoration-primary decoration-2 cursor-pointer">Cellucor</span></p>
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined fill-1">star</span>
+<span class="material-symbols-outlined fill-1">star</span>
+<span class="material-symbols-outlined fill-1">star</span>
+<span class="material-symbols-outlined fill-1">star</span>
+<span class="material-symbols-outlined">star_half</span>
+<span class="text-slate-500 text-sm ml-1 font-semibold">(124 отзыва)</span>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 mb-8">
+<div class="flex items-baseline gap-2 mb-6">
+<span class="text-4xl font-black text-slate-900 dark:text-white">29.99 BYN</span>
+<span class="text-slate-400 line-through text-lg">39.99 BYN</span>
+</div>
+<div class="space-y-6">
+<div>
+<p class="text-sm font-bold text-slate-900 dark:text-white mb-3 uppercase tracking-wide">Вкус: <span class="text-slate-500">Fruit Punch</span></p>
+<div class="flex flex-wrap gap-2">
+<button class="px-4 py-2 rounded-lg border-2 border-primary text-primary text-sm font-bold">Fruit Punch</button>
+<button class="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-sm font-bold">Blue Razz</button>
+<button class="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-sm font-bold">Icy Blue Razz</button>
+<button class="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-sm font-bold">Cherry Limeade</button>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row gap-4">
+<div class="flex items-center h-12 w-32 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+<button class="flex-1 h-full flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<span class="flex-1 text-center font-bold text-slate-900 dark:text-white">1</span>
+<button class="flex-1 h-full flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+<button class="flex-1 bg-primary text-white h-12 rounded-xl font-black text-lg uppercase tracking-wider shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">add_shopping_cart</span>
+                                В корзину
+                            </button>
+</div>
+</div>
+</div>
+<!-- Benefits Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+<div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+<span class="material-symbols-outlined text-primary">verified</span>
+<div class="flex flex-col">
+<span class="text-xs font-bold text-slate-500 uppercase tracking-tighter leading-none mb-1">Caffeine</span>
+<span class="text-sm font-black text-slate-900 dark:text-white">150mg</span>
+</div>
+</div>
+<div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+<span class="material-symbols-outlined text-primary">vital_signs</span>
+<div class="flex flex-col">
+<span class="text-xs font-bold text-slate-500 uppercase tracking-tighter leading-none mb-1">Beta-Alanine</span>
+<span class="text-sm font-black text-slate-900 dark:text-white">1.6g</span>
+</div>
+</div>
+<div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+<span class="material-symbols-outlined text-primary">bolt</span>
+<div class="flex flex-col">
+<span class="text-xs font-bold text-slate-500 uppercase tracking-tighter leading-none mb-1">Creatine</span>
+<span class="text-sm font-black text-slate-900 dark:text-white">1g</span>
+</div>
+</div>
+</div>
+<!-- Trust Badges -->
+<div class="flex flex-wrap gap-6 pt-6 border-t border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-2 text-slate-500">
+<span class="material-symbols-outlined text-primary">biotech</span>
+<span class="text-xs font-bold uppercase tracking-wide">Laboratory Tested</span>
+</div>
+<div class="flex items-center gap-2 text-slate-500">
+<span class="material-symbols-outlined text-primary">verified_user</span>
+<span class="text-xs font-bold uppercase tracking-wide">Quality Guarantee</span>
+</div>
+<div class="flex items-center gap-2 text-slate-500">
+<span class="material-symbols-outlined text-primary">local_shipping</span>
+<span class="text-xs font-bold uppercase tracking-wide">Fast Delivery</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Details Section -->
+<div class="mt-16 border-t border-slate-200 dark:border-slate-800 pt-12">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+<div class="lg:col-span-2 space-y-8">
+<div>
+<h3 class="text-2xl font-black text-slate-900 dark:text-white mb-4 uppercase tracking-tight">Описание продукта</h3>
+<p class="text-slate-600 dark:text-slate-400 leading-relaxed text-lg">
+                            C4 Original — это классический предтренировочный комплекс, который помог миллионам людей достичь своих целей в фитнесе. Независимо от того, являетесь ли вы новичком в фитнесе или профессиональным атлетом, C4 Original обеспечит вас взрывной энергией, повысит выносливость и улучшит концентрацию внимания.
+                        </p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+<h4 class="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">check_circle</span>
+                                Ключевые преимущества
+                            </h4>
+<ul class="space-y-3 text-sm text-slate-600 dark:text-slate-400 font-medium">
+<li class="flex items-start gap-2">
+<span class="text-primary font-black">•</span>
+                                    1.6г CarnoSyn® Beta-Alanine для выносливости
+                                </li>
+<li class="flex items-start gap-2">
+<span class="text-primary font-black">•</span>
+                                    150мг кофеина для энергии и концентрации
+                                </li>
+<li class="flex items-start gap-2">
+<span class="text-primary font-black">•</span>
+                                    1г нитрата креатина (NO3-T®) для пампа
+                                </li>
+<li class="flex items-start gap-2">
+<span class="text-primary font-black">•</span>
+                                    L-аргинин для улучшения кровотока
+                                </li>
+</ul>
+</div>
+<div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+<h4 class="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">info</span>
+                                Рекомендации по применению
+                            </h4>
+<p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                Смешайте одну порцию (1 мерная ложка) с 180-240 мл воды за 20-30 минут до тренировки. Некоторые люди могут испытывать безобидное покалывание, которое обусловлено бета-аланином. Используйте только по назначению.
+                            </p>
+</div>
+</div>
+</div>
+<!-- Reviews Summary Sidebar -->
+<div class="bg-slate-900 text-white p-8 rounded-2xl flex flex-col items-center text-center">
+<h4 class="text-xl font-black mb-2 uppercase italic tracking-tighter">Рейтинг покупателей</h4>
+<div class="text-6xl font-black text-primary mb-2">4.8</div>
+<div class="flex gap-0.5 text-primary mb-2">
+<span class="material-symbols-outlined fill-1">star</span>
+<span class="material-symbols-outlined fill-1">star</span>
+<span class="material-symbols-outlined fill-1">star</span>
+<span class="material-symbols-outlined fill-1">star</span>
+<span class="material-symbols-outlined fill-1">star</span>
+</div>
+<p class="text-slate-400 text-sm mb-8">Основано на 124 реальных отзывах</p>
+<div class="w-full space-y-3 mb-8">
+<div class="grid grid-cols-[15px_1fr_40px] items-center gap-3">
+<span class="text-xs font-bold">5</span>
+<div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 80%"></div>
+</div>
+<span class="text-xs text-slate-400 text-right">80%</span>
+</div>
+<div class="grid grid-cols-[15px_1fr_40px] items-center gap-3">
+<span class="text-xs font-bold">4</span>
+<div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 12%"></div>
+</div>
+<span class="text-xs text-slate-400 text-right">12%</span>
+</div>
+<div class="grid grid-cols-[15px_1fr_40px] items-center gap-3">
+<span class="text-xs font-bold">3</span>
+<div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 5%"></div>
+</div>
+<span class="text-xs text-slate-400 text-right">5%</span>
+</div>
+<div class="grid grid-cols-[15px_1fr_40px] items-center gap-3">
+<span class="text-xs font-bold">2</span>
+<div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 1%"></div>
+</div>
+<span class="text-xs text-slate-400 text-right">1%</span>
+</div>
+<div class="grid grid-cols-[15px_1fr_40px] items-center gap-3">
+<span class="text-xs font-bold">1</span>
+<div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 2%"></div>
+</div>
+<span class="text-xs text-slate-400 text-right">2%</span>
+</div>
+</div>
+<button class="w-full py-3 rounded-xl border border-primary text-primary text-sm font-bold uppercase tracking-wider hover:bg-primary hover:text-white transition-all">
+                        Оставить отзыв
+                    </button>
+</div>
+</div>
 </div>
 </main>
-<!-- Simple Footer -->
-<footer class="w-full border-t border-[#e6e0db] dark:border-[#3d2e24] py-8 bg-white dark:bg-background-dark">
-<div class="max-w-[1280px] mx-auto px-6 lg:px-40 flex flex-col md:flex-row justify-between items-center gap-4">
-<p class="text-sm text-[#8c725f] dark:text-[#b0a196]">
-                © 2024 Sport EDA. Все права защищены.
-            </p>
-<div class="flex gap-6">
-<a class="text-sm text-[#8c725f] dark:text-[#b0a196] hover:text-primary" href="#">Конфиденциальность</a>
-<a class="text-sm text-[#8c725f] dark:text-[#b0a196] hover:text-primary" href="#">Условия</a>
-<a class="text-sm text-[#8c725f] dark:text-[#b0a196] hover:text-primary" href="#">Поддержка</a>
+<!-- Footer -->
+<footer class="bg-white dark:bg-background-dark border-t border-slate-200 dark:border-slate-800 mt-20">
+<div class="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+<div class="col-span-2">
+<div class="flex items-center gap-2 text-primary mb-6">
+<span class="material-symbols-outlined text-4xl fill-1">bolt</span>
+<h2 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Спорт-Еда</h2>
+</div>
+<p class="text-slate-500 max-w-xs mb-6 text-sm">Ваш надежный партнер в достижении спортивных результатов с 2015 года. Только оригинальная продукция и быстрая доставка.</p>
+</div>
+<div>
+<h3 class="font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-wider text-sm">Каталог</h3>
+<ul class="space-y-2 text-sm text-slate-500">
+<li><a class="hover:text-primary transition-colors" href="#">Предтреники</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Жиросжигатели</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Гейнеры</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Одежда</a></li>
+</ul>
+</div>
+<div>
+<h3 class="font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-wider text-sm">Помощь</h3>
+<ul class="space-y-2 text-sm text-slate-500">
+<li><a class="hover:text-primary transition-colors" href="#">Доставка</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Оплата</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Контакты</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Вопросы и ответы</a></li>
+</ul>
+</div>
+</div>
+<div class="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
+<p class="text-xs text-slate-400 font-medium">© 2024 Спорт-Еда. Все права защищены.</p>
+<div class="flex gap-4">
+<div class="h-8 w-12 bg-slate-100 dark:bg-slate-800 rounded flex items-center justify-center">
+<span class="text-[10px] font-bold text-slate-400">VISA</span>
+</div>
+<div class="h-8 w-12 bg-slate-100 dark:bg-slate-800 rounded flex items-center justify-center">
+<span class="text-[10px] font-bold text-slate-400">MC</span>
+</div>
+<div class="h-8 w-12 bg-slate-100 dark:bg-slate-800 rounded flex items-center justify-center">
+<span class="text-[10px] font-bold text-slate-400">BEL</span>
+</div>
+</div>
 </div>
 </div>
 </footer>

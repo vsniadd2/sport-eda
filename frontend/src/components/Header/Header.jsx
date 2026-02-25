@@ -72,7 +72,7 @@ export default function Header() {
             <Link to="/catalog" className={isActive('/catalog') ? styles.navLinkActive : styles.navLink}>
               КАТАЛОГ
             </Link>
-            <Link to="/about" className={isActive('/about') ? styles.navLinkActive : styles.navLink}>
+            <Link to="/brands" className={isActive('/brands') ? styles.navLinkActive : styles.navLink}>
               БРЕНДЫ
             </Link>
             <Link to="/catalog?sale=true" className={isActive('/catalog?sale=true') ? styles.navLinkActive : styles.navLink}>
@@ -80,6 +80,9 @@ export default function Header() {
             </Link>
             <Link to="/payment" className={isActive('/payment') ? styles.navLinkActive : styles.navLink}>
               ДОСТАВКА
+            </Link>
+            <Link to="/about" className={isActive('/about') ? styles.navLinkActive : styles.navLink}>
+              О МАГАЗИНЕ
             </Link>
           </nav>
         </div>
@@ -161,14 +164,17 @@ export default function Header() {
             <Link to="/catalog" className={isActive('/catalog') ? styles.mobileNavActive : styles.mobileNavLink} onClick={() => setMobileMenuOpen(false)}>
               Каталог
             </Link>
-            <Link to="/payment" className={isActive('/payment') ? styles.mobileNavActive : styles.mobileNavLink} onClick={() => setMobileMenuOpen(false)}>
-              Доставка
-            </Link>
-            <Link to="/about" className={isActive('/about') ? styles.mobileNavActive : styles.mobileNavLink} onClick={() => setMobileMenuOpen(false)}>
+            <Link to="/brands" className={isActive('/brands') ? styles.mobileNavActive : styles.mobileNavLink} onClick={() => setMobileMenuOpen(false)}>
               Бренды
             </Link>
             <Link to="/catalog?sale=true" className={isActive('/catalog?sale=true') ? styles.mobileNavActive : styles.mobileNavLink} onClick={() => setMobileMenuOpen(false)}>
               Акции
+            </Link>
+            <Link to="/payment" className={isActive('/payment') ? styles.mobileNavActive : styles.mobileNavLink} onClick={() => setMobileMenuOpen(false)}>
+              Доставка
+            </Link>
+            <Link to="/about" className={isActive('/about') ? styles.mobileNavActive : styles.mobileNavLink} onClick={() => setMobileMenuOpen(false)}>
+              О магазине
             </Link>
           </nav>
           <div className={styles.mobileContacts}>

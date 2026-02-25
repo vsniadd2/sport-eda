@@ -43,7 +43,8 @@ export default function Footer() {
           <div className={styles.col}>
             <h3>Информация</h3>
             <ul>
-              <li><Link to="/about">О компании</Link></li>
+              <li><Link to="/about">О магазине</Link></li>
+              <li><Link to="/brands">Бренды</Link></li>
               <li><Link to="/payment">Доставка и оплата</Link></li>
               <li><Link to="/about">Возврат товара</Link></li>
               <li><Link to="/about">Публичная оферта</Link></li>

@@ -74,6 +74,7 @@ const SITEMAP_SECTIONS = [
     icon: ICON_INFO,
     links: [
       { to: '/about', label: 'О магазине' },
+      { to: '/brands', label: 'Бренды' },
       { to: '/payment', label: 'Самовывоз' },
       { to: '/sitemap', label: 'Карта сайта' },
     ],

@@ -103,4 +103,43 @@ router.get('/banners/:id/image', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/home/brands — список брендов (публичный, для страницы «Бренды»)
+ */
+router.get('/brands', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, sort_order, name, description, (image_data IS NOT NULL) AS has_image
+       FROM brands ORDER BY sort_order ASC, id ASC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * GET /api/home/brands/:id/image — изображение бренда
+ */
+router.get('/brands/:id/image', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const r = await pool.query(
+      'SELECT image_data, image_content_type FROM brands WHERE id = $1',
+      [id]
+    );
+    if (!r.rows[0] || !r.rows[0].image_data) {
+      return res.status(404).json({ message: 'Изображение не найдено' });
+    }
+    const { image_data, image_content_type } = r.rows[0];
+    res.set('Content-Type', image_content_type || 'image/jpeg');
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.send(image_data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
 export default router;

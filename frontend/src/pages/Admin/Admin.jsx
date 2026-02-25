@@ -31,7 +31,10 @@ const CHART_COLORS = ['#c45c26', '#3b82f6', '#eab308', '#22c55e', '#a84d1f', '#8
 
 const VISITS_DAY_WINDOW = 7;
 
-const ADMIN_TABS = ['users', 'orders', 'callbacks', 'feedback', 'reviews', 'catalog', 'visits', 'banners', 'stats'];
+/** Максимальный размер одного изображения по проекту: 5 МБ */
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+
+const ADMIN_TABS = ['users', 'orders', 'callbacks', 'feedback', 'reviews', 'catalog', 'visits', 'banners', 'brands', 'stats'];
 
 function buildVisitsChartForDay(selectedVisitDate, visitsByDay) {
   if (!selectedVisitDate || !visitsByDay.length) return [];
@@ -107,6 +110,17 @@ export default function Admin() {
   const [addBannerButtonText, setAddBannerButtonText] = useState('');
   const [bannerSaving, setBannerSaving] = useState(false);
   const [bannerDeleting, setBannerDeleting] = useState(null);
+  const [brands, setBrands] = useState([]);
+  const [showAddBrandModal, setShowAddBrandModal] = useState(false);
+  const [addBrandName, setAddBrandName] = useState('');
+  const [addBrandDescription, setAddBrandDescription] = useState('');
+  const [addBrandFile, setAddBrandFile] = useState(null);
+  const [brandSaving, setBrandSaving] = useState(false);
+  const [brandDeleting, setBrandDeleting] = useState(null);
+  const [editingBrandId, setEditingBrandId] = useState(null);
+  const [editBrandName, setEditBrandName] = useState('');
+  const [editBrandDescription, setEditBrandDescription] = useState('');
+  const [editBrandFile, setEditBrandFile] = useState(null);
   const [adminReviews, setAdminReviews] = useState([]);
   const [reviewReplyDrafts, setReviewReplyDrafts] = useState({});
   const [reviewReplySending, setReviewReplySending] = useState(null);
@@ -226,10 +240,26 @@ export default function Admin() {
     }
   }, []);
 
+  const fetchBrands = useCallback(async () => {
+    setError('');
+    try {
+      const res = await fetch(`${API_URL}/admin/brands`, { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error('Ошибка загрузки');
+      const data = await res.json();
+      setBrands(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setError(e.message);
+    }
+  }, []);
+
   const handleAddBanner = useCallback(async (e) => {
     e.preventDefault();
     if (!addBannerFile) {
       notify('Загрузите изображение', 'error');
+      return;
+    }
+    if (addBannerFile.size > MAX_IMAGE_SIZE) {
+      notify('Размер изображения не более 5 МБ', 'error');
       return;
     }
     setBannerSaving(true);
@@ -281,6 +311,109 @@ export default function Admin() {
       setBannerDeleting(null);
     }
   }, [notify, fetchBanners]);
+
+  const handleAddBrand = useCallback(async (e) => {
+    e.preventDefault();
+    const name = addBrandName.trim();
+    if (!name) {
+      notify('Введите название бренда', 'error');
+      return;
+    }
+    if (addBrandFile && addBrandFile.size > MAX_IMAGE_SIZE) {
+      notify('Размер изображения не более 5 МБ', 'error');
+      return;
+    }
+    setBrandSaving(true);
+    try {
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('description', addBrandDescription.trim());
+      if (addBrandFile) formData.append('image', addBrandFile);
+      const res = await fetch(`${API_URL}/admin/brands`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: formData,
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || 'Ошибка сохранения');
+      }
+      setShowAddBrandModal(false);
+      setAddBrandName('');
+      setAddBrandDescription('');
+      setAddBrandFile(null);
+      notify('Бренд добавлен');
+      fetchBrands();
+    } catch (err) {
+      notify(err.message || 'Ошибка', 'error');
+    } finally {
+      setBrandSaving(false);
+    }
+  }, [addBrandName, addBrandDescription, addBrandFile, notify, fetchBrands]);
+
+  const handleEditBrand = useCallback(async (e) => {
+    e.preventDefault();
+    if (editingBrandId == null) return;
+    const name = editBrandName.trim();
+    if (!name) {
+      notify('Введите название бренда', 'error');
+      return;
+    }
+    if (editBrandFile && editBrandFile.size > MAX_IMAGE_SIZE) {
+      notify('Размер изображения не более 5 МБ', 'error');
+      return;
+    }
+    setBrandSaving(true);
+    try {
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('description', editBrandDescription.trim());
+      if (editBrandFile) formData.append('image', editBrandFile);
+      const res = await fetch(`${API_URL}/admin/brands/${editingBrandId}`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: formData,
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || 'Ошибка сохранения');
+      }
+      setEditingBrandId(null);
+      setEditBrandName('');
+      setEditBrandDescription('');
+      setEditBrandFile(null);
+      notify('Бренд обновлён');
+      fetchBrands();
+    } catch (err) {
+      notify(err.message || 'Ошибка', 'error');
+    } finally {
+      setBrandSaving(false);
+    }
+  }, [editingBrandId, editBrandName, editBrandDescription, editBrandFile, notify, fetchBrands]);
+
+  const handleDeleteBrand = useCallback(async (id) => {
+    setBrandDeleting(id);
+    try {
+      const res = await fetch(`${API_URL}/admin/brands/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      if (!res.ok) throw new Error('Ошибка удаления');
+      notify('Бренд удалён');
+      fetchBrands();
+    } catch (err) {
+      notify(err.message || 'Ошибка', 'error');
+    } finally {
+      setBrandDeleting(null);
+    }
+  }, [notify, fetchBrands]);
+
+  const openEditBrandModal = useCallback((b) => {
+    setEditingBrandId(b.id);
+    setEditBrandName(b.name || '');
+    setEditBrandDescription(b.description || '');
+    setEditBrandFile(null);
+  }, []);
 
   const handleBannerMove = useCallback(async (id, direction) => {
     const idx = banners.findIndex((b) => b.id === id);
@@ -440,7 +573,8 @@ export default function Admin() {
         .then((data) => setBanners(Array.isArray(data) ? data : []))
         .catch((e) => setError(e.message));
     }
-  }, [tab, ordersSubTab, catalogSubTab, fetchUsers, fetchOrders, fetchFeedback, fetchAdminReviews, fetchVisits, fetchCategories, fetchProducts]);
+    if (tab === 'brands') fetchBrands();
+  }, [tab, ordersSubTab, catalogSubTab, fetchUsers, fetchOrders, fetchFeedback, fetchAdminReviews, fetchVisits, fetchCategories, fetchProducts, fetchBrands]);
 
   useEffect(() => {
     if (tab === 'stats') fetchStats();
@@ -599,6 +733,11 @@ export default function Admin() {
   const handleCategoryImageUpload = async (categoryId, e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > MAX_IMAGE_SIZE) {
+      notify('Размер изображения не более 5 МБ', 'error');
+      e.target.value = '';
+      return;
+    }
     const formData = new FormData();
     formData.append('image', file);
     try {
@@ -1070,11 +1209,17 @@ export default function Admin() {
   };
 
   const handleProductImageInputChange = (productId, e) => {
-    const files = e.target.files;
+    const files = Array.from(e.target.files || []);
+    const tooBig = files.find((f) => f.size > MAX_IMAGE_SIZE);
+    if (tooBig) {
+      notify('Каждое изображение — не более 5 МБ', 'error');
+      e.target.value = '';
+      return;
+    }
     setProductImagePreviewUrls((prev) => {
       const old = prev[productId] || [];
       old.forEach((url) => URL.revokeObjectURL(url));
-      if (!files?.length) {
+      if (!files.length) {
         const next = { ...prev };
         delete next[productId];
         return next;
@@ -1088,10 +1233,16 @@ export default function Admin() {
   };
 
   const handleAddProductImageInputChange = (e) => {
-    const files = e.target.files;
+    const files = Array.from(e.target.files || []);
+    const tooBig = files.find((f) => f.size > MAX_IMAGE_SIZE);
+    if (tooBig) {
+      notify('Каждое изображение — не более 5 МБ', 'error');
+      e.target.value = '';
+      return;
+    }
     setAddProductImagePreviewUrls((prev) => {
       prev.forEach((url) => URL.revokeObjectURL(url));
-      if (!files?.length) return [];
+      if (!files.length) return [];
       const urls = [];
       for (let i = 0; i < Math.min(10, files.length); i++) {
         urls.push(URL.createObjectURL(files[i]));
@@ -1119,6 +1270,7 @@ export default function Admin() {
     { id: 'catalog', label: 'Каталог' },
     { id: 'visits', label: 'Посещения' },
     { id: 'banners', label: 'Визуал главная' },
+    { id: 'brands', label: 'Бренды' },
     { id: 'stats', label: 'Статистика' },
   ];
 
@@ -1756,7 +1908,7 @@ export default function Admin() {
                     </div>
                     <form onSubmit={handleAddBanner} className={styles.form + ' ' + styles.modalForm}>
                       <label className={styles.label}>
-                        Изображение (обязательно)
+                        Изображение (обязательно, до 5 МБ)
                         <span className={styles.labelHint}>Рекомендуемый размер: 1920×520 px</span>
                         <input
                           type="file"
@@ -1813,6 +1965,162 @@ export default function Admin() {
                       <div className={styles.formRowActions}>
                         <button type="submit" disabled={bannerSaving}>{bannerSaving ? 'Сохранение…' : 'Добавить'}</button>
                         <button type="button" className={styles.btnSmallSecondary} onClick={() => !bannerSaving && setShowAddBannerModal(false)}>Отмена</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>,
+                document.body
+              )}
+            </div>
+          )}
+
+          {tab === 'brands' && (
+            <div className={styles.card + ' ' + styles.cardFullWidth}>
+              <h2>Бренды</h2>
+              <p className={styles.cardHint}>Карточки брендов отображаются на странице «Бренды» (О магазине). Можно добавить изображение и текст.</p>
+              <div className={styles.bannersHeader}>
+                <button
+                  type="button"
+                  className={styles.addCategoryBtn}
+                  onClick={() => setShowAddBrandModal(true)}
+                >
+                  + Добавить бренд
+                </button>
+              </div>
+              {brands.length === 0 ? (
+                <p className={styles.emptyHint}>Брендов пока нет. Добавьте первый.</p>
+              ) : (
+                <ul className={styles.bannersList}>
+                  {brands.map((b) => (
+                    <li key={b.id} className={styles.bannerRow}>
+                      <div className={styles.bannerPreview}>
+                        {b.has_image ? (
+                          <img src={`/api/home/brands/${b.id}/image`} alt={b.name || ''} />
+                        ) : (
+                          <span className={styles.bannerNoImage}>Нет изображения</span>
+                        )}
+                      </div>
+                      <div className={styles.bannerMeta}>
+                        <span className={styles.bannerTitle}>{b.name}</span>
+                        {b.description && <span className={styles.bannerLink}>{b.description.slice(0, 80)}{b.description.length > 80 ? '…' : ''}</span>}
+                      </div>
+                      <div className={styles.bannerActions}>
+                        <button
+                          type="button"
+                          className={styles.editBtn}
+                          onClick={() => openEditBrandModal(b)}
+                        >
+                          Изменить
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.btnDanger}
+                          disabled={brandDeleting === b.id}
+                          onClick={() => handleDeleteBrand(b.id)}
+                        >
+                          {brandDeleting === b.id ? '…' : 'Удалить'}
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {showAddBrandModal && createPortal(
+                <div
+                  className={styles.modalOverlay}
+                  onMouseDown={(e) => {
+                    if (e.target !== e.currentTarget) return;
+                    if (!brandSaving) setShowAddBrandModal(false);
+                  }}
+                >
+                  <div className={styles.modalBox} onClick={(e) => e.stopPropagation()}>
+                    <div className={styles.modalHeader}>
+                      <h3>Добавить бренд</h3>
+                      <button type="button" className={styles.closeBtn} onClick={() => !brandSaving && setShowAddBrandModal(false)} aria-label="Закрыть">×</button>
+                    </div>
+                    <form onSubmit={handleAddBrand} className={styles.form + ' ' + styles.modalForm}>
+                      <label className={styles.label}>
+                        Название
+                        <input
+                          type="text"
+                          value={addBrandName}
+                          onChange={(e) => setAddBrandName(e.target.value)}
+                          placeholder="Название бренда"
+                          required
+                        />
+                      </label>
+                      <label className={styles.label}>
+                        Текст (описание)
+                        <textarea
+                          value={addBrandDescription}
+                          onChange={(e) => setAddBrandDescription(e.target.value)}
+                          placeholder="Краткое описание или текст о бренде"
+                          rows={3}
+                        />
+                      </label>
+                      <label className={styles.label}>
+                        Изображение (необязательно, до 5 МБ)
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => setAddBrandFile(e.target.files?.[0] || null)}
+                        />
+                      </label>
+                      <div className={styles.formRowActions}>
+                        <button type="submit" disabled={brandSaving}>{brandSaving ? 'Сохранение…' : 'Добавить'}</button>
+                        <button type="button" className={styles.btnSmallSecondary} onClick={() => !brandSaving && setShowAddBrandModal(false)}>Отмена</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>,
+                document.body
+              )}
+
+              {editingBrandId != null && createPortal(
+                <div
+                  className={styles.modalOverlay}
+                  onMouseDown={(e) => {
+                    if (e.target !== e.currentTarget) return;
+                    if (!brandSaving) setEditingBrandId(null);
+                  }}
+                >
+                  <div className={styles.modalBox} onClick={(e) => e.stopPropagation()}>
+                    <div className={styles.modalHeader}>
+                      <h3>Редактировать бренд</h3>
+                      <button type="button" className={styles.closeBtn} onClick={() => !brandSaving && setEditingBrandId(null)} aria-label="Закрыть">×</button>
+                    </div>
+                    <form onSubmit={handleEditBrand} className={styles.form + ' ' + styles.modalForm}>
+                      <label className={styles.label}>
+                        Название
+                        <input
+                          type="text"
+                          value={editBrandName}
+                          onChange={(e) => setEditBrandName(e.target.value)}
+                          placeholder="Название бренда"
+                          required
+                        />
+                      </label>
+                      <label className={styles.label}>
+                        Текст (описание)
+                        <textarea
+                          value={editBrandDescription}
+                          onChange={(e) => setEditBrandDescription(e.target.value)}
+                          placeholder="Краткое описание"
+                          rows={3}
+                        />
+                      </label>
+                      <label className={styles.label}>
+                        Новое изображение (необязательно, до 5 МБ)
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => setEditBrandFile(e.target.files?.[0] || null)}
+                        />
+                      </label>
+                      <div className={styles.formRowActions}>
+                        <button type="submit" disabled={brandSaving}>{brandSaving ? 'Сохранение…' : 'Сохранить'}</button>
+                        <button type="button" className={styles.btnSmallSecondary} onClick={() => !brandSaving && setEditingBrandId(null)}>Отмена</button>
                       </div>
                     </form>
                   </div>

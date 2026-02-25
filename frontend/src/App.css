@@ -22,6 +22,14 @@
   min-height: 0;
 }
 
+/* Обёртка для sticky footer: при коротком контенте футер внизу экрана */
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 .app-content {
   flex: 1;
   position: relative;

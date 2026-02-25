@@ -39,11 +39,13 @@ export default function MainLayout() {
         defer
         className="app-scrollbars"
       >
-        <Header />
-        <div className="app-content">
-          <Outlet />
+        <div className="app-layout">
+          <Header />
+          <div className="app-content">
+            <Outlet />
+          </div>
+          <Footer />
         </div>
-        <Footer />
       </OverlayScrollbarsComponent>
     </div>
   );

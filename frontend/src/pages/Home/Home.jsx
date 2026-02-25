@@ -131,7 +131,7 @@ export default function Home() {
             <div className={styles.benefitItem}>
               <div className={styles.benefitIcon}>
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  <path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7L12 16.4 5.7 21l2.3-7L2 9.4h7.6z"/>
                 </svg>
               </div>
               <div>
@@ -287,10 +287,10 @@ export default function Home() {
               </p>
               <div className={styles.ctaButtons}>
                 <Link to="/about" className={styles.ctaBtnPrimary}>
-                  УЗНАТЬ БОЛЬШЕ
+                  О МАГАЗИНЕ
                 </Link>
-                <Link to="/about" className={styles.ctaBtnSecondary}>
-                  БОНУСНАЯ ПРОГРАММА
+                <Link to="/catalog" className={styles.ctaBtnSecondary}>
+                  В КАТАЛОГ
                 </Link>
               </div>
             </div>
