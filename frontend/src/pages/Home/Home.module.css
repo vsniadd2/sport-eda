@@ -23,6 +23,72 @@
   position: absolute;
   inset: 0;
   z-index: 0;
+  overflow: hidden;
+}
+
+.heroCarouselTrack {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.5s ease-in-out;
+}
+
+.heroCarouselSlide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.heroCarouselLink {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.heroCarouselSlide .heroImage,
+.heroCarouselLink .heroImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.heroCarouselDots {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.heroCarouselDot,
+.heroCarouselDotActive {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.heroCarouselDot {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.heroCarouselDot:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.heroCarouselDotActive {
+  background: #fff;
+  transform: scale(1.2);
 }
 
 .heroImage {

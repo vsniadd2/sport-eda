@@ -41,12 +41,11 @@ export default function ProductDetail() {
   const [zoomOpen, setZoomOpen] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [selectedThumb, setSelectedThumb] = useState(0);
-  const [activeSection, setActiveSection] = useState('about');
+  const [activeSection, setActiveSection] = useState('reviews');
   const [reviewsPage, setReviewsPage] = useState(1);
   const [qtyFocused, setQtyFocused] = useState(false);
   const [qtyInput, setQtyInput] = useState('');
   const reviewListRef = useRef(null);
-  const aboutRef = useRef(null);
   const deliveryRef = useRef(null);
 
   const productId = String(id ?? '');
@@ -156,7 +155,7 @@ export default function ProductDetail() {
   }, [productId]);
 
   useEffect(() => {
-    const els = [aboutRef.current, reviewListRef.current, deliveryRef.current].filter(Boolean);
+    const els = [reviewListRef.current, deliveryRef.current].filter(Boolean);
     if (els.length === 0) return;
 
     const observer = new IntersectionObserver(
@@ -407,7 +406,7 @@ export default function ProductDetail() {
   }
 
   const imageCount = product.has_image
-    ? (product.image_count > 0 ? Math.min(4, product.image_count) : 1)
+    ? (product.image_count > 0 ? Math.min(10, product.image_count) : 1)
     : 0;
   const imageUrls = imageCount > 0
     ? Array.from({ length: imageCount }, (_, i) => `/api/products/${product.id}/images/${i}`)
@@ -688,15 +687,8 @@ export default function ProductDetail() {
           </div>
         </div>
 
-        {/* Табы + описание/характеристики */}
+        {/* Табы: Отзывы, Доставка и оплата */}
         <div className={styles.sectionTabs}>
-          <button
-            type="button"
-            className={activeSection === 'about' ? styles.tabBtnActive : styles.tabBtn}
-            onClick={() => scrollToSection(aboutRef, 'about')}
-          >
-            О продукте
-          </button>
           <button
             type="button"
             className={activeSection === 'reviews' ? styles.tabBtnActive : styles.tabBtn}
@@ -712,71 +704,6 @@ export default function ProductDetail() {
             Доставка и оплата
           </button>
         </div>
-
-        <section ref={aboutRef} data-section-id="about" className={styles.detailsSection}>
-          <h2 className={styles.sectionTitle}>О продукте</h2>
-          <div className={styles.detailsGrid}>
-            <div>
-              {product.description ? (
-                <>
-                  <p className={styles.detailsText}>{product.description}</p>
-                  <ul className={styles.detailsList}>
-                    <li>Проверьте состав и рекомендации по применению.</li>
-                    <li>Смотрите отзывы покупателей — это помогает выбрать.</li>
-                    <li><Link to="/payment">Самовывоз и оплата</Link> — на отдельной странице.</li>
-                  </ul>
-                </>
-              ) : (
-                <>
-                  <p className={styles.detailsTextMuted}>Описание пока не добавлено.</p>
-                  <ul className={styles.detailsList}>
-                    <li>Смотрите отзывы покупателей.</li>
-                    <li><Link to="/payment">Самовывоз и оплата</Link>.</li>
-                  </ul>
-                </>
-              )}
-              {product.show_how_to_use !== false && (
-                <div className={styles.howToUse}>
-                  <h4 className={styles.howToUseTitle}>Как использовать</h4>
-                  <p className={styles.howToUseIntro}>
-                    {product.how_to_use_intro || 'Для лучшего результата следуйте рекомендациям производителя.'}
-                  </p>
-                  <div className={styles.howToUseSteps}>
-                    <div className={styles.howToUseStep}>
-                      <span className={styles.howToUseStepNum}>1</span>
-                      <p className={styles.howToUseStepText}>{product.how_to_use_step1 || 'Принимайте добавку в соответствии с инструкцией на упаковке.'}</p>
-                    </div>
-                    <div className={styles.howToUseStep}>
-                      <span className={styles.howToUseStepNum}>2</span>
-                      <p className={styles.howToUseStepText}>{product.how_to_use_step2 || 'Храните в сухом месте, берегите от прямых солнечных лучей.'}</p>
-                    </div>
-                    <div className={styles.howToUseStep}>
-                      <span className={styles.howToUseStepNum}>3</span>
-                      <p className={styles.howToUseStepText}>{product.how_to_use_step3 || 'Перед применением проконсультируйтесь со специалистом при необходимости.'}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className={styles.ratingsCard}>
-              <div className={styles.ratingsCardHeader}>
-                <h3 className={styles.ratingsCardTitle}>Рейтинг и отзывы</h3>
-                <span className={styles.ratingsCardBadge}>
-                  {reviews.length === 0 ? 'Нет отзывов' : `${reviews.length} ${reviews.length === 1 ? 'отзыв' : reviews.length < 5 ? 'отзыва' : 'отзывов'}`}
-                </span>
-              </div>
-              <div className={styles.ratingBarRow}>
-                <div className={styles.ratingBarLabel}>
-                  <span>Общий рейтинг</span>
-                  <span>{overallRatingPercent}%</span>
-                </div>
-                <div className={styles.ratingBarTrack}>
-                  <div className={styles.ratingBarFill} style={{ width: `${overallRatingPercent}%` }} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* Отзывы (1.txt: Customer Feedback + Write a Review) */}
         <section ref={reviewListRef} data-section-id="reviews" className={styles.reviewsSection}>

@@ -62,6 +62,10 @@
 .sidebar {
   flex-shrink: 0;
   width: 100%;
+  max-height: calc(100vh - 140px);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 @media (min-width: 1024px) {

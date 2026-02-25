@@ -28,6 +28,7 @@ function getFeedbackAuthorLabel(t) {
 }
 
 const CHART_COLORS = ['#c45c26', '#3b82f6', '#eab308', '#22c55e', '#a84d1f', '#8b5cf6'];
+
 const VISITS_DAY_WINDOW = 7;
 
 const ADMIN_TABS = ['users', 'orders', 'callbacks', 'feedback', 'reviews', 'catalog', 'visits', 'banners', 'stats'];
@@ -57,7 +58,11 @@ export default function Admin() {
   const [catalogSearchQuery, setCatalogSearchQuery] = useState('');
   const [expandedCategoryIds, setExpandedCategoryIds] = useState([]);
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+  const [addCategoryParentId, setAddCategoryParentId] = useState(null);
   const [addProductModalCategoryId, setAddProductModalCategoryId] = useState(null);
+  const [addProductToSubcategory, setAddProductToSubcategory] = useState(false);
+  const [addProductSubcategoryId, setAddProductSubcategoryId] = useState(null);
+  const [categoryOrderInputs, setCategoryOrderInputs] = useState({});
   const [users, setUsers] = useState([]);
   const [usersTotal, setUsersTotal] = useState(0);
   const [usersPage, setUsersPage] = useState(1);
@@ -393,8 +398,11 @@ export default function Admin() {
       setAddProductIsSale(false);
       setAddProductSalePrice('');
       setAddProductSalePercent('');
+      const subs = (categories || []).filter((c) => c.parent_id === addProductModalCategoryId).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+      setAddProductToSubcategory(false);
+      setAddProductSubcategoryId(subs.length > 0 ? subs[0].id : null);
     }
-  }, [addProductModalCategoryId]);
+  }, [addProductModalCategoryId, categories]);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -519,13 +527,15 @@ export default function Admin() {
     const form = e.target;
     const name = form.name.value.trim();
     const slug = slugFromName(name);
+    const parentIdVal = form.parent_id?.value?.trim();
+    const parent_id = parentIdVal && !Number.isNaN(parseInt(parentIdVal, 10)) ? parseInt(parentIdVal, 10) : null;
     if (!name) return;
     setError('');
     try {
       const res = await fetch(`${API_URL}/admin/categories`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify({ name, slug }),
+        body: JSON.stringify({ name, slug, parent_id }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Ошибка');
@@ -557,6 +567,29 @@ export default function Admin() {
       setEditingCategoryId(null);
       fetchCategories();
       notify('Категория сохранена', 'success');
+    } catch (e) {
+      setError(e.message);
+      notify(e.message, 'error');
+    }
+  };
+
+  const handleCategorySortOrderChange = async (id, sortOrder) => {
+    setError('');
+    try {
+      const res = await fetch(`${API_URL}/admin/categories/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ sort_order: sortOrder }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Ошибка');
+      setCategoryOrderInputs((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      fetchCategories();
+      notify('Порядок сохранён', 'success');
     } catch (e) {
       setError(e.message);
       notify(e.message, 'error');
@@ -625,7 +658,9 @@ export default function Admin() {
   const handleCreateProduct = async (e) => {
     e.preventDefault();
     const form = e.target;
-    const category_id = parseInt(form.category_id.value);
+    const subs = (categories || []).filter((c) => c.parent_id === addProductModalCategoryId);
+    const useSub = subs.length > 0 && addProductToSubcategory && addProductSubcategoryId;
+    const category_id = useSub ? addProductSubcategoryId : addProductModalCategoryId;
     const name = form.name.value.trim();
     const price = parseFloat(form.price.value);
     const description = form.description?.value?.trim() || null;
@@ -653,7 +688,7 @@ export default function Admin() {
       if (salePriceVal && !Number.isNaN(parseFloat(salePriceVal))) body.append('sale_price', salePriceVal);
       const imageInput = form.images;
       if (imageInput?.files?.length) {
-        for (let i = 0; i < Math.min(4, imageInput.files.length); i++) {
+        for (let i = 0; i < Math.min(10, imageInput.files.length); i++) {
           body.append('images', imageInput.files[i]);
         }
       }
@@ -736,7 +771,7 @@ export default function Admin() {
         body.append('how_to_use_step3', pageSettings.how_to_use_step3);
         body.append('show_how_to_use', pageSettings.show_how_to_use ? 'true' : 'false');
         body.append('show_related', pageSettings.show_related ? 'true' : 'false');
-        for (let i = 0; i < Math.min(4, imageFiles.length); i++) {
+        for (let i = 0; i < Math.min(10, imageFiles.length); i++) {
           body.append('images', imageFiles[i]);
         }
         const res = await fetch(`${API_URL}/admin/products/${id}`, {
@@ -1013,6 +1048,23 @@ export default function Admin() {
     return { categories: filteredCats, productsByCategory: filteredByCat };
   }, [categories, productsByCategory, catalogSearchLower]);
 
+  const catalogTreeRoots = useMemo(() => {
+    return filteredCatalog.categories
+      .filter((c) => !c.parent_id)
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+  }, [filteredCatalog]);
+
+  const catalogDisplayList = useMemo(() => {
+    const list = [];
+    const cats = filteredCatalog.categories;
+    const getSubs = (pid) => cats.filter((c) => c.parent_id === pid).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    catalogTreeRoots.forEach((root) => {
+      list.push({ category: root, level: 0 });
+      getSubs(root.id).forEach((sub) => list.push({ category: sub, level: 1 }));
+    });
+    return list;
+  }, [filteredCatalog, catalogTreeRoots]);
+
   const toggleCategoryExpand = (id) => {
     setExpandedCategoryIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
@@ -1028,7 +1080,7 @@ export default function Admin() {
         return next;
       }
       const urls = [];
-      for (let i = 0; i < Math.min(4, files.length); i++) {
+      for (let i = 0; i < Math.min(10, files.length); i++) {
         urls.push(URL.createObjectURL(files[i]));
       }
       return { ...prev, [productId]: urls };
@@ -1041,7 +1093,7 @@ export default function Admin() {
       prev.forEach((url) => URL.revokeObjectURL(url));
       if (!files?.length) return [];
       const urls = [];
-      for (let i = 0; i < Math.min(4, files.length); i++) {
+      for (let i = 0; i < Math.min(10, files.length); i++) {
         urls.push(URL.createObjectURL(files[i]));
       }
       return urls;
@@ -1814,6 +1866,15 @@ export default function Admin() {
                         Название
                         <input name="name" placeholder="Название категории" required />
                       </label>
+                      <label className={styles.label}>
+                        Родительская категория (опционально)
+                        <select name="parent_id" className={styles.select}>
+                          <option value="">— Без родителя —</option>
+                          {(categories || []).filter((c) => !c.parent_id).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)).map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      </label>
                       <div className={styles.formRowActions}>
                         <button type="submit">Добавить</button>
                         <button type="button" className={styles.btnSmallSecondary} onClick={() => setShowAddCategoryModal(false)}>Отмена</button>
@@ -1824,11 +1885,11 @@ export default function Admin() {
               )}
 
               <div className={styles.catalogTree}>
-                {filteredCatalog.categories.map((c) => {
+                {catalogDisplayList.map(({ category: c, level }) => {
                   const isExpanded = expandedCategoryIds.includes(c.id);
                   const categoryProducts = filteredCatalog.productsByCategory[c.id] || [];
-                  return (
-                    <div key={c.id} className={styles.catalogCategoryBlock}>
+                  const rowAndContent = (
+                    <>
                       <div
                         className={styles.catalogCategoryRow + (isExpanded ? ' ' + styles.catalogCategoryRowExpanded : '')}
                         onClick={() => toggleCategoryExpand(c.id)}
@@ -1855,6 +1916,33 @@ export default function Admin() {
                             )}
                             <span className={styles.catalogCategoryName}>{c.name}</span>
                             <div className={styles.rowActions} onClick={(e) => e.stopPropagation()}>
+                              <label className={styles.catalogOrderLabel}>
+                                Порядок
+                                <input
+                                  type="number"
+                                  min="0"
+                                  className={styles.catalogOrderInput}
+                                  data-category-id={c.id}
+                                  value={categoryOrderInputs[c.id] !== undefined ? String(categoryOrderInputs[c.id]) : String(c.sort_order ?? 0)}
+                                  onChange={(e) => {
+                                    const raw = e.target.value;
+                                    const catId = parseInt(e.target.dataset.categoryId, 10);
+                                    if (raw === '') {
+                                      setCategoryOrderInputs((prev) => { const n = { ...prev }; delete n[catId]; return n; });
+                                      return;
+                                    }
+                                    const v = parseInt(raw, 10);
+                                    if (!Number.isNaN(v) && v >= 0 && !Number.isNaN(catId)) setCategoryOrderInputs((prev) => ({ ...prev, [catId]: v }));
+                                  }}
+                                  onBlur={(e) => {
+                                    const catId = parseInt(e.target.dataset.categoryId, 10);
+                                    const v = parseInt(e.target.value, 10);
+                                    if (!Number.isNaN(catId) && !Number.isNaN(v) && v >= 0) handleCategorySortOrderChange(catId, v);
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  aria-label="Порядок категории (0 — первый)"
+                                />
+                              </label>
                               <label className={styles.btnImageUpload}>
                                 {c.has_image ? 'Изменить фото' : 'Добавить фото'}
                                 <input type="file" accept="image/*" onChange={(e) => handleCategoryImageUpload(c.id, e)} hidden />
@@ -1915,7 +2003,7 @@ export default function Admin() {
                                   )}
                                   <label className={styles.fileInputButton}>
                                     <input name="images" type="file" accept="image/jpeg,image/png,image/webp" className={styles.fileInputHidden} multiple onChange={(e) => handleProductImageInputChange(p.id, e)} />
-                                    Выбрать фото (до 4, заменят текущие)
+                                    Выбрать фото (до 10, заменят текущие)
                                   </label>
                                   {(productImagePreviewUrls[p.id]?.length ?? 0) > 0 && (
                                     <div className={styles.productImagesRow}>
@@ -2059,6 +2147,11 @@ export default function Admin() {
                           </div>
                         </div>
                       )}
+                    </>
+                  );
+                  return (
+                    <div key={c.id} className={styles.catalogCategoryBlock + (level === 1 ? ' ' + styles.catalogSubcategoryBlock : '')}>
+                      {rowAndContent}
                     </div>
                   );
                 })}
@@ -2088,7 +2181,29 @@ export default function Admin() {
                         <button type="button" className={styles.closeBtn} onClick={() => { setAddProductImagePreviewUrls((prev) => { prev.forEach((u) => URL.revokeObjectURL(u)); return []; }); setAddProductModalCategoryId(null); }} aria-label="Закрыть">×</button>
                       </div>
                       <form onSubmit={handleCreateProduct} className={styles.form + ' ' + styles.modalForm}>
-                        <input name="category_id" type="hidden" value={addProductModalCategoryId} readOnly />
+                        <input name="category_id" type="hidden" value={addProductToSubcategory && addProductSubcategoryId ? addProductSubcategoryId : addProductModalCategoryId} readOnly />
+                        {(() => {
+                          const subs = (categories || []).filter((c) => c.parent_id === addProductModalCategoryId).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+                          if (subs.length === 0) return null;
+                          return (
+                            <div className={styles.checkboxGroup + ' ' + styles.checkboxGroupColumn}>
+                              <label className={styles.checkLabel}>
+                                <input type="checkbox" checked={addProductToSubcategory} onChange={(e) => setAddProductToSubcategory(e.target.checked)} />
+                                <span>Добавить в подкатегорию</span>
+                              </label>
+                              {addProductToSubcategory && (
+                                <label className={styles.label}>
+                                  Подкатегория
+                                  <select className={styles.select} value={addProductSubcategoryId ?? ''} onChange={(e) => setAddProductSubcategoryId(e.target.value ? parseInt(e.target.value, 10) : null)}>
+                                    {subs.map((s) => (
+                                      <option key={s.id} value={s.id}>{s.name}</option>
+                                    ))}
+                                  </select>
+                                </label>
+                              )}
+                            </div>
+                          );
+                        })()}
                         <label className={styles.label}>
                           Название товара
                           <input name="name" placeholder="Название товара" required />
@@ -2129,7 +2244,7 @@ export default function Admin() {
                         </label>
                         <label className={styles.fileInputButton}>
                           <input name="images" type="file" accept="image/jpeg,image/png,image/webp" className={styles.fileInputHidden} id="add-product-image" multiple onChange={handleAddProductImageInputChange} />
-                          Выбрать фото (до 4)
+                          Выбрать фото (до 10)
                         </label>
                         {addProductImagePreviewUrls.length > 0 && (
                           <div className={styles.productImagesRow}>

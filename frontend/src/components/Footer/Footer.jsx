@@ -13,7 +13,7 @@ export default function Footer() {
                   <path d="M24 4C25.7818 14.2173 33.7827 22.2182 44 24C33.7827 25.7818 25.7818 33.7827 24 44C22.2182 33.7827 14.2173 25.7818 4 24C14.2173 22.2182 22.2182 14.2173 24 4Z" fill="currentColor"/>
                 </svg>
               </div>
-              <h2 className={styles.logoText}>SPORT EDA</h2>
+              <h2 className={styles.logoText}>СПОРТ-ЕДА</h2>
             </div>
             <p className={styles.description}>
               Ваш надежный партнер в достижении спортивных высот. Только проверенные бренды и качественное питание.
@@ -74,7 +74,7 @@ export default function Footer() {
           </div>
         </div>
         <div className={styles.footerBottom}>
-          <p className={styles.copyright}>© 2026 SPORT EDA. Все права защищены.</p>
+          <p className={styles.copyright}>© 2026 СПОРТ-ЕДА. Все права защищены.</p>
           <div className={styles.paymentIcons}>
             <img src="/Img/Visa_2021.svg.png" alt="Visa" className={styles.payIcon} />
             <img src="/Img/mastercard-svg.svg" alt="Mastercard" className={styles.payIcon} />

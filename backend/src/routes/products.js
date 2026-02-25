@@ -39,14 +39,16 @@ export async function getCatalogProducts(params = {}) {
   if (searchTerm) {
     const term = `%${searchTerm}%`;
     const isNumeric = /^\d+$/.test(searchTerm);
+    // Поиск по названию, описанию, категории, производителю, артикулу (частичное); для числа — ещё точное совпадение артикула
+    conditions.push(
+      `(p.name ILIKE $${paramIndex} OR p.description ILIKE $${paramIndex} OR c.name ILIKE $${paramIndex} OR COALESCE(p.manufacturer, '') ILIKE $${paramIndex} OR p.article::text ILIKE $${paramIndex}` +
+      (isNumeric ? ` OR p.article = $${paramIndex + 1})` : ')')
+    );
+    queryParams.push(term);
     if (isNumeric) {
-      conditions.push(`(p.name ILIKE $${paramIndex} OR p.description ILIKE $${paramIndex} OR p.article = $${paramIndex + 1})`);
-      queryParams.push(term);
       queryParams.push(parseInt(searchTerm, 10));
       paramIndex += 2;
     } else {
-      conditions.push(`(p.name ILIKE $${paramIndex} OR p.description ILIKE $${paramIndex} OR c.name ILIKE $${paramIndex})`);
-      queryParams.push(term);
       paramIndex += 1;
     }
   }
@@ -118,14 +120,14 @@ router.get('/', async (req, res) => {
         const term = `%${String(searchTerm).trim()}%`;
         const trimmedSearch = String(searchTerm).trim();
         const isNumeric = /^\d+$/.test(trimmedSearch);
+        query += ` AND (p.name ILIKE $${paramIndex} OR p.description ILIKE $${paramIndex} OR c.name ILIKE $${paramIndex} OR COALESCE(p.manufacturer, '') ILIKE $${paramIndex} OR p.article::text ILIKE $${paramIndex}`;
         if (isNumeric) {
-          // Поиск по артикулу (точное совпадение числа)
-          query += ` AND (p.name ILIKE $${paramIndex} OR p.description ILIKE $${paramIndex} OR p.article = $${paramIndex + 1})`;
+          query += ` OR p.article = $${paramIndex + 1})`;
           params.push(term);
           params.push(parseInt(trimmedSearch, 10));
           paramIndex += 2;
         } else {
-          query += ` AND (p.name ILIKE $${paramIndex} OR p.description ILIKE $${paramIndex} OR c.name ILIKE $${paramIndex})`;
+          query += ')';
           params.push(term);
           paramIndex += 1;
         }
@@ -166,16 +168,15 @@ router.get('/', async (req, res) => {
         const term = `%${String(searchTerm).trim()}%`;
         const trimmedSearch = String(searchTerm).trim();
         const isNumeric = /^\d+$/.test(trimmedSearch);
+        conditions.push(
+          `(p.name ILIKE $${paramIndex} OR p.description ILIKE $${paramIndex} OR c.name ILIKE $${paramIndex} OR COALESCE(p.manufacturer, '') ILIKE $${paramIndex} OR p.article::text ILIKE $${paramIndex}` +
+          (isNumeric ? ` OR p.article = $${paramIndex + 1})` : ')')
+        );
+        params.push(term);
         if (isNumeric) {
-          // Поиск по артикулу (точное совпадение числа) + по названию/описанию
-          conditions.push(`(p.name ILIKE $${paramIndex} OR p.description ILIKE $${paramIndex} OR p.article = $${paramIndex + 1})`);
-          params.push(term);
           params.push(parseInt(trimmedSearch, 10));
           paramIndex += 2;
         } else {
-          // Поиск по названию, описанию и категории
-          conditions.push(`(p.name ILIKE $${paramIndex} OR p.description ILIKE $${paramIndex} OR c.name ILIKE $${paramIndex})`);
-          params.push(term);
           paramIndex += 1;
         }
       }
@@ -209,7 +210,9 @@ router.get('/', async (req, res) => {
 router.get('/categories', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, name, slug, (image_data IS NOT NULL) AS has_image FROM categories ORDER BY id`
+      `SELECT id, name, slug, parent_id, COALESCE(sort_order, 0) AS sort_order, (image_data IS NOT NULL) AS has_image
+       FROM categories
+       ORDER BY COALESCE(sort_order, 0) ASC, parent_id NULLS FIRST, id`
     );
     res.json(result.rows);
   } catch (err) {
@@ -251,37 +254,21 @@ router.get('/search', async (req, res) => {
     const limitNum = Math.min(Math.max(parseInt(limitParam, 10) || 10, 1), 20);
     const term = `%${searchTerm}%`;
     const isNumeric = /^\d+$/.test(searchTerm);
+    const articleExact = isNumeric ? parseInt(searchTerm, 10) : null;
 
-    // Поиск товаров
-    let productsQuery;
-    let productsParams;
-    if (isNumeric) {
-      productsQuery = `
-        SELECT p.id, p.name, p.article, p.price, p.sale_price,
-               (p.image_data IS NOT NULL) AS has_image,
-               COALESCE(p.is_sale, false) AS is_sale,
-               c.name AS category_name, c.slug AS category_slug
-        FROM products p
-        JOIN categories c ON p.category_id = c.id
-        WHERE p.name ILIKE $1 OR p.article = $2
-        ORDER BY CASE WHEN p.article = $2 THEN 0 ELSE 1 END, p.name
-        LIMIT $3
-      `;
-      productsParams = [term, parseInt(searchTerm, 10), limitNum];
-    } else {
-      productsQuery = `
-        SELECT p.id, p.name, p.article, p.price, p.sale_price,
-               (p.image_data IS NOT NULL) AS has_image,
-               COALESCE(p.is_sale, false) AS is_sale,
-               c.name AS category_name, c.slug AS category_slug
-        FROM products p
-        JOIN categories c ON p.category_id = c.id
-        WHERE p.name ILIKE $1 OR c.name ILIKE $1 OR p.article::text ILIKE $1
-        ORDER BY p.name
-        LIMIT $2
-      `;
-      productsParams = [term, limitNum];
-    }
+    // Поиск товаров: название, описание, категория, производитель, артикул (частичное + точное для числа)
+    const productsQuery = `
+      SELECT p.id, p.name, p.article, p.price, p.sale_price,
+             (p.image_data IS NOT NULL) AS has_image,
+             COALESCE(p.is_sale, false) AS is_sale,
+             c.name AS category_name, c.slug AS category_slug
+      FROM products p
+      JOIN categories c ON p.category_id = c.id
+      WHERE (p.name ILIKE $1 OR p.description ILIKE $1 OR c.name ILIKE $1 OR COALESCE(p.manufacturer, '') ILIKE $1 OR p.article::text ILIKE $1${articleExact != null ? ' OR p.article = $2' : ''})
+      ORDER BY ${articleExact != null ? 'CASE WHEN p.article = $2 THEN 0 ELSE 1 END, ' : ''}p.name
+      LIMIT $${articleExact != null ? 3 : 2}
+    `;
+    const productsParams = articleExact != null ? [term, articleExact, limitNum] : [term, limitNum];
 
     // Поиск категорий
     const categoriesQuery = `
@@ -341,8 +328,8 @@ router.get('/:id/images/:index', async (req, res) => {
   try {
     const { id, index } = req.params;
     const idx = parseInt(index, 10);
-    if (Number.isNaN(idx) || idx < 0 || idx > 3) {
-      return res.status(400).json({ message: 'Индекс изображения от 0 до 3' });
+    if (Number.isNaN(idx) || idx < 0 || idx > 9) {
+      return res.status(400).json({ message: 'Индекс изображения от 0 до 9' });
     }
     const fromPi = await pool.query(
       'SELECT image_data, image_content_type FROM product_images WHERE product_id = $1 ORDER BY sort_order ASC OFFSET $2 LIMIT 1',

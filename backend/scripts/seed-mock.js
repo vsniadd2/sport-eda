@@ -23,8 +23,8 @@ const client = await pool.connect();
 try {
   console.log('Добавление мок-данных...\n');
 
-  // ——— Категории ———
-  const categories = [
+  // ——— Категории: родители и подкатегории (parent_id) ———
+  const rootCategories = [
     { name: 'Протеин', slug: 'protein' },
     { name: 'Гейнеры', slug: 'gainers' },
     { name: 'Аминокислоты', slug: 'amino-acids' },
@@ -33,17 +33,47 @@ try {
     { name: 'Предтрены', slug: 'pre-workout' },
   ];
 
-  const categoryIds = [];
-  for (const c of categories) {
+  const rootIds = [];
+  for (const c of rootCategories) {
     const res = await client.query(
-      `INSERT INTO categories (name, slug) VALUES ($1, $2)
-       ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name
+      `INSERT INTO categories (name, slug, parent_id) VALUES ($1, $2, NULL)
+       ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name, parent_id = EXCLUDED.parent_id
        RETURNING id`,
       [c.name, c.slug]
     );
-    categoryIds.push(res.rows[0].id);
+    rootIds.push(res.rows[0].id);
   }
-  console.log(`Категории: добавлено/обновлено ${categories.length}`);
+
+  const subcategories = [
+    { name: 'Сывороточный', slug: 'protein-whey', parentIdx: 0 },
+    { name: 'Казеин и изоляты', slug: 'protein-casein', parentIdx: 0 },
+    { name: 'Высококалорийные', slug: 'gainers-mass', parentIdx: 1 },
+    { name: 'Стандарт', slug: 'gainers-standard', parentIdx: 1 },
+    { name: 'BCAA', slug: 'amino-bcaa', parentIdx: 2 },
+    { name: 'Комплекс аминокислот', slug: 'amino-complex', parentIdx: 2 },
+    { name: 'Мультивитамины', slug: 'vitamins-multi', parentIdx: 3 },
+    { name: 'Омега и минералы', slug: 'vitamins-omega', parentIdx: 3 },
+    { name: 'Термогеники', slug: 'fat-burners-thermo', parentIdx: 4 },
+    { name: 'С кофеином', slug: 'pre-caffeine', parentIdx: 5 },
+    { name: 'Памп и без кофеина', slug: 'pre-pump', parentIdx: 5 },
+  ];
+
+  const firstSubcategoryIdByRoot = {}; // parentIdx -> id первой подкатегории (для productTemplates catIdx 0..5)
+  for (const sub of subcategories) {
+    const parentId = rootIds[sub.parentIdx];
+    const res = await client.query(
+      `INSERT INTO categories (name, slug, parent_id) VALUES ($1, $2, $3)
+       ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name, parent_id = EXCLUDED.parent_id
+       RETURNING id`,
+      [sub.name, sub.slug, parentId]
+    );
+    const id = res.rows[0].id;
+    if (firstSubcategoryIdByRoot[sub.parentIdx] == null) {
+      firstSubcategoryIdByRoot[sub.parentIdx] = id;
+    }
+  }
+  const categoryIds = rootIds.map((_, parentIdx) => firstSubcategoryIdByRoot[parentIdx]);
+  console.log(`Категории: добавлено/обновлено ${rootCategories.length} родительских и ${subcategories.length} подкатегорий`);
 
   // ——— Пользователи (пароль у всех: 123456), около 100 ———
   const firstNames = ['Александр', 'Дмитрий', 'Максим', 'Иван', 'Артём', 'Никита', 'Михаил', 'Даниил', 'Егор', 'Андрей', 'Сергей', 'Павел', 'Алексей', 'Роман', 'Владимир', 'Марк', 'Константин', 'Тимофей', 'Илья', 'Леонид', 'Мария', 'Анна', 'Елена', 'Ольга', 'Наталья', 'Татьяна', 'Ирина', 'Екатерина', 'Светлана', 'Юлия', 'Виктория', 'Полина', 'Дарья', 'Анастасия', 'Александра', 'Ксения', 'Валерия', 'Вероника', 'Кристина', 'Алина'];

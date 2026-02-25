@@ -24,6 +24,7 @@ export default function ProductFilters({
   const [results, setResults] = useState({ products: [], categories: [] });
   const [loading, setLoading] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [expandedParentId, setExpandedParentId] = useState(null);
   const debounceRef = useRef(null);
   const wrapRef = useRef(null);
 
@@ -105,6 +106,32 @@ export default function ProductFilters({
     dropdownOpen &&
     (searchQuery || '').trim() &&
     (loading || hasResults);
+
+  const sortByOrder = (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0);
+  const rootCategories = (categories || []).filter((c) => c.parent_id == null).sort(sortByOrder);
+  const getSubcategories = (parentId) => (categories || []).filter((c) => c.parent_id === parentId).sort(sortByOrder);
+  const isCategorySelected = (slug) => selectedCategory === slug;
+  const isParentExpanded = (id) => expandedParentId === id;
+  const toggleParent = (id) => setExpandedParentId((prev) => (prev === id ? null : id));
+
+  // Раскрывать родителя, если выбрана подкатегория
+  useEffect(() => {
+    if (!selectedCategory || !categories?.length) return;
+    const selected = categories.find((c) => c.slug === selectedCategory);
+    if (selected?.parent_id != null) setExpandedParentId(selected.parent_id);
+  }, [selectedCategory, categories]);
+  const handleRootCategoryClick = (slug, hasChildren, parentId) => {
+    if (hasChildren) {
+      toggleParent(parentId);
+    } else {
+      onFilterChange(slug);
+    }
+  };
+  const handleSubcategoryClick = (slug) => onFilterChange(slug);
+  const handleAllClick = () => {
+    setExpandedParentId(null);
+    onFilterChange('');
+  };
 
   const categoryIcon = (
     <svg className={styles.categoriesIcon} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -277,24 +304,47 @@ export default function ProductFilters({
           <button
             type="button"
             className={`${styles.categoryBtn} ${!selectedCategory ? styles.active : ''}`}
-            onClick={() => onFilterChange('')}
+            onClick={handleAllClick}
           >
             <span>Все товары</span>
             {chevronRight}
           </button>
         </li>
-        {categories.map((cat) => (
-          <li key={cat.id}>
-            <button
-              type="button"
-              className={`${styles.categoryBtn} ${selectedCategory === cat.slug ? styles.active : ''}`}
-              onClick={() => onFilterChange(cat.slug)}
-            >
-              <span>{cat.name}</span>
-              {chevronRight}
-            </button>
-          </li>
-        ))}
+        {rootCategories.map((root) => {
+          const subcategories = getSubcategories(root.id);
+          const hasChildren = subcategories.length > 0;
+          const isExpanded = isParentExpanded(root.id);
+          const isActive = !hasChildren && isCategorySelected(root.slug);
+          return (
+            <li key={root.id}>
+              <button
+                type="button"
+                className={`${styles.categoryBtn} ${isActive ? styles.active : ''}`}
+                onClick={() => handleRootCategoryClick(root.slug, hasChildren, root.id)}
+                aria-expanded={hasChildren ? isExpanded : undefined}
+              >
+                <span>{root.name}</span>
+                {chevronRight}
+              </button>
+              {hasChildren && isExpanded && (
+                <ul className={styles.subcategoryList}>
+                  {subcategories.map((sub) => (
+                    <li key={sub.id}>
+                      <button
+                        type="button"
+                        className={`${styles.categoryBtn} ${styles.subcategoryBtn} ${isCategorySelected(sub.slug) ? styles.active : ''}`}
+                        onClick={() => handleSubcategoryClick(sub.slug)}
+                      >
+                        <span>{sub.name}</span>
+                        {chevronRight}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          );
+        })}
       </ul>
       <div className={styles.priceFilter}>
         <h3 className={styles.priceFilterTitle}>Фильтр по цене</h3>

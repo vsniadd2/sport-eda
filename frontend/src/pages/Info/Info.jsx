@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import styles from './Info.module.css';
 
 const PAGES = {
-  about: { title: 'О магазине', content: 'SPORT EDA — интернет-магазин спортивного питания и товаров для спорта. Мы предлагаем широкий ассортимент качественной продукции от ведущих брендов.' },
+  about: { title: 'О магазине', content: 'СПОРТ-ЕДА — интернет-магазин спортивного питания и товаров для спорта. Мы предлагаем широкий ассортимент качественной продукции от ведущих брендов.' },
   payment: { title: 'Оплата', content: 'Принимаем оплату картами Visa, Mastercard, а также наличными при получении. Безопасная оплата онлайн.' },
   delivery: { title: 'Доставка', content: 'Доставка по всей стране. Бесплатная доставка при заказе от определённой суммы. Быстрая отправка заказов.' },
   sitemap: { title: 'Карта сайта', content: null, links: null },
@@ -208,7 +208,7 @@ export default function Info({ page }) {
             <span>Карта сайта</span>
           </nav>
           <h1 className={styles.pageTitle}>Карта сайта</h1>
-          <p className={styles.sitemapSubtitle}>Все разделы и страницы интернет-магазина SPORT EDA</p>
+          <p className={styles.sitemapSubtitle}>Все разделы и страницы интернет-магазина СПОРТ-ЕДА</p>
           <p className={styles.sitemapIntro}>
             Выберите раздел или перейдите в каталог по категориям.
           </p>

@@ -5,9 +5,13 @@ import Loader from '../../components/Loader/Loader';
 import ScrollReveal from '../../components/ScrollReveal/ScrollReveal';
 import styles from './Home.module.css';
 
+const BANNER_AUTO_MS = 10000;
+
 export default function Home() {
   const [popularCategories, setPopularCategories] = useState([]);
   const [bestProducts, setBestProducts] = useState([]);
+  const [banners, setBanners] = useState([]);
+  const [bannerIndex, setBannerIndex] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const fetchHomeData = useCallback(() => {
@@ -22,29 +26,83 @@ export default function Home() {
       .finally(() => setLoading(false));
   }, []);
 
+  const fetchBanners = useCallback(() => {
+    fetch('/api/home/banners')
+      .then((r) => r.json())
+      .then((data) => setBanners(Array.isArray(data) ? data : []))
+      .catch(() => setBanners([]));
+  }, []);
+
   useEffect(() => {
     fetchHomeData();
   }, [fetchHomeData]);
 
   useEffect(() => {
+    fetchBanners();
+  }, [fetchBanners]);
+
+  useEffect(() => {
     const socket = io(window.location.origin);
     socket.on('productsChanged', () => fetchHomeData());
+    socket.on('homeBannersChanged', () => fetchBanners());
     return () => socket.disconnect();
-  }, [fetchHomeData]);
+  }, [fetchHomeData, fetchBanners]);
+
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const t = setInterval(() => {
+      setBannerIndex((i) => (i + 1) % banners.length);
+    }, BANNER_AUTO_MS);
+    return () => clearInterval(t);
+  }, [banners.length]);
 
   const saleProducts = bestProducts.filter((p) => p.is_sale).slice(0, 4);
 
   return (
     <main className={styles.main}>
-      {/* Hero Banner */}
+      {/* Hero Banner / Carousel */}
       <section className={styles.heroSection}>
         <div className={styles.heroImageWrap}>
-          <img 
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAz8OKu-kxA9EjhozJH5zEahfn9O_CI52eV9E_Pc39S4mr2LKrfAn9TFVyKXk7x7YnxdM0pa4-1Yw0ltnDzMHCXmtmdL9qwiKpi97MCr7qPk3KPK6ZqQehD1g5KobWcHp8GZjvbLwtLHYjOUb9DHWsh4C1scl0v20qeJHuxI63kBa_B02V3D81B4r3kzFgm__2Fw3VVk8WbMFYZdFqYa4vXnUtbwwrGkQZBCKFSpZ9o-0N-ZEIRYOulpOUcBNIGOHEmlbbnbtJSPRLc"
-            alt="Спортивное питание"
-            className={styles.heroImage}
-          />
-          <div className={styles.heroGradient}></div>
+          {banners.length > 0 ? (
+            <>
+              <div className={styles.heroCarouselTrack} style={{ transform: `translateX(-${bannerIndex * 100}%)` }}>
+                {banners.map((b) => (
+                  <div key={b.id} className={styles.heroCarouselSlide}>
+                    {b.link_url ? (
+                      <a href={b.link_url} className={styles.heroCarouselLink} target="_blank" rel="noopener noreferrer">
+                        <img src={`/api/home/banners/${b.id}/image`} alt={b.title || 'Баннер'} className={styles.heroImage} />
+                      </a>
+                    ) : (
+                      <img src={`/api/home/banners/${b.id}/image`} alt={b.title || 'Баннер'} className={styles.heroImage} />
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className={styles.heroGradient} aria-hidden />
+              {banners.length > 1 && (
+                <div className={styles.heroCarouselDots}>
+                  {banners.map((b, i) => (
+                    <button
+                      key={b.id}
+                      type="button"
+                      className={i === bannerIndex ? styles.heroCarouselDotActive : styles.heroCarouselDot}
+                      onClick={() => setBannerIndex(i)}
+                      aria-label={`Слайд ${i + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <img
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAz8OKu-kxA9EjhozJH5zEahfn9O_CI52eV9E_Pc39S4mr2LKrfAn9TFVyKXk7x7YnxdM0pa4-1Yw0ltnDzMHCXmtmdL9qwiKpi97MCr7qPk3KPK6ZqQehD1g5KobWcHp8GZjvbLwtLHYjOUb9DHWsh4C1scl0v20qeJHuxI63kBa_B02V3D81B4r3kzFgm__2Fw3VVk8WbMFYZdFqYa4vXnUtbwwrGkQZBCKFSpZ9o-0N-ZEIRYOulpOUcBNIGOHEmlbbnbtJSPRLc"
+                alt="Спортивное питание"
+                className={styles.heroImage}
+              />
+              <div className={styles.heroGradient}></div>
+            </>
+          )}
         </div>
         <div className={styles.heroContent}>
           <ScrollReveal className={styles.heroInner}>
@@ -73,7 +131,7 @@ export default function Home() {
             <div className={styles.benefitItem}>
               <div className={styles.benefitIcon}>
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 18.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                 </svg>
               </div>
               <div>

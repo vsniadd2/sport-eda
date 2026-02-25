@@ -456,17 +456,46 @@ router.get('/stats', async (req, res) => {
 
 router.post('/categories', async (req, res) => {
   try {
-    const { name, slug } = req.body;
+    const { name, slug, parent_id: parentIdParam, sort_order: sortOrderParam } = req.body;
     if (!name || !slug) return res.status(400).json({ message: 'Название и slug обязательны' });
+    const slugVal = String(slug).trim().toLowerCase().replace(/\s+/g, '-') || 'category';
+    const parentId = parentIdParam !== undefined && parentIdParam !== '' && parentIdParam != null
+      ? (Number.isNaN(parseInt(parentIdParam, 10)) ? null : parseInt(parentIdParam, 10))
+      : null;
+    const sortOrder = sortOrderParam !== undefined && sortOrderParam !== '' && !Number.isNaN(parseInt(sortOrderParam, 10))
+      ? parseInt(sortOrderParam, 10)
+      : 0;
     const result = await pool.query(
-      'INSERT INTO categories (name, slug) VALUES ($1, $2) RETURNING *',
-      [name, slug.toLowerCase().replace(/\s+/g, '-')]
+      'INSERT INTO categories (name, slug, parent_id, sort_order) VALUES ($1, $2, $3, $4) RETURNING *',
+      [name, slugVal, parentId, sortOrder]
     );
     getIO().emitToAdmin('catalogChanged');
     getIO().emitToAll('productsChanged');
     res.status(201).json(result.rows[0]);
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ message: 'Категория с таким slug уже существует' });
+    if (err.code === '23503') return res.status(400).json({ message: 'Родительская категория не найдена' });
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+router.patch('/categories/reorder', async (req, res) => {
+  try {
+    const items = req.body;
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ message: 'Ожидается массив { id, sort_order }[]' });
+    }
+    for (const item of items) {
+      const id = parseInt(item.id, 10);
+      const sort_order = parseInt(item.sort_order, 10);
+      if (Number.isNaN(id) || Number.isNaN(sort_order)) continue;
+      await pool.query('UPDATE categories SET sort_order = $1 WHERE id = $2', [sort_order, id]);
+    }
+    getIO().emitToAdmin('catalogChanged');
+    getIO().emitToAll('productsChanged');
+    res.json({ ok: true });
+  } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Ошибка сервера' });
   }
@@ -474,13 +503,37 @@ router.post('/categories', async (req, res) => {
 
 router.patch('/categories/:id', async (req, res) => {
   try {
-    const { id } = req.params;
-    const { name, slug } = req.body || {};
+    const id = parseInt(req.params.id, 10);
+    if (Number.isNaN(id)) return res.status(400).json({ message: 'Неверный ID' });
+    const { name, slug, parent_id: parentIdParam, sort_order: sortOrderParam } = req.body || {};
     const updates = [];
     const values = [];
     let i = 1;
     if (name !== undefined) { updates.push(`name = $${i++}`); values.push(name); }
-    if (slug !== undefined) { updates.push(`slug = $${i++}`); values.push(slug.toLowerCase().replace(/\s+/g, '-')); }
+    if (slug !== undefined) { updates.push(`slug = $${i++}`); values.push(String(slug).trim().toLowerCase().replace(/\s+/g, '-')); }
+    if (sortOrderParam !== undefined && sortOrderParam !== '' && !Number.isNaN(parseInt(sortOrderParam, 10))) {
+      updates.push(`sort_order = $${i++}`);
+      values.push(parseInt(sortOrderParam, 10));
+    }
+    if (parentIdParam !== undefined) {
+      const parentId = parentIdParam === '' || parentIdParam == null ? null : parseInt(parentIdParam, 10);
+      if (parentId !== null && (Number.isNaN(parentId) || parentId === id)) {
+        return res.status(400).json({ message: 'Родителем не может быть эта же категория' });
+      }
+      if (parentId !== null) {
+        const cycleCheck = await pool.query(
+          `WITH RECURSIVE descendants AS (
+            SELECT id FROM categories WHERE parent_id = $1
+            UNION ALL
+            SELECT c.id FROM categories c JOIN descendants d ON c.parent_id = d.id
+          ) SELECT 1 FROM descendants WHERE id = $2`,
+          [id, parentId]
+        );
+        if (cycleCheck.rows.length > 0) return res.status(400).json({ message: 'Нельзя сделать подкатегорию родителем (цикл)' });
+      }
+      updates.push(`parent_id = $${i++}`);
+      values.push(parentId);
+    }
     if (updates.length === 0) return res.status(400).json({ message: 'Нет данных для обновления' });
     values.push(id);
     const result = await pool.query(
@@ -493,6 +546,7 @@ router.patch('/categories/:id', async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ message: 'Категория с таким slug уже существует' });
+    if (err.code === '23503') return res.status(400).json({ message: 'Родительская категория не найдена' });
     console.error(err);
     res.status(500).json({ message: 'Ошибка сервера' });
   }
@@ -501,6 +555,10 @@ router.patch('/categories/:id', async (req, res) => {
 router.delete('/categories/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const hasChildren = await pool.query('SELECT 1 FROM categories WHERE parent_id = $1 LIMIT 1', [id]);
+    if (hasChildren.rows.length > 0) {
+      return res.status(400).json({ message: 'Нельзя удалить категорию: в ней есть подкатегории. Сначала удалите или перенесите подкатегории.' });
+    }
     const hasProducts = await pool.query('SELECT 1 FROM products WHERE category_id = $1 LIMIT 1', [id]);
     if (hasProducts.rows.length > 0) {
       return res.status(400).json({ message: 'Нельзя удалить категорию: в ней есть товары. Сначала удалите или перенесите товары.' });
@@ -596,7 +654,7 @@ router.get('/products', async (req, res) => {
 
 const productImageFields = [
   { name: 'image', maxCount: 1 },
-  { name: 'images', maxCount: 4 },
+  { name: 'images', maxCount: 10 },
 ];
 
 router.post('/products', upload.fields(productImageFields), async (req, res) => {
@@ -619,7 +677,7 @@ router.post('/products', upload.fields(productImageFields), async (req, res) => 
     );
     const productId = result.rows[0].id;
     const files = req.files?.images?.length ? req.files.images : (req.files?.image?.length ? req.files.image : []);
-    for (let i = 0; i < Math.min(files.length, 4); i++) {
+    for (let i = 0; i < Math.min(files.length, 10); i++) {
       const file = files[i];
       if (file?.buffer) {
         await pool.query(
@@ -693,7 +751,7 @@ router.patch('/products/:id', upload.fields(productImageFields), async (req, res
     const files = req.files?.images?.length ? req.files.images : (req.files?.image?.length ? req.files.image : []);
     if (files.length > 0) {
       await pool.query('DELETE FROM product_images WHERE product_id = $1', [id]);
-      for (let j = 0; j < Math.min(files.length, 4); j++) {
+      for (let j = 0; j < Math.min(files.length, 10); j++) {
         const file = files[j];
         if (file?.buffer) {
           await pool.query(
@@ -754,6 +812,10 @@ router.get('/banners', async (req, res) => {
 
 router.post('/banners', upload.single('image'), async (req, res) => {
   try {
+    const countResult = await pool.query('SELECT COUNT(*)::int AS cnt FROM home_banners');
+    if ((countResult.rows[0]?.cnt ?? 0) >= 5) {
+      return res.status(400).json({ message: 'Максимум 5 баннеров' });
+    }
     if (!req.file || !req.file.buffer) {
       return res.status(400).json({ message: 'Загрузите изображение' });
     }

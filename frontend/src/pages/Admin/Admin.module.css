@@ -417,6 +417,10 @@
   background: #fff;
 }
 
+.catalogSubcategoryBlock {
+  margin-left: 20px;
+}
+
 .catalogCategoryRow {
   display: flex;
   align-items: center;
@@ -458,6 +462,34 @@
 .catalogCategoryRow .rowActions {
   margin-left: auto;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.catalogOrderLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--color-gray);
+  margin: 0;
+}
+
+.catalogOrderInput {
+  width: 3ch;
+  padding: 4px 6px;
+  font-size: 13px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.catalogOrderInput::-webkit-outer-spin-button,
+.catalogOrderInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .catalogCategoryRow .formInline {
@@ -629,16 +661,16 @@
   font-size: 13px;
   font-weight: 600;
   color: #1a1a1a;
-  background: #e8f4f8;
-  border: 1px solid #b8d8e8;
+  background: #fff;
+  border: 1px solid #1a1a1a;
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
 
 .btnImageUpload:hover {
-  background: #d0e8f0;
-  border-color: #90c0d8;
+  background: #f5f5f5;
+  border-color: #333;
 }
 
 .categoryThumb {
@@ -1909,8 +1941,8 @@
   font-size: 15px;
   font-weight: 600;
   color: #fff;
-  background: #2d2d2d;
-  border: 2px solid #2d2d2d;
+  background: #1a1a1a;
+  border: 2px solid #1a1a1a;
   border-radius: 10px;
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s, color 0.2s;
@@ -1918,8 +1950,8 @@
 }
 
 .feedbackReplyBtn:hover:not(:disabled) {
-  background: #1f1f1f;
-  border-color: #1f1f1f;
+  background: #333;
+  border-color: #333;
 }
 
 .feedbackReplyBtn:disabled {
@@ -1931,9 +1963,9 @@
   padding: 12px 24px;
   font-size: 15px;
   font-weight: 600;
-  color: #2d2d2d;
+  color: #1a1a1a;
   background: transparent;
-  border: 2px solid #2d2d2d;
+  border: 2px solid #1a1a1a;
   border-radius: 10px;
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s, color 0.2s;
@@ -1941,7 +1973,7 @@
 }
 
 .feedbackCloseBtn:hover:not(:disabled) {
-  background: #2d2d2d;
+  background: #1a1a1a;
   color: #fff;
 }
 
