@@ -45,27 +45,12 @@ export default function ProductDetail() {
   const [qtyFocused, setQtyFocused] = useState(false);
   const [qtyInput, setQtyInput] = useState('');
   const [activeTab, setActiveTab] = useState('specs');
-  const [selectedFlavor, setSelectedFlavor] = useState(0);
   const reviewListRef = useRef(null);
 
   const productId = String(id ?? '');
   const cartQty = getQuantity(product?.id || 0);
   const inCart = cartQty > 0;
   const myReview = reviews.find((r) => Number(r.user_id) === Number(user?.id));
-
-  const flavorsList = useMemo(() => {
-    const f = product?.flavors;
-    if (Array.isArray(f) && f.length > 0) return f;
-    if (typeof f === 'string') {
-      try {
-        const arr = JSON.parse(f);
-        return Array.isArray(arr) ? arr : [];
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  }, [product]);
 
   const specItems = useMemo(() => {
     if (!product) return [];
@@ -75,7 +60,7 @@ export default function ProductDetail() {
     if (product.manufacturer) items.push({ label: 'Бренд', value: product.manufacturer });
     if (product.category_name) items.push({ label: 'Категория', value: product.category_name });
     if (product.country) items.push({ label: 'Страна', value: product.country });
-    if (product.servings != null) items.push({ label: 'Порций', value: String(product.servings) });
+    if (product.servings != null) items.push({ label: 'Количество', value: String(product.servings) });
     return items;
   }, [product]);
 
@@ -372,25 +357,6 @@ export default function ProductDetail() {
               </p>
             </div>
 
-            {/* Flavor selector */}
-            {flavorsList.length > 0 && (
-              <div className={styles.flavorBlock}>
-                <label className={styles.flavorLabel}>Вкус</label>
-                <div className={styles.flavorButtons}>
-                  {flavorsList.map((flavor, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      className={selectedFlavor === i ? styles.flavorBtnActive : styles.flavorBtn}
-                      onClick={() => setSelectedFlavor(i)}
-                    >
-                      {flavor}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Cart + actions */}
             <div className={styles.cartActionsRow}>
               <div className={styles.cartBtnWrap}>
@@ -488,16 +454,11 @@ export default function ProductDetail() {
                   )}
                   {activeTab === 'howto' && (
                     <div className={styles.tabHowTo}>
-                      {product.show_how_to_use !== false && (product.how_to_use_step1 || product.how_to_use_intro) ? (
-                        <>
-                          {product.how_to_use_intro && <p className={styles.featureIntro}>{product.how_to_use_intro}</p>}
-                          <ul className={styles.featureList}>
-                            {product.how_to_use_step1 && <li><span className={styles.bullet}>•</span>{product.how_to_use_step1}</li>}
-                            {product.how_to_use_step2 && <li><span className={styles.bullet}>•</span>{product.how_to_use_step2}</li>}
-                            {product.how_to_use_step3 && <li><span className={styles.bullet}>•</span>{product.how_to_use_step3}</li>}
-                          </ul>
-                        </>
-                      ) : <p className={styles.detailsParagraph}>Инструкция по применению отсутствует.</p>}
+                      {product.how_to_take ? (
+                        <div className={styles.detailsParagraph} style={{ whiteSpace: 'pre-wrap' }}>{product.how_to_take}</div>
+                      ) : (
+                        <p className={styles.detailsParagraph}>Инструкция по применению отсутствует.</p>
+                      )}
                     </div>
                   )}
                 </div>

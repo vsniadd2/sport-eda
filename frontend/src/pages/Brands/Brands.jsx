@@ -22,19 +22,30 @@ export default function Brands() {
           </p>
         ) : (
           <div className={styles.brandsGrid}>
-            {brands.map((b) => (
-              <div key={b.id} className={styles.brandCard}>
-                {b.has_image && (
-                  <div className={styles.brandCardImage}>
-                    <img src={`/api/home/brands/${b.id}/image`} alt={b.name || ''} />
+            {brands.map((b) => {
+              const cardContent = (
+                <>
+                  {b.has_image && (
+                    <div className={styles.brandCardImage}>
+                      <img src={`/api/home/brands/${b.id}/image`} alt={b.name || ''} />
+                    </div>
+                  )}
+                  <div className={styles.brandCardBody}>
+                    <h3 className={styles.brandCardName}>{b.name}</h3>
+                    {b.description && <p className={styles.brandCardDescription}>{b.description}</p>}
                   </div>
-                )}
-                <div className={styles.brandCardBody}>
-                  <h3 className={styles.brandCardName}>{b.name}</h3>
-                  {b.description && <p className={styles.brandCardDescription}>{b.description}</p>}
+                </>
+              );
+              return b.link_url ? (
+                <a key={b.id} href={b.link_url} target="_blank" rel="noopener noreferrer" className={styles.brandCard + ' ' + styles.brandCardLink}>
+                  {cardContent}
+                </a>
+              ) : (
+                <div key={b.id} className={styles.brandCard}>
+                  {cardContent}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

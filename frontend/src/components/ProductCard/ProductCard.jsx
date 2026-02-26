@@ -93,18 +93,7 @@ export default function ProductCard({ product, showTag, showAvailability, showWi
   const isRecommended = variant === 'recommended';
   const availabilityText = stock <= 0 ? 'Нет в наличии' : (stock <= 5 ? 'Осталось мало' : 'В наличии');
   const availabilityClass = stock <= 0 ? styles.availabilityOut : (stock <= 5 ? styles.availabilityLow : styles.availability);
-  const firstFlavor = (() => {
-    const f = product.flavors;
-    if (Array.isArray(f) && f[0]) return f[0];
-    if (typeof f === 'string') {
-      try {
-        const arr = JSON.parse(f);
-        return Array.isArray(arr) && arr[0] ? arr[0] : null;
-      } catch { return null; }
-    }
-    return null;
-  })();
-  const subtitle = [product.weight, firstFlavor].filter(Boolean).join(' • ');
+  const subtitle = product.weight ? product.weight : '';
 
   return (
     <article className={`${styles.card} ${layout === 'list' ? styles.cardList : ''} ${compact ? styles.cardCompact : ''} ${variant === 'home' ? styles.cardHome : ''} ${isCatalog ? styles.cardCatalog : ''} ${isRecommended ? styles.cardRecommended : ''}`}>

@@ -114,12 +114,14 @@ export default function Admin() {
   const [showAddBrandModal, setShowAddBrandModal] = useState(false);
   const [addBrandName, setAddBrandName] = useState('');
   const [addBrandDescription, setAddBrandDescription] = useState('');
+  const [addBrandLinkUrl, setAddBrandLinkUrl] = useState('');
   const [addBrandFile, setAddBrandFile] = useState(null);
   const [brandSaving, setBrandSaving] = useState(false);
   const [brandDeleting, setBrandDeleting] = useState(null);
   const [editingBrandId, setEditingBrandId] = useState(null);
   const [editBrandName, setEditBrandName] = useState('');
   const [editBrandDescription, setEditBrandDescription] = useState('');
+  const [editBrandLinkUrl, setEditBrandLinkUrl] = useState('');
   const [editBrandFile, setEditBrandFile] = useState(null);
   const [adminReviews, setAdminReviews] = useState([]);
   const [reviewReplyDrafts, setReviewReplyDrafts] = useState({});
@@ -328,6 +330,8 @@ export default function Admin() {
       const formData = new FormData();
       formData.append('name', name);
       formData.append('description', addBrandDescription.trim());
+      const linkUrl = addBrandLinkUrl.trim();
+      if (linkUrl) formData.append('link_url', linkUrl);
       if (addBrandFile) formData.append('image', addBrandFile);
       const res = await fetch(`${API_URL}/admin/brands`, {
         method: 'POST',
@@ -341,6 +345,7 @@ export default function Admin() {
       setShowAddBrandModal(false);
       setAddBrandName('');
       setAddBrandDescription('');
+      setAddBrandLinkUrl('');
       setAddBrandFile(null);
       notify('Бренд добавлен');
       fetchBrands();
@@ -349,7 +354,7 @@ export default function Admin() {
     } finally {
       setBrandSaving(false);
     }
-  }, [addBrandName, addBrandDescription, addBrandFile, notify, fetchBrands]);
+  }, [addBrandName, addBrandDescription, addBrandLinkUrl, addBrandFile, notify, fetchBrands]);
 
   const handleEditBrand = useCallback(async (e) => {
     e.preventDefault();
@@ -368,6 +373,7 @@ export default function Admin() {
       const formData = new FormData();
       formData.append('name', name);
       formData.append('description', editBrandDescription.trim());
+      formData.append('link_url', editBrandLinkUrl.trim());
       if (editBrandFile) formData.append('image', editBrandFile);
       const res = await fetch(`${API_URL}/admin/brands/${editingBrandId}`, {
         method: 'PATCH',
@@ -381,6 +387,7 @@ export default function Admin() {
       setEditingBrandId(null);
       setEditBrandName('');
       setEditBrandDescription('');
+      setEditBrandLinkUrl('');
       setEditBrandFile(null);
       notify('Бренд обновлён');
       fetchBrands();
@@ -389,7 +396,7 @@ export default function Admin() {
     } finally {
       setBrandSaving(false);
     }
-  }, [editingBrandId, editBrandName, editBrandDescription, editBrandFile, notify, fetchBrands]);
+  }, [editingBrandId, editBrandName, editBrandDescription, editBrandLinkUrl, editBrandFile, notify, fetchBrands]);
 
   const handleDeleteBrand = useCallback(async (id) => {
     setBrandDeleting(id);
@@ -412,6 +419,7 @@ export default function Admin() {
     setEditingBrandId(b.id);
     setEditBrandName(b.name || '');
     setEditBrandDescription(b.description || '');
+    setEditBrandLinkUrl(b.link_url || '');
     setEditBrandFile(null);
   }, []);
 
@@ -661,8 +669,7 @@ export default function Admin() {
     const form = e.target;
     const name = form.name.value.trim();
     const slug = slugFromName(name);
-    const parentIdVal = form.parent_id?.value?.trim();
-    const parent_id = parentIdVal && !Number.isNaN(parseInt(parentIdVal, 10)) ? parseInt(parentIdVal, 10) : null;
+    const parent_id = addCategoryParentId;
     if (!name) return;
     setError('');
     try {
@@ -675,8 +682,9 @@ export default function Admin() {
       if (!res.ok) throw new Error(data.message || 'Ошибка');
       form.reset();
       setShowAddCategoryModal(false);
+      setAddCategoryParentId(null);
       fetchCategories();
-      notify('Категория добавлена', 'success');
+      notify(addCategoryParentId ? 'Подкаталог добавлен' : 'Категория добавлена', 'success');
     } catch (e) {
       setError(e.message);
       notify(e.message, 'error');
@@ -821,8 +829,8 @@ export default function Admin() {
       if (countryVal) body.append('country', countryVal);
       const servingsVal = form.servings?.value?.trim();
       if (servingsVal && !Number.isNaN(parseInt(servingsVal, 10))) body.append('servings', servingsVal);
-      const flavorsVal = form.flavors?.value?.trim();
-      if (flavorsVal) body.append('flavors', JSON.stringify(flavorsVal.split(/[,;]/).map((x) => x.trim()).filter(Boolean)));
+      const howToTakeVal = form.how_to_take?.value?.trim();
+      if (howToTakeVal) body.append('how_to_take', howToTakeVal);
       body.append('is_sale', form.is_sale?.checked ? 'true' : 'false');
       body.append('is_hit', form.is_hit?.checked ? 'true' : 'false');
       body.append('is_recommended', form.is_recommended?.checked ? 'true' : 'false');
@@ -920,8 +928,8 @@ export default function Admin() {
         if (countryVal !== undefined) body.append('country', countryVal || '');
         const servingsVal = form.servings?.value?.trim();
         if (servingsVal !== undefined && servingsVal !== '') body.append('servings', servingsVal);
-        const flavorsVal = form.flavors?.value?.trim();
-        if (flavorsVal) body.append('flavors', JSON.stringify(flavorsVal.split(/[,;]/).map((x) => x.trim()).filter(Boolean)));
+        const howToTakeVal = form.how_to_take?.value?.trim();
+        if (howToTakeVal !== undefined) body.append('how_to_take', howToTakeVal ?? '');
         for (let i = 0; i < Math.min(10, imageFiles.length); i++) {
           body.append('images', imageFiles[i]);
         }
@@ -946,8 +954,8 @@ export default function Admin() {
         if (countryVal !== undefined) payload.country = countryVal === '' ? null : countryVal;
         const servingsVal = form.servings?.value?.trim();
         if (servingsVal !== undefined && servingsVal !== '') payload.servings = parseInt(servingsVal, 10);
-        const flavorsVal = form.flavors?.value?.trim();
-        if (flavorsVal !== undefined) payload.flavors = flavorsVal ? flavorsVal.split(/[,;]/).map((x) => x.trim()).filter(Boolean) : null;
+        const howToTakeVal = form.how_to_take?.value?.trim();
+        if (howToTakeVal !== undefined) payload.how_to_take = howToTakeVal || null;
         const res = await fetch(`${API_URL}/admin/products/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
@@ -1211,16 +1219,10 @@ export default function Admin() {
       .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
   }, [filteredCatalog]);
 
-  const catalogDisplayList = useMemo(() => {
-    const list = [];
+  const getSubs = useCallback((pid) => {
     const cats = filteredCatalog.categories;
-    const getSubs = (pid) => cats.filter((c) => c.parent_id === pid).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
-    catalogTreeRoots.forEach((root) => {
-      list.push({ category: root, level: 0 });
-      getSubs(root.id).forEach((sub) => list.push({ category: sub, level: 1 }));
-    });
-    return list;
-  }, [filteredCatalog, catalogTreeRoots]);
+    return cats.filter((c) => c.parent_id === pid).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+  }, [filteredCatalog]);
 
   const toggleCategoryExpand = (id) => {
     setExpandedCategoryIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -2078,6 +2080,15 @@ export default function Admin() {
                         />
                       </label>
                       <label className={styles.label}>
+                        Ссылка (куда ведёт карточка)
+                        <input
+                          type="url"
+                          value={addBrandLinkUrl}
+                          onChange={(e) => setAddBrandLinkUrl(e.target.value)}
+                          placeholder="https://..."
+                        />
+                      </label>
+                      <label className={styles.label}>
                         Изображение (необязательно, до 5 МБ)
                         <input
                           type="file"
@@ -2129,6 +2140,15 @@ export default function Admin() {
                         />
                       </label>
                       <label className={styles.label}>
+                        Ссылка (куда ведёт карточка)
+                        <input
+                          type="url"
+                          value={editBrandLinkUrl}
+                          onChange={(e) => setEditBrandLinkUrl(e.target.value)}
+                          placeholder="https://..."
+                        />
+                      </label>
+                      <label className={styles.label}>
                         Новое изображение (необязательно, до 5 МБ)
                         <input
                           type="file"
@@ -2155,7 +2175,7 @@ export default function Admin() {
                 <button
                   type="button"
                   className={styles.addCategoryBtn}
-                  onClick={() => setShowAddCategoryModal(true)}
+                  onClick={() => { setAddCategoryParentId(null); setShowAddCategoryModal(true); }}
                 >
                   + Добавить категорию
                 </button>
@@ -2180,30 +2200,22 @@ export default function Admin() {
                 onMouseDown={(e) => {
                   if (e.target !== e.currentTarget) return;
                   setShowAddCategoryModal(false);
+                  setAddCategoryParentId(null);
                 }}
               >
                   <div className={styles.modalBox} onClick={(e) => e.stopPropagation()}>
                     <div className={styles.modalHeader}>
-                      <h3>Добавить категорию</h3>
-                      <button type="button" className={styles.closeBtn} onClick={() => setShowAddCategoryModal(false)} aria-label="Закрыть">×</button>
+                      <h3>{addCategoryParentId ? 'Добавить подкаталог' : 'Добавить категорию'}</h3>
+                      <button type="button" className={styles.closeBtn} onClick={() => { setShowAddCategoryModal(false); setAddCategoryParentId(null); }} aria-label="Закрыть">×</button>
                     </div>
                     <form onSubmit={handleCreateCategory} className={styles.form + ' ' + styles.modalForm}>
                       <label className={styles.label}>
                         Название
-                        <input name="name" placeholder="Название категории" required />
-                      </label>
-                      <label className={styles.label}>
-                        Родительская категория (опционально)
-                        <select name="parent_id" className={styles.select}>
-                          <option value="">— Без родителя —</option>
-                          {(categories || []).filter((c) => !c.parent_id).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)).map((c) => (
-                            <option key={c.id} value={c.id}>{c.name}</option>
-                          ))}
-                        </select>
+                        <input name="name" placeholder={addCategoryParentId ? 'Название подкаталога' : 'Название категории'} required />
                       </label>
                       <div className={styles.formRowActions}>
                         <button type="submit">Добавить</button>
-                        <button type="button" className={styles.btnSmallSecondary} onClick={() => setShowAddCategoryModal(false)}>Отмена</button>
+                        <button type="button" className={styles.btnSmallSecondary} onClick={() => { setShowAddCategoryModal(false); setAddCategoryParentId(null); }}>Отмена</button>
                       </div>
                     </form>
                   </div>
@@ -2211,36 +2223,36 @@ export default function Admin() {
               )}
 
               <div className={styles.catalogTree}>
-                {catalogDisplayList.map(({ category: c, level }) => {
-                  const isExpanded = expandedCategoryIds.includes(c.id);
-                  const categoryProducts = filteredCatalog.productsByCategory[c.id] || [];
-                  const rowAndContent = (
-                    <>
+                {catalogTreeRoots.map((root) => {
+                  const rootExpanded = expandedCategoryIds.includes(root.id);
+                  const rootProducts = filteredCatalog.productsByCategory[root.id] || [];
+                  return (
+                    <div key={root.id} className={styles.catalogCategoryBlock}>
                       <div
-                        className={styles.catalogCategoryRow + (isExpanded ? ' ' + styles.catalogCategoryRowExpanded : '')}
-                        onClick={() => toggleCategoryExpand(c.id)}
+                        className={styles.catalogCategoryRow + (rootExpanded ? ' ' + styles.catalogCategoryRowExpanded : '')}
+                        onClick={() => toggleCategoryExpand(root.id)}
                         role="button"
                         tabIndex={0}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCategoryExpand(c.id); } }}
-                        aria-expanded={isExpanded}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCategoryExpand(root.id); } }}
+                        aria-expanded={rootExpanded}
                       >
-                        <span className={styles.catalogExpandIcon} aria-hidden>{isExpanded ? '▼' : '▶'}</span>
-                        {editingCategoryId === c.id ? (
+                        <span className={styles.catalogExpandIcon} aria-hidden>{rootExpanded ? '▼' : '▶'}</span>
+                        {editingCategoryId === root.id ? (
                           <form
                             className={styles.formInline}
                             onClick={(e) => e.stopPropagation()}
-                            onSubmit={(e) => { handleUpdateCategory(e, c.id); }}
+                            onSubmit={(e) => { handleUpdateCategory(e, root.id); }}
                           >
-                            <input name="name" defaultValue={c.name} placeholder="Название" required />
+                            <input name="name" defaultValue={root.name} placeholder="Название" required />
                             <button type="submit" className={styles.btnSmall}>Сохранить</button>
                             <button type="button" className={styles.btnSmallSecondary} onClick={() => setEditingCategoryId(null)}>Отмена</button>
                           </form>
                         ) : (
                           <>
-                            {c.has_image && (
-                              <img src={`/api/products/categories/${c.id}/image`} alt="" className={styles.categoryThumb} />
+                            {root.has_image && (
+                              <img src={`/api/products/categories/${root.id}/image`} alt="" className={styles.categoryThumb} />
                             )}
-                            <span className={styles.catalogCategoryName}>{c.name}</span>
+                            <span className={styles.catalogCategoryName}>{root.name}</span>
                             <div className={styles.rowActions} onClick={(e) => e.stopPropagation()}>
                               <label className={styles.catalogOrderLabel}>
                                 Порядок
@@ -2248,8 +2260,8 @@ export default function Admin() {
                                   type="number"
                                   min="0"
                                   className={styles.catalogOrderInput}
-                                  data-category-id={c.id}
-                                  value={categoryOrderInputs[c.id] !== undefined ? String(categoryOrderInputs[c.id]) : String(c.sort_order ?? 0)}
+                                  data-category-id={root.id}
+                                  value={categoryOrderInputs[root.id] !== undefined ? String(categoryOrderInputs[root.id]) : String(root.sort_order ?? 0)}
                                   onChange={(e) => {
                                     const raw = e.target.value;
                                     const catId = parseInt(e.target.dataset.categoryId, 10);
@@ -2270,28 +2282,118 @@ export default function Admin() {
                                 />
                               </label>
                               <label className={styles.btnImageUpload}>
-                                {c.has_image ? 'Изменить фото' : 'Добавить фото'}
-                                <input type="file" accept="image/*" onChange={(e) => handleCategoryImageUpload(c.id, e)} hidden />
+                                {root.has_image ? 'Изменить фото' : 'Добавить фото'}
+                                <input type="file" accept="image/*" onChange={(e) => handleCategoryImageUpload(root.id, e)} hidden />
                               </label>
-                              <button type="button" className={styles.btnEdit} onClick={() => setEditingCategoryId(c.id)}>Изменить</button>
-                              <button type="button" className={styles.btnDangerSmall} onClick={() => setConfirmDeleteCategoryId(c.id)}>Удалить</button>
+                              <button type="button" className={styles.btnSmallSecondary} onClick={(e) => { e.stopPropagation(); setAddCategoryParentId(root.id); setShowAddCategoryModal(true); }}>+ Подкаталог</button>
+                              <button type="button" className={styles.btnEdit} onClick={() => setEditingCategoryId(root.id)}>Изменить</button>
+                              <button type="button" className={styles.btnDangerSmall} onClick={() => setConfirmDeleteCategoryId(root.id)}>Удалить</button>
                             </div>
                           </>
                         )}
                       </div>
 
-                      {isExpanded && (
-                        <div className={styles.catalogProducts}>
-                          {categoryProducts.length === 0 ? (
+                      {rootExpanded && (
+                        <>
+                          {getSubs(root.id).map((sub) => {
+                            const subExpanded = expandedCategoryIds.includes(sub.id);
+                            const subProducts = filteredCatalog.productsByCategory[sub.id] || [];
+                            return (
+                              <div key={sub.id} className={styles.catalogCategoryBlock + ' ' + styles.catalogSubcategoryBlock}>
+                                <div
+                                  className={styles.catalogCategoryRow + (subExpanded ? ' ' + styles.catalogCategoryRowExpanded : '')}
+                                  onClick={() => toggleCategoryExpand(sub.id)}
+                                  role="button"
+                                  tabIndex={0}
+                                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCategoryExpand(sub.id); } }}
+                                  aria-expanded={subExpanded}
+                                >
+                                  <span className={styles.catalogExpandIcon} aria-hidden>{subExpanded ? '▼' : '▶'}</span>
+                                  {editingCategoryId === sub.id ? (
+                                    <form className={styles.formInline} onClick={(e) => e.stopPropagation()} onSubmit={(e) => { handleUpdateCategory(e, sub.id); }}>
+                                      <input name="name" defaultValue={sub.name} placeholder="Название" required />
+                                      <button type="submit" className={styles.btnSmall}>Сохранить</button>
+                                      <button type="button" className={styles.btnSmallSecondary} onClick={() => setEditingCategoryId(null)}>Отмена</button>
+                                    </form>
+                                  ) : (
+                                    <>
+                                      {sub.has_image && <img src={`/api/products/categories/${sub.id}/image`} alt="" className={styles.categoryThumb} />}
+                                      <span className={styles.catalogCategoryName}>{sub.name}</span>
+                                      <div className={styles.rowActions} onClick={(e) => e.stopPropagation()}>
+                                        <label className={styles.btnImageUpload}>
+                                          {sub.has_image ? 'Изменить фото' : 'Добавить фото'}
+                                          <input type="file" accept="image/*" onChange={(e) => handleCategoryImageUpload(sub.id, e)} hidden />
+                                        </label>
+                                        <button type="button" className={styles.btnEdit} onClick={() => setEditingCategoryId(sub.id)}>Изменить</button>
+                                        <button type="button" className={styles.btnDangerSmall} onClick={() => setConfirmDeleteCategoryId(sub.id)}>Удалить</button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                                {subExpanded && (
+                                  <div className={styles.catalogProducts}>
+                                    {subProducts.length === 0 ? (
+                                      <div className={styles.catalogEmptyBlock}>
+                                        <p className={styles.catalogEmpty}>В этой категории пока нет товаров. Добавьте первый ниже.</p>
+                                      </div>
+                                    ) : (
+                                      <h4 className={styles.catalogProductsTitle}>Товары ({subProducts.length})</h4>
+                                    )}
+                                    {subProducts.length > 0 && subProducts.map((p) => (
+                                      <details key={p.id} className={styles.catalogProductRow}>
+                                        <summary className={styles.catalogProductSummary}>
+                                          <span className={styles.catalogProductExpand}>▶</span>
+                                          <span>{p.name} — {p.is_sale && p.sale_price != null ? <><span className={styles.priceOld}>{formatPrice(p.price)}</span> {formatPrice(p.sale_price)}</> : formatPrice(p.price)}</span>
+                                          <div className={styles.rowActions} onClick={(e) => e.preventDefault()}>
+                                            <Link to={`/product/${p.id}`} target="_blank" rel="noopener noreferrer" className={styles.btnSmallSecondary} onClick={(e) => e.stopPropagation()}>Перейти на товар</Link>
+                                            <button type="button" className={styles.btnEdit} onClick={(e) => { e.preventDefault(); e.stopPropagation(); const d = e.currentTarget.closest('details'); if (d) d.open = true; }}>Изменить</button>
+                                            <button type="button" className={styles.btnDangerSmall} onClick={(e) => { e.preventDefault(); setConfirmDeleteProductId(p.id); }}>Удалить</button>
+                                          </div>
+                                        </summary>
+                                        <form onSubmit={(e) => handleUpdateProduct(e, p.id)} className={styles.form + ' ' + styles.catalogProductForm}>
+                                          <label className={styles.label}>Категория <select name="category_id" className={styles.select} defaultValue={p.category_id}>{categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}</select></label>
+                                          {p.article != null && <label className={styles.label}>Артикул <input name="article" readOnly value={p.article} className={styles.inputReadonly} /></label>}
+                                          <label className={styles.label}>Бренд <input name="manufacturer" defaultValue={p.manufacturer ?? ''} placeholder="Например: Optimum Nutrition" /></label>
+                                          <label className={styles.label}>Название <input name="name" defaultValue={p.name} required /></label>
+                                          <label className={styles.label}>Цена <input name="price" type="number" step="0.01" defaultValue={p.price} required /></label>
+                                          <label className={styles.label}>Вес <input name="weight" defaultValue={p.weight || ''} placeholder="150 гр" /></label>
+                                          <label className={styles.label}>Страна <input name="country" defaultValue={p.country ?? ''} placeholder="США" /></label>
+                                          <label className={styles.label}>Количество <input name="servings" type="number" min="0" defaultValue={p.servings ?? ''} placeholder="29" /></label>
+                                          <label className={styles.label}>Краткое описание <textarea name="short_description" defaultValue={p.short_description || ''} rows={2} className={styles.textareaAutoResize} onInput={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} /></label>
+                                          <label className={styles.label}>Подробное описание <textarea name="description" defaultValue={p.description || ''} rows={4} className={styles.textareaAutoResize} onInput={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} /></label>
+                                          <label className={styles.label}>Как принимать <textarea name="how_to_take" defaultValue={p.how_to_take ?? ''} rows={3} className={styles.textareaAutoResize} placeholder="Текст инструкции" onInput={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} /></label>
+                                          {(p.image_count ?? (p.has_image ? 1 : 0)) > 0 && <div className={styles.productImagesRow}><span className={styles.label}>Фото:</span><div className={styles.productThumbs}>{Array.from({ length: p.image_count ?? (p.has_image ? 1 : 0) }).map((_, i) => <img key={i} src={`${API_URL}/products/${p.id}/images/${i}`} alt="" className={styles.productThumb} />)}</div></div>}
+                                          <label className={styles.fileInputButton}><input name="images" type="file" accept="image/jpeg,image/png,image/webp" className={styles.fileInputHidden} multiple onChange={(e) => handleProductImageInputChange(p.id, e)} />Выбрать фото</label>
+                                          <div className={styles.checkboxGroup + ' ' + styles.checkboxGroupColumn}>
+                                            <label className={styles.checkLabel}><input type="checkbox" name="is_sale" checked={(productSaleChecked[p.id] !== undefined ? productSaleChecked[p.id] : !!p.is_sale)} onChange={(e) => setProductSaleChecked((prev) => ({ ...prev, [p.id]: e.target.checked }))} /><span>Акция</span></label>
+                                            {(productSaleChecked[p.id] !== undefined ? productSaleChecked[p.id] : !!p.is_sale) && <><label className={styles.label}>Цена по акции <input name="sale_price" type="number" step="0.01" value={productSalePrice[p.id] ?? (p.sale_price != null ? String(p.sale_price) : '')} onChange={(e) => { setProductSalePrice((prev) => ({ ...prev, [p.id]: e.target.value })); }} /></label><label className={styles.label}>Процент скидки <input type="number" min="0" max="100" value={productSalePercent[p.id] ?? (p.price && p.sale_price != null ? Math.round((1 - p.sale_price / p.price) * 100) : '')} onChange={(e) => setProductSalePercent((prev) => ({ ...prev, [p.id]: e.target.value })); } /></label></>}
+                                            <label className={styles.checkLabel}><input type="checkbox" name="is_hit" defaultChecked={!!p.is_hit} /><span>Хит</span></label>
+                                            <label className={styles.checkLabel}><input type="checkbox" name="is_recommended" defaultChecked={!!p.is_recommended} /><span>Советуем</span></label>
+                                            <label className={styles.checkLabel}><input type="checkbox" name="in_stock" defaultChecked={p.in_stock !== false} /><span>В наличии</span></label>
+                                            <label className={styles.label}>Количество (шт) <input name="quantity" type="number" min="0" defaultValue={p.quantity ?? 0} /></label>
+                                          </div>
+                                          <details className={styles.pageSettingsDetails}><summary className={styles.pageSettingsSummary}>Настройка страницы товара</summary><div className={styles.pageSettingsFields}><label className={styles.checkLabel}><input type="checkbox" name="show_how_to_use" defaultChecked={p.show_how_to_use !== false} /><span>Показывать «Как использовать»</span></label><label className={styles.checkLabel}><input type="checkbox" name="show_related" defaultChecked={p.show_related !== false} /><span>Рекомендуемые товары</span></label></div></details>
+                                          <div className={styles.formRowActions}><button type="submit">Сохранить</button><button type="button" className={styles.btnDanger} onClick={() => setConfirmDeleteProductId(p.id)}>Удалить товар</button></div>
+                                        </form>
+                                      </details>
+                                    ))}
+                                    <div className={styles.catalogAddProductSection}><button type="button" className={styles.addProductBtn} onClick={() => setAddProductModalCategoryId(sub.id)}>+ Добавить товар</button></div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                          <div className={styles.catalogProducts}>
+                          {rootProducts.length === 0 ? (
                             <div className={styles.catalogEmptyBlock}>
                               <p className={styles.catalogEmpty}>В этой категории пока нет товаров. Добавьте первый ниже.</p>
                             </div>
                           ) : (
-                            <h4 className={styles.catalogProductsTitle}>Товары ({categoryProducts.length})</h4>
+                            <h4 className={styles.catalogProductsTitle}>Товары ({rootProducts.length})</h4>
                           )}
 
-                          {categoryProducts.length > 0 && (
-                            categoryProducts.map((p) => (
+                          {rootProducts.length > 0 && (
+                            rootProducts.map((p) => (
                               <details key={p.id} className={styles.catalogProductRow}>
                                 <summary className={styles.catalogProductSummary}>
                                   <span className={styles.catalogProductExpand}>▶</span>
@@ -2319,10 +2421,10 @@ export default function Admin() {
                                   <label className={styles.label}>Цена <input name="price" type="number" step="0.01" defaultValue={p.price} required /></label>
                                   <label className={styles.label}>Вес (например 150 гр) <input name="weight" defaultValue={p.weight || ''} placeholder="150 гр" /></label>
                                   <label className={styles.label}>Страна <input name="country" defaultValue={p.country ?? ''} placeholder="Например: США" /></label>
-                                  <label className={styles.label}>Порций <input name="servings" type="number" min="0" defaultValue={p.servings ?? ''} placeholder="29" /></label>
-                                  <label className={styles.label}>Вкусы (через запятую) <input name="flavors" defaultValue={(() => { const f = p.flavors; if (Array.isArray(f)) return f.join(', '); if (typeof f === 'string') { try { const arr = JSON.parse(f); return Array.isArray(arr) ? arr.join(', ') : f; } catch { return f; } } return ''; })()} placeholder="Шоколад, Ваниль, Клубника" /></label>
+                                  <label className={styles.label}>Количество <input name="servings" type="number" min="0" defaultValue={p.servings ?? ''} placeholder="29" /></label>
                                   <label className={styles.label}>Краткое описание товара <textarea name="short_description" defaultValue={p.short_description || ''} placeholder="Краткое содержание под названием на странице товара" rows={2} className={styles.textareaAutoResize} onInput={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} onFocus={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} /></label>
                                   <label className={styles.label}>Подробное описание товара <textarea name="description" defaultValue={p.description || ''} placeholder="Полное описание для карточки и блока под фотками" rows={4} className={styles.textareaAutoResize} onInput={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} onFocus={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} /></label>
+                                  <label className={styles.label}>Как принимать <textarea name="how_to_take" defaultValue={p.how_to_take ?? ''} rows={3} placeholder="Текст инструкции по применению" className={styles.textareaAutoResize} onInput={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} onFocus={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} /></label>
                                   {(p.image_count ?? (p.has_image ? 1 : 0)) > 0 && (
                                     <div className={styles.productImagesRow}>
                                       <span className={styles.label}>Текущие фото:</span>
@@ -2472,18 +2574,14 @@ export default function Admin() {
                             <button
                               type="button"
                               className={styles.addProductBtn}
-                              onClick={() => setAddProductModalCategoryId(c.id)}
+                              onClick={() => setAddProductModalCategoryId(root.id)}
                             >
                               + Добавить товар
                             </button>
                           </div>
                         </div>
+                      </>
                       )}
-                    </>
-                  );
-                  return (
-                    <div key={c.id} className={styles.catalogCategoryBlock + (level === 1 ? ' ' + styles.catalogSubcategoryBlock : '')}>
-                      {rowAndContent}
                     </div>
                   );
                 })}
@@ -2557,12 +2655,12 @@ export default function Admin() {
                           <input name="country" placeholder="Например: США" />
                         </label>
                         <label className={styles.label}>
-                          Порций (опционально)
+                          Количество (опционально)
                           <input name="servings" type="number" min="0" placeholder="29" />
                         </label>
                         <label className={styles.label}>
-                          Вкусы (через запятую, опционально)
-                          <input name="flavors" placeholder="Шоколад, Ваниль, Клубника" />
+                          Как принимать (опционально)
+                          <textarea name="how_to_take" rows={3} placeholder="Текст инструкции по применению" className={styles.textareaAutoResize} onInput={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} onFocus={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} />
                         </label>
                         <label className={styles.label}>
                           Краткое описание (краткое содержание под названием на странице товара)

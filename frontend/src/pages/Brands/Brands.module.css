@@ -31,13 +31,23 @@
   margin-top: 32px;
 }
 
-.brandCard {
+.brandCard,
+.brandCardLink {
   background: #fafafa;
   border: 1px solid var(--color-light-gray);
   border-radius: 12px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+.brandCardLink {
+  text-decoration: none;
+  color: inherit;
+}
+
+.brandCardLink:hover {
+  border-color: var(--color-primary, #1a1a1a);
 }
 
 .brandCardImage {

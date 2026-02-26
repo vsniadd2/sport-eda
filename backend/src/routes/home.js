@@ -109,7 +109,7 @@ router.get('/banners/:id/image', async (req, res) => {
 router.get('/brands', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, sort_order, name, description, (image_data IS NOT NULL) AS has_image
+      `SELECT id, sort_order, name, description, link_url, (image_data IS NOT NULL) AS has_image
        FROM brands ORDER BY sort_order ASC, id ASC`
     );
     res.json(result.rows);

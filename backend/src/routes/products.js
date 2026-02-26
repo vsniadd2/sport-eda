@@ -387,7 +387,8 @@ router.get('/:id', async (req, res) => {
               c.name as category_name, c.slug as category_slug,
               p.short_description, p.trust_badges, p.how_to_use_intro, p.how_to_use_step1, p.how_to_use_step2, p.how_to_use_step3,
               COALESCE(p.show_how_to_use, true) AS show_how_to_use,
-              COALESCE(p.show_related, true) AS show_related
+              COALESCE(p.show_related, true) AS show_related,
+              p.how_to_take
        FROM products p JOIN categories c ON p.category_id = c.id WHERE p.id = $1`,
       [id]
     );

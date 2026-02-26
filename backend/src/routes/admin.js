@@ -630,7 +630,8 @@ router.get('/products', async (req, res) => {
         COALESCE(p.in_stock, true) AS in_stock, COALESCE(p.quantity, 0)::int AS quantity,
         COALESCE(p.is_sale, false) AS is_sale, COALESCE(p.is_hit, false) AS is_hit, COALESCE(p.is_recommended, false) AS is_recommended,
         p.short_description, p.trust_badges, p.how_to_use_intro, p.how_to_use_step1, p.how_to_use_step2, p.how_to_use_step3,
-        COALESCE(p.show_how_to_use, true) AS show_how_to_use, COALESCE(p.show_related, true) AS show_related
+        COALESCE(p.show_how_to_use, true) AS show_how_to_use, COALESCE(p.show_related, true) AS show_related,
+        p.how_to_take
       FROM products p
       ORDER BY p.category_id, p.id
     `);
@@ -660,7 +661,7 @@ const productImageFields = [
 
 router.post('/products', upload.fields(productImageFields), async (req, res) => {
   try {
-    const { category_id, name, description, short_description, weight, price, sale_price, image_url, is_sale, is_hit, is_recommended, in_stock, quantity, article, manufacturer, country, servings, flavors } = req.body || {};
+    const { category_id, name, description, short_description, weight, price, sale_price, image_url, is_sale, is_hit, is_recommended, in_stock, quantity, article, manufacturer, country, servings, flavors, how_to_take } = req.body || {};
     if (!category_id || !name || price === undefined) return res.status(400).json({ message: 'Категория, название и цена обязательны' });
     const sale = parseBool(is_sale);
     const hit = parseBool(is_hit);
@@ -686,10 +687,11 @@ router.post('/products', upload.fields(productImageFields), async (req, res) => 
         return arr.length ? JSON.stringify(arr) : null;
       }
     })();
+    const howToTakeVal = how_to_take !== undefined && String(how_to_take).trim() !== '' ? String(how_to_take).trim() : null;
     const result = await pool.query(
-      `INSERT INTO products (category_id, name, description, short_description, weight, price, sale_price, image_url, is_sale, is_hit, is_recommended, in_stock, quantity, article, manufacturer, country, servings, flavors)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING id, category_id, name, description, short_description, weight, price, sale_price, image_url, created_at`,
-      [category_id, name, description || null, shortDescVal, weight || null, parseFloat(price), salePriceVal, image_url || null, sale, hit, rec, inStock, qty, articleVal, manufacturerVal, countryVal, servingsVal, flavorsVal]
+      `INSERT INTO products (category_id, name, description, short_description, weight, price, sale_price, image_url, is_sale, is_hit, is_recommended, in_stock, quantity, article, manufacturer, country, servings, flavors, how_to_take)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) RETURNING id, category_id, name, description, short_description, weight, price, sale_price, image_url, created_at`,
+      [category_id, name, description || null, shortDescVal, weight || null, parseFloat(price), salePriceVal, image_url || null, sale, hit, rec, inStock, qty, articleVal, manufacturerVal, countryVal, servingsVal, flavorsVal, howToTakeVal]
     );
     const productId = result.rows[0].id;
     const files = req.files?.images?.length ? req.files.images : (req.files?.image?.length ? req.files.image : []);
@@ -718,7 +720,7 @@ router.patch('/products/:id', upload.fields(productImageFields), async (req, res
     const {
       name, description, weight, price, sale_price, image_url, category_id, is_sale, is_hit, is_recommended, in_stock, quantity,
       short_description, trust_badges, how_to_use_intro, how_to_use_step1, how_to_use_step2, how_to_use_step3, show_how_to_use, show_related,
-      article, manufacturer, country, servings, flavors,
+      article, manufacturer, country, servings, flavors, how_to_take,
     } = body;
     const updates = [];
     const values = [];
@@ -747,6 +749,7 @@ router.patch('/products/:id', upload.fields(productImageFields), async (req, res
     if (how_to_use_step3 !== undefined) { updates.push(`how_to_use_step3 = $${i++}`); values.push(how_to_use_step3 === '' ? null : how_to_use_step3); }
     if (show_how_to_use !== undefined) { updates.push(`show_how_to_use = $${i++}`); values.push(parseBool(show_how_to_use)); }
     if (show_related !== undefined) { updates.push(`show_related = $${i++}`); values.push(parseBool(show_related)); }
+    if (how_to_take !== undefined) { updates.push(`how_to_take = $${i++}`); values.push(how_to_take === '' ? null : how_to_take); }
     if (article !== undefined) {
       const articleVal = article === '' || article == null ? null : (Number.isNaN(parseInt(article, 10)) ? null : parseInt(article, 10));
       updates.push(`article = $${i++}`);
@@ -947,7 +950,7 @@ router.delete('/banners/:id', async (req, res) => {
 router.get('/brands', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, sort_order, name, description, (image_data IS NOT NULL) AS has_image
+      `SELECT id, sort_order, name, description, link_url, (image_data IS NOT NULL) AS has_image
        FROM brands ORDER BY sort_order ASC, id ASC`
     );
     res.json(result.rows);
@@ -962,15 +965,16 @@ router.post('/brands', upload.single('image'), async (req, res) => {
     const name = (req.body.name || '').trim();
     if (!name) return res.status(400).json({ message: 'Укажите название бренда' });
     const description = (req.body.description || '').trim() || null;
+    const linkUrl = (req.body.link_url || '').trim() || null;
     const countResult = await pool.query('SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order FROM brands');
     const sortOrder = countResult.rows[0]?.next_order ?? 0;
     const imageBuffer = req.file?.buffer ?? null;
     const imageContentType = req.file?.mimetype || (imageBuffer ? 'image/jpeg' : null);
     const result = await pool.query(
-      `INSERT INTO brands (sort_order, name, description, image_data, image_content_type)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, sort_order, name, description, (image_data IS NOT NULL) AS has_image`,
-      [sortOrder, name, description, imageBuffer, imageContentType]
+      `INSERT INTO brands (sort_order, name, description, link_url, image_data, image_content_type)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, sort_order, name, description, link_url, (image_data IS NOT NULL) AS has_image`,
+      [sortOrder, name, description, linkUrl, imageBuffer, imageContentType]
     );
     getIO().emitToAll('brandsChanged');
     res.status(201).json(result.rows[0]);
@@ -986,6 +990,7 @@ router.patch('/brands/:id', upload.single('image'), async (req, res) => {
     if (Number.isNaN(id)) return res.status(400).json({ message: 'Неверный ID' });
     const name = req.body.name !== undefined ? (req.body.name || '').trim() : undefined;
     const description = req.body.description !== undefined ? ((req.body.description || '').trim() || null) : undefined;
+    const linkUrl = req.body.link_url !== undefined ? ((req.body.link_url || '').trim() || null) : undefined;
     const sortOrderParam = req.body.sort_order;
     const sortOrder = sortOrderParam !== undefined ? (Number.isNaN(parseInt(sortOrderParam, 10)) ? undefined : parseInt(sortOrderParam, 10)) : undefined;
     if (name !== undefined && !name) return res.status(400).json({ message: 'Название не может быть пустым' });
@@ -1009,9 +1014,13 @@ router.patch('/brands/:id', upload.single('image'), async (req, res) => {
       updates.push('sort_order = $' + i++);
       values.push(sortOrder);
     }
+    if (linkUrl !== undefined) {
+      updates.push('link_url = $' + i++);
+      values.push(linkUrl);
+    }
     if (updates.length === 0) {
       const r = await pool.query(
-        `SELECT id, sort_order, name, description, (image_data IS NOT NULL) AS has_image FROM brands WHERE id = $1`,
+        `SELECT id, sort_order, name, description, link_url, (image_data IS NOT NULL) AS has_image FROM brands WHERE id = $1`,
         [id]
       );
       if (!r.rows[0]) return res.status(404).json({ message: 'Бренд не найден' });
@@ -1019,7 +1028,7 @@ router.patch('/brands/:id', upload.single('image'), async (req, res) => {
     }
     values.push(id);
     const result = await pool.query(
-      `UPDATE brands SET ${updates.join(', ')} WHERE id = $${i} RETURNING id, sort_order, name, description, (image_data IS NOT NULL) AS has_image`,
+      `UPDATE brands SET ${updates.join(', ')} WHERE id = $${i} RETURNING id, sort_order, name, description, link_url, (image_data IS NOT NULL) AS has_image`,
       values
     );
     if (!result.rows[0]) return res.status(404).json({ message: 'Бренд не найден' });
