@@ -5,7 +5,7 @@ const router = Router();
 
 /**
  * Возвращает список товаров для каталога по параметрам (для HTTP и WS).
- * @param {{ category?: string, search?: string, price_min?: number, price_max?: number }} params
+ * @param {{ category?: string, search?: string, price_min?: number, price_max?: number, sale?: boolean }} params
  * @returns {Promise<Array>}
  */
 export async function getCatalogProducts(params = {}) {
@@ -13,6 +13,7 @@ export async function getCatalogProducts(params = {}) {
   const searchTerm = (params.search && String(params.search).trim()) || '';
   const priceMin = params.price_min != null && params.price_min !== '' ? parseFloat(params.price_min) : null;
   const priceMax = params.price_max != null && params.price_max !== '' ? parseFloat(params.price_max) : null;
+  const saleOnly = params.sale === true || params.sale === 'true' || params.sale === '1';
   const hasPriceFilter = (priceMin != null && !Number.isNaN(priceMin)) || (priceMax != null && !Number.isNaN(priceMax));
 
   let query = `
@@ -32,6 +33,9 @@ export async function getCatalogProducts(params = {}) {
   let paramIndex = 1;
   const conditions = [];
 
+  if (saleOnly) {
+    conditions.push('COALESCE(p.is_sale, false) = true');
+  }
   if (categorySlug) {
     conditions.push(`c.slug = $${paramIndex++}`);
     queryParams.push(categorySlug);
@@ -72,8 +76,9 @@ export async function getCatalogProducts(params = {}) {
 
 router.get('/', async (req, res) => {
   try {
-    const { category: categorySlug, search: searchTerm, ids: idsParam, sort: sortParam, limit: limitParam, price_min: priceMinParam, price_max: priceMaxParam } = req.query;
+    const { category: categorySlug, search: searchTerm, ids: idsParam, sort: sortParam, limit: limitParam, price_min: priceMinParam, price_max: priceMaxParam, sale: saleParam } = req.query;
     const sortBySales = sortParam === 'sales';
+    const saleOnly = saleParam === 'true' || saleParam === '1';
     const limitNum = limitParam ? Math.min(Math.max(parseInt(limitParam, 10) || 0, 1), 100) : null;
     const priceMin = priceMinParam != null && priceMinParam !== '' ? parseFloat(priceMinParam) : null;
     const priceMax = priceMaxParam != null && priceMaxParam !== '' ? parseFloat(priceMaxParam) : null;
@@ -91,6 +96,7 @@ router.get('/', async (req, res) => {
           GROUP BY oi.product_id
         )
         SELECT p.id, p.name, p.description, p.weight, p.price, p.sale_price, p.image_url, p.article, p.manufacturer,
+               p.flavors,
                (p.image_data IS NOT NULL OR (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) > 0) AS has_image,
                (SELECT COUNT(*)::int FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
                COALESCE(p.in_stock, true) AS in_stock,
@@ -103,6 +109,7 @@ router.get('/', async (req, res) => {
         JOIN categories c ON p.category_id = c.id
         LEFT JOIN sold s ON s.product_id = p.id
         WHERE c.slug = $${paramIndex++}
+        ${saleOnly ? ' AND COALESCE(p.is_sale, false) = true' : ''}
       `;
       params.push(categorySlug);
       if (hasPriceFilter) {
@@ -140,6 +147,7 @@ router.get('/', async (req, res) => {
     } else {
       query = `
         SELECT p.id, p.name, p.description, p.weight, p.price, p.sale_price, p.image_url, p.article, p.manufacturer,
+               p.flavors,
                (p.image_data IS NOT NULL OR (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) > 0) AS has_image,
                (SELECT COUNT(*)::int FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
                COALESCE(p.in_stock, true) AS in_stock,
@@ -152,6 +160,9 @@ router.get('/', async (req, res) => {
         JOIN categories c ON p.category_id = c.id
       `;
       const conditions = [];
+      if (saleOnly) {
+        conditions.push('COALESCE(p.is_sale, false) = true');
+      }
       if (idsParam && String(idsParam).trim()) {
         const ids = String(idsParam).split(',').map((s) => parseInt(s.trim(), 10)).filter((n) => !Number.isNaN(n));
         if (ids.length) {
@@ -365,6 +376,7 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params;
     const result = await pool.query(
       `SELECT p.id, p.category_id, p.name, p.description, p.weight, p.price, p.sale_price, p.image_url, p.article, p.manufacturer,
+              p.country, p.servings, p.flavors,
               (p.image_data IS NOT NULL OR (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) > 0) AS has_image,
               (SELECT COUNT(*)::int FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
               COALESCE(p.in_stock, true) AS in_stock,
@@ -389,6 +401,14 @@ router.get('/:id', async (req, res) => {
       }
     }
     if (!Array.isArray(row.trust_badges)) row.trust_badges = null;
+    if (row.flavors && typeof row.flavors === 'string') {
+      try {
+        row.flavors = JSON.parse(row.flavors);
+      } catch {
+        row.flavors = null;
+      }
+    }
+    if (!Array.isArray(row.flavors)) row.flavors = null;
     res.json(row);
   } catch (err) {
     console.error(err);

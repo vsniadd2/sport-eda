@@ -38,6 +38,7 @@ export default function ProductCatalog({ limitPerCategory }) {
   const searchFilter = searchParams.get('search') || '';
   const priceMinParam = searchParams.get('price_min');
   const priceMaxParam = searchParams.get('price_max');
+  const saleFilter = searchParams.get('sale') === 'true';
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -96,6 +97,7 @@ export default function ProductCatalog({ limitPerCategory }) {
       search: (searchFilter && searchFilter.trim()) || undefined,
       price_min: priceMin != null && !Number.isNaN(priceMin) ? priceMin : undefined,
       price_max: priceMax != null && !Number.isNaN(priceMax) ? priceMax : undefined,
+      sale: saleFilter ? true : undefined,
     };
     socketRef.current.emit('catalog:query', payload);
 
@@ -110,7 +112,7 @@ export default function ProductCatalog({ limitPerCategory }) {
     return () => {
       socketRef.current?.off('catalog:results', onResults);
     };
-  }, [category, searchFilter, priceMin, priceMax, limitPerCategory]);
+  }, [category, searchFilter, priceMin, priceMax, saleFilter, limitPerCategory]);
 
   // Блоки на главной и т.п.: загрузка по HTTP
   const fetchDataHttp = useCallback(() => {
@@ -121,12 +123,13 @@ export default function ProductCatalog({ limitPerCategory }) {
     if (searchFilter.trim()) url.searchParams.set('search', searchFilter.trim());
     if (priceMin != null && !Number.isNaN(priceMin)) url.searchParams.set('price_min', String(priceMin));
     if (priceMax != null && !Number.isNaN(priceMax)) url.searchParams.set('price_max', String(priceMax));
+    if (saleFilter) url.searchParams.set('sale', 'true');
     fetch(url.toString())
       .then((r) => r.json().catch(() => []))
       .then((data) => setProducts(Array.isArray(data) ? data : []))
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
-  }, [limitPerCategory, category, searchFilter, priceMin, priceMax]);
+  }, [limitPerCategory, category, searchFilter, priceMin, priceMax, saleFilter]);
 
   useEffect(() => {
     if (limitPerCategory) fetchDataHttp();
@@ -142,15 +145,16 @@ export default function ProductCatalog({ limitPerCategory }) {
         search: (searchFilter && searchFilter.trim()) || undefined,
         price_min: priceMin != null && !Number.isNaN(priceMin) ? priceMin : undefined,
         price_max: priceMax != null && !Number.isNaN(priceMax) ? priceMax : undefined,
+        sale: saleFilter ? true : undefined,
       });
     };
     s.on('productsChanged', onChanged);
     return () => s.off('productsChanged', onChanged);
-  }, [category, searchFilter, priceMin, priceMax, limitPerCategory]);
+  }, [category, searchFilter, priceMin, priceMax, saleFilter, limitPerCategory]);
 
   useEffect(() => {
     setPage(1);
-  }, [category, searchFilter, priceMin, priceMax]);
+  }, [category, searchFilter, priceMin, priceMax, saleFilter]);
 
   const filteredCategories = category
     ? categories.filter((c) => c.slug === category)
@@ -177,8 +181,16 @@ export default function ProductCatalog({ limitPerCategory }) {
       <section className={styles.section} ref={sectionRef}>
         <div className={styles.catalogHeader}>
           <div>
-            <h1 className={styles.catalogTitle}>Каталог товаров</h1>
-            <p className={styles.catalogSubtitle}>Спортивное питание и добавки для ваших достижений</p>
+            <h1 className={styles.catalogTitle}>
+              {saleFilter ? 'Акции' : 'Каталог товаров'}
+            </h1>
+            <p className={styles.catalogSubtitle}>
+              {saleFilter ? 'Товары по специальным ценам' : 'Спортивное питание и добавки для ваших достижений'}
+            </p>
+            <nav className={styles.catalogTabs} aria-label="Режим каталога">
+              <Link to="/catalog" className={!saleFilter ? styles.catalogTabActive : styles.catalogTab}>Каталог</Link>
+              <Link to="/catalog?sale=true" className={saleFilter ? styles.catalogTabActive : styles.catalogTab}>Акции</Link>
+            </nav>
           </div>
           <div className={styles.sortBlock} ref={sortDropdownRef}>
             <span className={styles.sortLabelTop}>Сортировка</span>

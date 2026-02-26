@@ -1,350 +1,449 @@
 <!DOCTYPE html>
-
 <html lang="ru"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
+<title>СПОРТ-ЕДА - Whey Protein 100% Gold Standard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
+<script>
         tailwind.config = {
             darkMode: "class",
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#ec5b13",
-                        "background-light": "#f8f6f6",
-                        "background-dark": "#221610",
+                        primary: "#FF6600", // Vibrant Orange as seen in screenshots
+                        secondary: "#1A1A1A", // Dark color for header
+                        "background-light": "#F9FAFB", // Very light grey for main bg
+                        "background-dark": "#111827", // Dark mode bg
+                        "surface-light": "#FFFFFF",
+                        "surface-dark": "#1F2937",
+                        "text-light": "#1F2937",
+                        "text-dark": "#F3F4F6",
+                        "text-muted-light": "#6B7280",
+                        "text-muted-dark": "#9CA3AF",
                     },
                     fontFamily: {
-                        "display": ["Public Sans"]
+                        display: ["Inter", "sans-serif"],
+                        body: ["Inter", "sans-serif"],
                     },
-                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                    borderRadius: {
+                        DEFAULT: "0.5rem",
+                    },
                 },
             },
-        }
+        };
     </script>
-<title>C4 Original - Спорт-Еда</title>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
-<!-- Top Navigation Bar -->
-<header class="sticky top-0 z-50 w-full bg-white dark:bg-background-dark border-b border-slate-200 dark:border-slate-800">
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-<div class="flex items-center justify-between h-20">
-<!-- Logo & Search -->
-<div class="flex items-center gap-8 flex-1">
-<div class="flex items-center gap-2 text-primary">
-<span class="material-symbols-outlined text-4xl fill-1">bolt</span>
-<h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Спорт-Еда</h1>
-</div>
-<div class="hidden md:flex flex-1 max-w-md">
-<div class="relative w-full">
-<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-<span class="material-symbols-outlined">search</span>
-</div>
-<input class="block w-full pl-10 pr-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm" placeholder="Поиск спортивного питания..." type="text"/>
-</div>
-</div>
-</div>
-<!-- Nav Links -->
-<nav class="hidden lg:flex items-center gap-6 mx-8">
-<a class="text-sm font-semibold hover:text-primary transition-colors" href="#">Протеины</a>
-<a class="text-sm font-semibold text-primary border-b-2 border-primary" href="#">Предтреники</a>
-<a class="text-sm font-semibold hover:text-primary transition-colors" href="#">Аминокислоты</a>
-<a class="text-sm font-semibold hover:text-primary transition-colors" href="#">Витамины</a>
-<a class="text-sm font-semibold hover:text-primary transition-colors" href="#">Аксессуары</a>
+<body class="bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark antialiased transition-colors duration-200">
+<header class="bg-[#1A1A1A] text-white sticky top-0 z-50 shadow-lg">
+<div class="container mx-auto px-4 lg:px-8 h-20 flex items-center justify-between">
+<div class="flex items-center gap-12">
+<a class="flex items-center gap-2 group" href="#">
+<span class="text-primary text-3xl material-icons-outlined transform group-hover:scale-110 transition-transform">bolt</span>
+<span class="text-2xl font-black tracking-wider uppercase">СПОРТ-ЕДА</span>
+</a>
+<nav class="hidden xl:flex items-center gap-8 text-sm font-medium tracking-wide">
+<a class="text-primary hover:text-white transition-colors uppercase" href="#">Каталог</a>
+<a class="hover:text-primary transition-colors uppercase" href="#">Бренды</a>
+<a class="hover:text-primary transition-colors uppercase" href="#">Акции</a>
+<a class="hover:text-primary transition-colors uppercase" href="#">Доставка</a>
+<a class="hover:text-primary transition-colors uppercase" href="#">О Магазине</a>
 </nav>
-<!-- Actions -->
-<div class="flex items-center gap-3">
-<button class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all">
-<span class="material-symbols-outlined">favorite</span>
+</div>
+<div class="flex items-center gap-6">
+<a class="hidden lg:block text-sm font-medium hover:text-primary transition-colors" href="#">Заказать звонок</a>
+<div class="flex items-center gap-4">
+<button aria-label="Search" class="p-2 hover:bg-white/10 rounded-full transition-colors">
+<span class="material-icons-outlined">search</span>
 </button>
-<button class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all relative">
-<span class="material-symbols-outlined">shopping_cart</span>
-<span class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white leading-none">0</span>
+<button aria-label="Profile" class="p-2 hover:bg-white/10 rounded-full transition-colors">
+<span class="material-icons-outlined">person</span>
 </button>
-<button class="flex items-center gap-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-4 py-2 rounded-xl font-bold text-sm hover:opacity-90 transition-opacity">
-<span class="material-symbols-outlined text-lg">person</span>
-<span class="hidden sm:inline">Войти</span>
+<button aria-label="Cart" class="p-2 hover:bg-white/10 rounded-full transition-colors relative">
+<span class="material-icons-outlined">shopping_cart</span>
+<span class="absolute top-1 right-1 w-2.5 h-2.5 bg-primary rounded-full"></span>
+</button>
+<button aria-label="Toggle Dark Mode" class="p-2 hover:bg-white/10 rounded-full transition-colors" onclick="document.documentElement.classList.toggle('dark')">
+<span class="material-icons-outlined dark:hidden">dark_mode</span>
+<span class="material-icons-outlined hidden dark:block">light_mode</span>
 </button>
 </div>
 </div>
 </div>
 </header>
-<main class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-<!-- Breadcrumbs -->
-<nav class="flex items-center gap-2 text-sm text-slate-500 mb-8 overflow-x-auto whitespace-nowrap">
-<a class="hover:text-primary" href="#">Главная</a>
-<span class="material-symbols-outlined text-xs">chevron_right</span>
-<a class="hover:text-primary" href="#">Предтренировочные комплексы</a>
-<span class="material-symbols-outlined text-xs">chevron_right</span>
-<span class="text-slate-900 dark:text-slate-300 font-medium">Cellucor C4 Original</span>
+<main class="container mx-auto px-4 lg:px-8 py-8">
+<nav class="text-sm text-text-muted-light dark:text-text-muted-dark mb-8 flex items-center flex-wrap gap-2">
+<a class="hover:text-primary transition-colors" href="#">Главная</a>
+<span class="material-icons-outlined text-xs">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">Каталог</a>
+<span class="material-icons-outlined text-xs">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">Сывороточный</a>
+<span class="material-icons-outlined text-xs">chevron_right</span>
+<span class="text-text-light dark:text-text-dark font-medium">Whey Protein 100% Gold Standard</span>
 </nav>
-<!-- Product Section -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-<!-- Left Side: Product Images -->
-<div class="space-y-4">
-<div class="aspect-square w-full bg-white dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center p-8">
-<img alt="Cellucor C4 Original Pre-workout jar" class="w-full h-full object-contain" data-alt="Yellow and black C4 Original pre-workout supplement jar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8iVDcJlSZKPsTN0B3D5WUNX-YV3zKX9QkoOJ_k0V1ojR_4s6frsrNagMGcgCICM13DgLOr_evePiCndafq4j0spIExx5pyvCJfcY5lr_FOj6xJzqNlLzguvQPXweVrSSertqR57wYN5XjRF_eTKbJO5LQqunFVDObVjYlQv-I0-Lwi-vvQWj6YUEMrYzWOReOmvk9Jc468y-uTpllw8WMEo36cJUW2gN85XqQKMtkcSSZfLQr_y-henVUAvcCm-UgPtQbAYvG6EPT"/>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-16">
+<div class="lg:col-span-7 space-y-4">
+<div class="relative bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden aspect-square flex items-center justify-center p-8 group">
+<div class="absolute top-4 left-4 flex flex-col gap-2 z-10">
+<span class="px-3 py-1 bg-primary text-white text-xs font-bold uppercase rounded-full shadow-md">Хит продаж</span>
+<span class="px-3 py-1 bg-red-600 text-white text-xs font-bold uppercase rounded-full shadow-md">-15%</span>
 </div>
-<div class="grid grid-cols-4 gap-4">
-<div class="aspect-square bg-white dark:bg-slate-800 rounded-lg border-2 border-primary p-2">
-<img alt="C4 Front" class="w-full h-full object-contain" data-alt="Front view of C4 pre-workout container" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWtTWL9s7g4Iw5BhqBP6ujSxcDhJoZfbR3rNQuto2OFQ3HPQK-L9972qdR1mfd-lcBkdpXeiaPC3o-7P1ly2z1OIMzhBVQwRfUQeptqeQE9MnHnH6z3OY29HbHsJ1T8Kt7txvj44NjW2cjAay9jQIepoCCOC_65cQWQ5UOQVkPqj3Utqo1SbWu5RyMbUzdk6X_JV_8kXqAW3IbWOrsahH-ZEqeSYkWXd7OIJEbl8G9Cr3Kh96pBFfxztn0hMShKyOpG8dKF7HNphtv"/>
-</div>
-<div class="aspect-square bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-2 opacity-60 hover:opacity-100 cursor-pointer transition-opacity">
-<div class="w-full h-full bg-slate-100 dark:bg-slate-700 rounded flex items-center justify-center">
-<span class="material-symbols-outlined text-slate-400">nutrition</span>
+<div class="w-full h-full bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-gray-300 dark:text-gray-600">
+<img alt="Whey Protein Product Image" class="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAS7wp4M7uq9IK4ctwbV9I_Ip_h3Z7-xwwB3XF1_q7fpiGk6nMfzTtduHLY2WCihzkmVmRSpANB8-oHnE0jHLoXAU4em9fBBKOFKZHjcKHvGAWl3cy73VyynPsxZFeAbiqI3sJCVPQTE90q04aZIWurX7CCAYJYWtzqxK4rbpOonVLBdJWqzcn7U8OsQI7k8tzPlcFhiR_N_2YekNULRGf4PU2DiL8S8HlPem_gLgKroB3jygYGeE22LM0MO3jC6jISLexyLOXSXLU"/>
 </div>
 </div>
-<div class="aspect-square bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-2 opacity-60 hover:opacity-100 cursor-pointer transition-opacity">
-<div class="w-full h-full bg-slate-100 dark:bg-slate-700 rounded flex items-center justify-center">
-<span class="material-symbols-outlined text-slate-400">fitness_center</span>
+<div class="grid grid-cols-5 gap-4">
+<button class="aspect-square rounded-lg border-2 border-primary overflow-hidden p-1 bg-white dark:bg-surface-dark">
+<img alt="Thumbnail 1" class="w-full h-full object-cover rounded" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9KrZRmBIX3Ya7xYH2F5Uq6JsIYsybJwCgIl6kRnvdZtGJnPS4fqEmqBJaqzBkcye4e_PINv9u6bgv3NYUTDiNlIRDNJbmeG5gJEV4mS2pm4sf343VYHnl8RcWN8fjWURS8w5brlQA6qrNZCuIB_zV8pk5jPjAw6b6VJpTlZ8PA5Z2FAuwRmOnIp-09VyMrEGc1t3KeDjvGxj3NfwZLlO5hb_qgFO2kldPGmJaT6TB9jv4NewmVjPgq4Iy239FUveMUtLtE9WBQD0"/>
+</button>
+<button class="aspect-square rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary dark:hover:border-primary overflow-hidden p-1 bg-white dark:bg-surface-dark transition-colors">
+<img alt="Thumbnail 2" class="w-full h-full object-cover rounded" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDId420hT5Mx4_pwbznpjKv14FO5Fyhimrg82ecJH6gy7YNJ7usj9HV7IPVj2EodaUGSB4DaRbLgz9ra9rmyMkamKJ4XVT68Xr5h6grKXF7BE9D-yDmGBeB-6oMHn2vQGK9lRAnqIAucISTFxwFHrIJourWj1FgR2EltuYQbTjHBsQSTIKUO11uwhOmOkQAopdf9-D-qTPC4359Ojf8fmIU1t5zRFkFbQ1ZGrBLTV2HG_KObSfwKf3IYPjkBwyRtmnA8HMbZG8H-ng"/>
+</button>
+<button class="aspect-square rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary dark:hover:border-primary overflow-hidden p-1 bg-white dark:bg-surface-dark transition-colors">
+<img alt="Thumbnail 3" class="w-full h-full object-cover rounded" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNwwGjvuTcgE3gvTt7TOd7IlU6uqHMkmQHD8YDUaiB77nDbCuAMrhFwvrFaPVf1NT4ZQg7nMf6hC2vpgJQNn1g1yXEIzJzAzzIrwooYRAcMjrt-9j1PuX-mAuAET52RdcDLuC1RTHUFpBsuRu1WZUpy5Ayc7khNeCdfXMg_S5lQE_aV-4YfbFi8vcLkLfkfyvY1Qes-24EK9lMP4jYHq65oC7soaK_SqyeL22b3ELDuONt_jhdAraYwKh_pljJu6NKkKcdFGUIzSU"/>
+</button>
+<button class="aspect-square rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary dark:hover:border-primary overflow-hidden p-1 bg-white dark:bg-surface-dark transition-colors">
+<img alt="Thumbnail 4" class="w-full h-full object-cover rounded" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKEhPnrDxsTy0Afn95484gW3fpcqN8v_uZ87Q52KMoM9enZpeH_l7-lOtJq6Ro4QqUbpE_jbb7Bd45rs-teIVLakwh9NKwlymqRKcykpNg2bDXL2-eUrPJTNIzB__WV9h8HScixwnsE9l5GEfya7zN8e2fr15SziaJ8mxrwxD_-iF9nGmYqU9F2_1I5YckpEnHI47hR0wQr10fBOL3WEpai32JSiJjTNRWYz3isx2m_NZxcGk4ET7WlazrZaJl8iJpm2T-J9X7Ysg"/>
+</button>
 </div>
 </div>
-<div class="aspect-square bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-2 opacity-60 hover:opacity-100 cursor-pointer transition-opacity">
-<div class="w-full h-full bg-slate-100 dark:bg-slate-700 rounded flex items-center justify-center">
-<span class="material-symbols-outlined text-slate-400">list_alt</span>
+<div class="lg:col-span-5 flex flex-col h-full">
+<div class="mb-6 border-b border-gray-200 dark:border-gray-700 pb-6">
+<div class="flex items-center justify-between mb-2">
+<span class="text-sm font-semibold text-primary uppercase tracking-wider">Optimum Nutrition</span>
+<div class="flex items-center gap-1 text-yellow-400 text-sm">
+<span class="material-icons-outlined text-base">star</span>
+<span class="material-icons-outlined text-base">star</span>
+<span class="material-icons-outlined text-base">star</span>
+<span class="material-icons-outlined text-base">star</span>
+<span class="material-icons-outlined text-base text-gray-300 dark:text-gray-600">star</span>
+<span class="text-text-muted-light dark:text-text-muted-dark ml-1 text-xs">(42 отзыва)</span>
 </div>
 </div>
+<h1 class="text-3xl lg:text-4xl font-extrabold text-text-light dark:text-text-dark leading-tight mb-2">
+                        Whey Protein 100% Gold Standard
+                    </h1>
+<p class="text-text-muted-light dark:text-text-muted-dark">Сывороточный протеин премиум-класса. 24 г белка на порцию.</p>
 </div>
+<div class="mb-8">
+<div class="flex items-baseline gap-4 mb-2">
+<span class="text-5xl font-black text-text-light dark:text-text-dark">74.99 BYN</span>
+<span class="text-xl text-text-muted-light dark:text-text-muted-dark line-through font-medium">89.99 BYN</span>
 </div>
-<!-- Right Side: Product Info -->
-<div class="flex flex-col">
-<div class="mb-2">
-<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary uppercase tracking-wider">Top Seller</span>
+<p class="text-sm text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
+<span class="material-icons-outlined text-sm">check_circle</span>
+                        В наличии: 100 шт
+                    </p>
 </div>
-<h1 class="text-4xl font-extrabold text-slate-900 dark:text-white mb-2 uppercase">C4 Original</h1>
-<div class="flex items-center gap-4 mb-6">
-<p class="text-lg font-medium text-slate-500 uppercase">Brand: <span class="text-slate-900 dark:text-white underline decoration-primary decoration-2 cursor-pointer">Cellucor</span></p>
-<div class="flex items-center gap-1 text-primary">
-<span class="material-symbols-outlined fill-1">star</span>
-<span class="material-symbols-outlined fill-1">star</span>
-<span class="material-symbols-outlined fill-1">star</span>
-<span class="material-symbols-outlined fill-1">star</span>
-<span class="material-symbols-outlined">star_half</span>
-<span class="text-slate-500 text-sm ml-1 font-semibold">(124 отзыва)</span>
-</div>
-</div>
-<div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 mb-8">
-<div class="flex items-baseline gap-2 mb-6">
-<span class="text-4xl font-black text-slate-900 dark:text-white">29.99 BYN</span>
-<span class="text-slate-400 line-through text-lg">39.99 BYN</span>
-</div>
-<div class="space-y-6">
-<div>
-<p class="text-sm font-bold text-slate-900 dark:text-white mb-3 uppercase tracking-wide">Вкус: <span class="text-slate-500">Fruit Punch</span></p>
+<div class="mb-8">
+<label class="block text-sm font-semibold text-text-light dark:text-text-dark mb-3">Вкус</label>
 <div class="flex flex-wrap gap-2">
-<button class="px-4 py-2 rounded-lg border-2 border-primary text-primary text-sm font-bold">Fruit Punch</button>
-<button class="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-sm font-bold">Blue Razz</button>
-<button class="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-sm font-bold">Icy Blue Razz</button>
-<button class="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-sm font-bold">Cherry Limeade</button>
+<button class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium shadow-md ring-2 ring-primary ring-offset-2 dark:ring-offset-gray-900">Шоколад</button>
+<button class="px-4 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-600 text-text-light dark:text-text-dark rounded-lg text-sm font-medium hover:border-primary dark:hover:border-primary transition-colors">Ваниль</button>
+<button class="px-4 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-600 text-text-light dark:text-text-dark rounded-lg text-sm font-medium hover:border-primary dark:hover:border-primary transition-colors">Клубника</button>
 </div>
 </div>
-<div class="flex flex-col sm:flex-row gap-4">
-<div class="flex items-center h-12 w-32 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-<button class="flex-1 h-full flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300">
-<span class="material-symbols-outlined">remove</span>
+<div class="flex flex-col sm:flex-row gap-4 mb-8">
+<button class="flex-1 bg-primary hover:bg-orange-600 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3 transform active:scale-95">
+<span class="material-icons-outlined">shopping_cart_checkout</span>
+                        В КОРЗИНУ
+                    </button>
+<div class="flex gap-4">
+<button aria-label="Add to favorites" class="p-4 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-text-muted-light dark:text-text-muted-dark rounded-xl hover:text-red-500 hover:border-red-500 dark:hover:text-red-400 transition-colors shadow-sm">
+<span class="material-icons-outlined">favorite_border</span>
 </button>
-<span class="flex-1 text-center font-bold text-slate-900 dark:text-white">1</span>
-<button class="flex-1 h-full flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300">
-<span class="material-symbols-outlined">add</span>
+<button aria-label="Share" class="p-4 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-text-muted-light dark:text-text-muted-dark rounded-xl hover:text-blue-500 hover:border-blue-500 dark:hover:text-blue-400 transition-colors shadow-sm">
+<span class="material-icons-outlined">share</span>
 </button>
 </div>
-<button class="flex-1 bg-primary text-white h-12 rounded-xl font-black text-lg uppercase tracking-wider shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all flex items-center justify-center gap-2">
-<span class="material-symbols-outlined">add_shopping_cart</span>
-                                В корзину
-                            </button>
 </div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-white dark:bg-surface-dark rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm mt-auto">
+<div class="flex items-center gap-3 p-2">
+<div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 text-primary flex items-center justify-center flex-shrink-0">
+<span class="material-icons-outlined">science</span>
 </div>
-</div>
-<!-- Benefits Cards -->
-<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-<div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
-<span class="material-symbols-outlined text-primary">verified</span>
 <div class="flex flex-col">
-<span class="text-xs font-bold text-slate-500 uppercase tracking-tighter leading-none mb-1">Caffeine</span>
-<span class="text-sm font-black text-slate-900 dark:text-white">150mg</span>
+<span class="text-[10px] uppercase text-text-muted-light dark:text-text-muted-dark font-bold tracking-wide">Проверено</span>
+<span class="text-xs font-bold text-text-light dark:text-text-dark leading-tight">Лабораторно</span>
 </div>
 </div>
-<div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
-<span class="material-symbols-outlined text-primary">vital_signs</span>
+<div class="flex items-center gap-3 p-2 border-l-0 sm:border-l border-gray-100 dark:border-gray-700">
+<div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 text-primary flex items-center justify-center flex-shrink-0">
+<span class="material-icons-outlined">verified_user</span>
+</div>
 <div class="flex flex-col">
-<span class="text-xs font-bold text-slate-500 uppercase tracking-tighter leading-none mb-1">Beta-Alanine</span>
-<span class="text-sm font-black text-slate-900 dark:text-white">1.6g</span>
+<span class="text-[10px] uppercase text-text-muted-light dark:text-text-muted-dark font-bold tracking-wide">Гарантия</span>
+<span class="text-xs font-bold text-text-light dark:text-text-dark leading-tight">Качества</span>
 </div>
 </div>
-<div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
-<span class="material-symbols-outlined text-primary">bolt</span>
+<div class="flex items-center gap-3 p-2 border-l-0 sm:border-l border-gray-100 dark:border-gray-700">
+<div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 text-primary flex items-center justify-center flex-shrink-0">
+<span class="material-icons-outlined">local_shipping</span>
+</div>
 <div class="flex flex-col">
-<span class="text-xs font-bold text-slate-500 uppercase tracking-tighter leading-none mb-1">Creatine</span>
-<span class="text-sm font-black text-slate-900 dark:text-white">1g</span>
-</div>
-</div>
-</div>
-<!-- Trust Badges -->
-<div class="flex flex-wrap gap-6 pt-6 border-t border-slate-200 dark:border-slate-800">
-<div class="flex items-center gap-2 text-slate-500">
-<span class="material-symbols-outlined text-primary">biotech</span>
-<span class="text-xs font-bold uppercase tracking-wide">Laboratory Tested</span>
-</div>
-<div class="flex items-center gap-2 text-slate-500">
-<span class="material-symbols-outlined text-primary">verified_user</span>
-<span class="text-xs font-bold uppercase tracking-wide">Quality Guarantee</span>
-</div>
-<div class="flex items-center gap-2 text-slate-500">
-<span class="material-symbols-outlined text-primary">local_shipping</span>
-<span class="text-xs font-bold uppercase tracking-wide">Fast Delivery</span>
+<span class="text-[10px] uppercase text-text-muted-light dark:text-text-muted-dark font-bold tracking-wide">Быстрая</span>
+<span class="text-xs font-bold text-text-light dark:text-text-dark leading-tight">Доставка</span>
 </div>
 </div>
 </div>
 </div>
-<!-- Details Section -->
-<div class="mt-16 border-t border-slate-200 dark:border-slate-800 pt-12">
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
-<div class="lg:col-span-2 space-y-8">
-<div>
-<h3 class="text-2xl font-black text-slate-900 dark:text-white mb-4 uppercase tracking-tight">Описание продукта</h3>
-<p class="text-slate-600 dark:text-slate-400 leading-relaxed text-lg">
-                            C4 Original — это классический предтренировочный комплекс, который помог миллионам людей достичь своих целей в фитнесе. Независимо от того, являетесь ли вы новичком в фитнесе или профессиональным атлетом, C4 Original обеспечит вас взрывной энергией, повысит выносливость и улучшит концентрацию внимания.
-                        </p>
 </div>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-<div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-<h4 class="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-<span class="material-symbols-outlined text-primary">check_circle</span>
-                                Ключевые преимущества
-                            </h4>
-<ul class="space-y-3 text-sm text-slate-600 dark:text-slate-400 font-medium">
-<li class="flex items-start gap-2">
-<span class="text-primary font-black">•</span>
-                                    1.6г CarnoSyn® Beta-Alanine для выносливости
-                                </li>
-<li class="flex items-start gap-2">
-<span class="text-primary font-black">•</span>
-                                    150мг кофеина для энергии и концентрации
-                                </li>
-<li class="flex items-start gap-2">
-<span class="text-primary font-black">•</span>
-                                    1г нитрата креатина (NO3-T®) для пампа
-                                </li>
-<li class="flex items-start gap-2">
-<span class="text-primary font-black">•</span>
-                                    L-аргинин для улучшения кровотока
-                                </li>
-</ul>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-16">
+<div class="lg:col-span-8">
+<div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+<div class="flex border-b border-gray-100 dark:border-gray-700 overflow-x-auto scrollbar-hide">
+<button class="px-8 py-5 text-sm font-bold uppercase tracking-wide border-b-2 border-primary text-primary whitespace-nowrap">Характеристики</button>
+<button class="px-8 py-5 text-sm font-bold uppercase tracking-wide text-text-muted-light dark:text-text-muted-dark hover:text-text-light dark:hover:text-text-dark whitespace-nowrap transition-colors">Описание</button>
+<button class="px-8 py-5 text-sm font-bold uppercase tracking-wide text-text-muted-light dark:text-text-muted-dark hover:text-text-light dark:hover:text-text-dark whitespace-nowrap transition-colors">Как принимать</button>
 </div>
-<div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-<h4 class="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-<span class="material-symbols-outlined text-primary">info</span>
-                                Рекомендации по применению
-                            </h4>
-<p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                                Смешайте одну порцию (1 мерная ложка) с 180-240 мл воды за 20-30 минут до тренировки. Некоторые люди могут испытывать безобидное покалывание, которое обусловлено бета-аланином. Используйте только по назначению.
+<div class="p-8">
+<h3 class="text-xl font-bold text-text-light dark:text-text-dark mb-6 flex items-center gap-2">
+<span class="material-icons-outlined text-primary">analytics</span>
+                             Основные характеристики
+                        </h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-12">
+<div class="flex justify-between items-center py-3 border-b border-dashed border-gray-200 dark:border-gray-700">
+<span class="text-text-muted-light dark:text-text-muted-dark">Артикул</span>
+<span class="font-medium text-text-light dark:text-text-dark">946513</span>
+</div>
+<div class="flex justify-between items-center py-3 border-b border-dashed border-gray-200 dark:border-gray-700">
+<span class="text-text-muted-light dark:text-text-muted-dark">Вес</span>
+<span class="font-medium text-text-light dark:text-text-dark">908 г</span>
+</div>
+<div class="flex justify-between items-center py-3 border-b border-dashed border-gray-200 dark:border-gray-700">
+<span class="text-text-muted-light dark:text-text-muted-dark">Бренд</span>
+<span class="font-medium text-primary cursor-pointer hover:underline">Optimum Nutrition</span>
+</div>
+<div class="flex justify-between items-center py-3 border-b border-dashed border-gray-200 dark:border-gray-700">
+<span class="text-text-muted-light dark:text-text-muted-dark">Категория</span>
+<span class="font-medium text-text-light dark:text-text-dark">Сывороточный</span>
+</div>
+<div class="flex justify-between items-center py-3 border-b border-dashed border-gray-200 dark:border-gray-700">
+<span class="text-text-muted-light dark:text-text-muted-dark">Страна</span>
+<span class="font-medium text-text-light dark:text-text-dark">США</span>
+</div>
+<div class="flex justify-between items-center py-3 border-b border-dashed border-gray-200 dark:border-gray-700">
+<span class="text-text-muted-light dark:text-text-muted-dark">Порций</span>
+<span class="font-medium text-text-light dark:text-text-dark">29</span>
+</div>
+</div>
+<h3 class="text-xl font-bold text-text-light dark:text-text-dark mt-10 mb-4 flex items-center gap-2">
+<span class="material-icons-outlined text-primary">local_shipping</span>
+                             Самовывоз и Оплата
+                        </h3>
+<div class="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-xl">
+<h4 class="font-bold text-text-light dark:text-text-dark mb-2">Самовывоз</h4>
+<p class="text-sm text-text-muted-light dark:text-text-muted-dark leading-relaxed mb-4">
+                                Заказ оформляется на сайте, оплата при получении. Менеджер свяжется по телефону, когда заказ будет готов.
                             </p>
+<a class="text-sm font-semibold text-primary hover:underline flex items-center gap-1" href="#">
+                                Подробнее о доставке
+                                <span class="material-icons-outlined text-sm">arrow_forward</span>
+</a>
 </div>
 </div>
 </div>
-<!-- Reviews Summary Sidebar -->
-<div class="bg-slate-900 text-white p-8 rounded-2xl flex flex-col items-center text-center">
-<h4 class="text-xl font-black mb-2 uppercase italic tracking-tighter">Рейтинг покупателей</h4>
+</div>
+<div class="lg:col-span-4">
+<div class="bg-[#111827] text-white rounded-2xl shadow-lg p-8 h-full">
+<h3 class="text-lg font-bold uppercase tracking-wider mb-8 text-center">Рейтинг покупателей</h3>
+<div class="flex flex-col items-center mb-8">
 <div class="text-6xl font-black text-primary mb-2">4.8</div>
-<div class="flex gap-0.5 text-primary mb-2">
-<span class="material-symbols-outlined fill-1">star</span>
-<span class="material-symbols-outlined fill-1">star</span>
-<span class="material-symbols-outlined fill-1">star</span>
-<span class="material-symbols-outlined fill-1">star</span>
-<span class="material-symbols-outlined fill-1">star</span>
+<div class="flex gap-1 text-yellow-400 mb-2">
+<span class="material-icons-outlined">star</span>
+<span class="material-icons-outlined">star</span>
+<span class="material-icons-outlined">star</span>
+<span class="material-icons-outlined">star</span>
+<span class="material-icons-outlined">star_half</span>
 </div>
-<p class="text-slate-400 text-sm mb-8">Основано на 124 реальных отзывах</p>
-<div class="w-full space-y-3 mb-8">
-<div class="grid grid-cols-[15px_1fr_40px] items-center gap-3">
-<span class="text-xs font-bold">5</span>
-<div class="h-2 bg-slate-800 rounded-full overflow-hidden">
-<div class="h-full bg-primary" style="width: 80%"></div>
+<p class="text-gray-400 text-sm">Основано на 42 реальных отзывах</p>
 </div>
-<span class="text-xs text-slate-400 text-right">80%</span>
+<div class="space-y-3">
+<div class="flex items-center gap-3 text-sm">
+<span class="w-3 font-bold">5</span>
+<div class="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[80%] rounded-full"></div>
 </div>
-<div class="grid grid-cols-[15px_1fr_40px] items-center gap-3">
-<span class="text-xs font-bold">4</span>
-<div class="h-2 bg-slate-800 rounded-full overflow-hidden">
-<div class="h-full bg-primary" style="width: 12%"></div>
+<span class="w-8 text-right text-gray-400">80%</span>
 </div>
-<span class="text-xs text-slate-400 text-right">12%</span>
+<div class="flex items-center gap-3 text-sm">
+<span class="w-3 font-bold">4</span>
+<div class="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[15%] rounded-full"></div>
 </div>
-<div class="grid grid-cols-[15px_1fr_40px] items-center gap-3">
-<span class="text-xs font-bold">3</span>
-<div class="h-2 bg-slate-800 rounded-full overflow-hidden">
-<div class="h-full bg-primary" style="width: 5%"></div>
+<span class="w-8 text-right text-gray-400">15%</span>
 </div>
-<span class="text-xs text-slate-400 text-right">5%</span>
+<div class="flex items-center gap-3 text-sm">
+<span class="w-3 font-bold">3</span>
+<div class="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[5%] rounded-full"></div>
 </div>
-<div class="grid grid-cols-[15px_1fr_40px] items-center gap-3">
-<span class="text-xs font-bold">2</span>
-<div class="h-2 bg-slate-800 rounded-full overflow-hidden">
-<div class="h-full bg-primary" style="width: 1%"></div>
+<span class="w-8 text-right text-gray-400">5%</span>
 </div>
-<span class="text-xs text-slate-400 text-right">1%</span>
+<div class="flex items-center gap-3 text-sm">
+<span class="w-3 font-bold">2</span>
+<div class="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[0%] rounded-full"></div>
 </div>
-<div class="grid grid-cols-[15px_1fr_40px] items-center gap-3">
-<span class="text-xs font-bold">1</span>
-<div class="h-2 bg-slate-800 rounded-full overflow-hidden">
-<div class="h-full bg-primary" style="width: 2%"></div>
+<span class="w-8 text-right text-gray-400">0%</span>
 </div>
-<span class="text-xs text-slate-400 text-right">2%</span>
+<div class="flex items-center gap-3 text-sm">
+<span class="w-3 font-bold">1</span>
+<div class="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[0%] rounded-full"></div>
+</div>
+<span class="w-8 text-right text-gray-400">0%</span>
 </div>
 </div>
-<button class="w-full py-3 rounded-xl border border-primary text-primary text-sm font-bold uppercase tracking-wider hover:bg-primary hover:text-white transition-all">
-                        Оставить отзыв
+<button class="w-full mt-10 py-3 rounded-xl border border-white/20 hover:bg-white/10 transition-colors font-medium text-sm">
+                        Написать отзыв
                     </button>
 </div>
 </div>
 </div>
+<section class="mb-16">
+<h2 class="text-2xl font-bold text-text-light dark:text-text-dark mb-8 uppercase tracking-wide">Рекомендуемые товары</h2>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+<article class="bg-white dark:bg-surface-dark rounded-xl shadow-sm hover:shadow-xl transition-shadow border border-gray-100 dark:border-gray-700 p-4 relative group flex flex-col">
+<button class="absolute top-4 right-4 text-gray-300 hover:text-primary transition-colors z-10">
+<span class="material-icons-outlined">favorite_border</span>
+</button>
+<div class="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg mb-4 flex items-center justify-center relative overflow-hidden">
+<img alt="Syntha-6 Edge" class="object-cover w-full h-full mix-blend-multiply dark:mix-blend-normal group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsY21TMrVYt-HbFhFobZLuBqWWNTTBiaTi3YGHrRrTyYMtpWu940VOWI8s5O5TG9g16jqnHwI2rnv3vC-Z6XEumYdp2lZ9yf7gc6wwkaE-hF1F7px6-46nm6GWS9G5S3P4EJyxo5Xh-oDyJMkm_KSAePVZsY14Q4AbwqLrJrZjcJTYh7ujyIPayuCbQt73-sPq6sWzuKCp3cfSE_qrHEyvnU2fQvzt10CZKM9jDV5a0JyXgW382nEbVlf2Q951Ka9ffCzZ2G84BiE"/>
+</div>
+<div class="flex flex-col flex-grow">
+<h3 class="font-bold text-text-light dark:text-text-dark mb-1 line-clamp-2">Syntha-6 Edge</h3>
+<p class="text-xs text-text-muted-light dark:text-text-muted-dark mb-4">907 г • Шоколад</p>
+<div class="mt-auto flex items-center justify-between">
+<span class="font-bold text-lg text-text-light dark:text-text-dark">54.99 BYN</span>
+<button class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:bg-orange-600 transition-colors">
+<span class="material-icons-outlined text-sm">add</span>
+</button>
+</div>
+</div>
+</article>
+<article class="bg-white dark:bg-surface-dark rounded-xl shadow-sm hover:shadow-xl transition-shadow border border-gray-100 dark:border-gray-700 p-4 relative group flex flex-col">
+<span class="absolute top-4 left-4 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded uppercase z-10">Акция</span>
+<button class="absolute top-4 right-4 text-gray-300 hover:text-primary transition-colors z-10">
+<span class="material-icons-outlined">favorite_border</span>
+</button>
+<div class="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg mb-4 flex items-center justify-center relative overflow-hidden">
+<img alt="Impact Whey Protein" class="object-cover w-full h-full mix-blend-multiply dark:mix-blend-normal group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgnsqzXx0K2bA4DRQAOd4wepLRATQv8keVDWiUHOVh-IlvoKLfrJGuaaLHsFBzi1P7T5KIfTL_nM4tzFnjTHLsgw4q3-KLnagEa1wgvjVpjQHuHgvAA9tCzfYueE3k3VI2RvkOg6aCipA-khucD0keRhsyhCZ8LDTJnfmqoYy6Ap4bZN79tWfGB7wAJdr1HiaglDjC-ceO9qlNAPXHYbl4XOd2xtDo5F2Q4BRquCtXdJaZWEsdbPwl6b4A9ZutqKHyPdrE4vgsh6E"/>
+</div>
+<div class="flex flex-col flex-grow">
+<h3 class="font-bold text-text-light dark:text-text-dark mb-1 line-clamp-2">Impact Whey Protein</h3>
+<p class="text-xs text-text-muted-light dark:text-text-muted-dark mb-4">1 кг • Ваниль</p>
+<div class="mt-auto flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-bold text-lg text-text-light dark:text-text-dark">39.99 BYN</span>
+<span class="text-xs line-through text-text-muted-light dark:text-text-muted-dark">45.00 BYN</span>
+</div>
+<button class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:bg-orange-600 transition-colors">
+<span class="material-icons-outlined text-sm">add</span>
+</button>
+</div>
+</div>
+</article>
+<article class="bg-white dark:bg-surface-dark rounded-xl shadow-sm hover:shadow-xl transition-shadow border border-gray-100 dark:border-gray-700 p-4 relative group flex flex-col">
+<span class="absolute top-4 left-4 bg-primary text-white text-[10px] font-bold px-2 py-1 rounded uppercase z-10">Хит</span>
+<button class="absolute top-4 right-4 text-gray-300 hover:text-primary transition-colors z-10">
+<span class="material-icons-outlined">favorite_border</span>
+</button>
+<div class="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg mb-4 flex items-center justify-center relative overflow-hidden">
+<img alt="Gold Standard Casein" class="object-cover w-full h-full mix-blend-multiply dark:mix-blend-normal group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3_1hjh1I1u8aEhVVZ7ygyBfKAYGHEXxn6eA3RmBPlUS0qPN-WU-GaLtAvEK3B4yhM0ZcKSeFW8m5YJR57DdwdzXpeTPXJ50MFMPj84FzBoCwZo485C7v7KLonCLTHk1cmkQf9e3M0Vu2GlYc5ahlkXeakHZiU8aNIRm9GMxQ74yPAgNXjo4ljqWn_XN3XEbp-bnWaMFrMZxKPpK2gk3H-1fuW_BUmKObKKuesIyvfrg4DAhG_8AG208zw6L_jfRWW3j7cABk5LP4"/>
+</div>
+<div class="flex flex-col flex-grow">
+<h3 class="font-bold text-text-light dark:text-text-dark mb-1 line-clamp-2">Gold Standard Casein</h3>
+<p class="text-xs text-text-muted-light dark:text-text-muted-dark mb-4">908 г • Клубника</p>
+<div class="mt-auto flex items-center justify-between">
+<span class="font-bold text-lg text-text-light dark:text-text-dark">79.99 BYN</span>
+<button class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:bg-orange-600 transition-colors">
+<span class="material-icons-outlined text-sm">add</span>
+</button>
+</div>
+</div>
+</article>
+<article class="bg-white dark:bg-surface-dark rounded-xl shadow-sm hover:shadow-xl transition-shadow border border-gray-100 dark:border-gray-700 p-4 relative group flex flex-col">
+<button class="absolute top-4 right-4 text-gray-300 hover:text-primary transition-colors z-10">
+<span class="material-icons-outlined">favorite_border</span>
+</button>
+<div class="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg mb-4 flex items-center justify-center relative overflow-hidden">
+<img alt="ISO 100 Hydrolyzed" class="object-cover w-full h-full mix-blend-multiply dark:mix-blend-normal group-hover:scale-105 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCz0FEqMqMel0hn-FZoxzsWJAShBhZ66cD7Sqhn5BeeWl4GpevHkwkOfT-u101QwMYUbrHijbnYvOPwnpYq7744zj4NsBUgKIvHX146dwGhQepYk3JxIHX4H1y-8q94mkmeg58k_us1-ug981lsWhqxmw09r527KRBJs4ukwjC7qI0k2-JfA59t6lZ6NTpYzGUmg5CSY51j5NzhxUGuOG88Hbpz9P0ITsZolu0sVR3ONjGUdQYGASTtLNRmNrm3u4wLmtXrxgGssvM"/>
+</div>
+<div class="flex flex-col flex-grow">
+<h3 class="font-bold text-text-light dark:text-text-dark mb-1 line-clamp-2">ISO 100 Hydrolyzed</h3>
+<p class="text-xs text-text-muted-light dark:text-text-muted-dark mb-4">681 г • Печенье</p>
+<div class="mt-auto flex items-center justify-between">
+<span class="font-bold text-lg text-text-light dark:text-text-dark">94.99 BYN</span>
+<button class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:bg-orange-600 transition-colors">
+<span class="material-icons-outlined text-sm">add</span>
+</button>
+</div>
+</div>
+</article>
+</div>
+</section>
 </main>
-<!-- Footer -->
-<footer class="bg-white dark:bg-background-dark border-t border-slate-200 dark:border-slate-800 mt-20">
-<div class="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-<div class="grid grid-cols-2 md:grid-cols-4 gap-8">
-<div class="col-span-2">
-<div class="flex items-center gap-2 text-primary mb-6">
-<span class="material-symbols-outlined text-4xl fill-1">bolt</span>
-<h2 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Спорт-Еда</h2>
-</div>
-<p class="text-slate-500 max-w-xs mb-6 text-sm">Ваш надежный партнер в достижении спортивных результатов с 2015 года. Только оригинальная продукция и быстрая доставка.</p>
+<footer class="bg-secondary text-gray-400 py-12 border-t border-gray-800">
+<div class="container mx-auto px-4 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
+<div>
+<a class="flex items-center gap-2 mb-6 text-white" href="#">
+<span class="text-primary text-2xl material-icons-outlined">bolt</span>
+<span class="text-xl font-black tracking-wider uppercase">СПОРТ-ЕДА</span>
+</a>
+<p class="text-sm">Ваш надежный партнер в достижении спортивных целей. Только оригинальная продукция.</p>
 </div>
 <div>
-<h3 class="font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-wider text-sm">Каталог</h3>
-<ul class="space-y-2 text-sm text-slate-500">
-<li><a class="hover:text-primary transition-colors" href="#">Предтреники</a></li>
-<li><a class="hover:text-primary transition-colors" href="#">Жиросжигатели</a></li>
+<h4 class="text-white font-bold mb-4 uppercase text-sm tracking-wider">Каталог</h4>
+<ul class="space-y-2 text-sm">
+<li><a class="hover:text-primary transition-colors" href="#">Протеины</a></li>
 <li><a class="hover:text-primary transition-colors" href="#">Гейнеры</a></li>
-<li><a class="hover:text-primary transition-colors" href="#">Одежда</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Аминокислоты</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Витамины</a></li>
 </ul>
 </div>
 <div>
-<h3 class="font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-wider text-sm">Помощь</h3>
-<ul class="space-y-2 text-sm text-slate-500">
-<li><a class="hover:text-primary transition-colors" href="#">Доставка</a></li>
-<li><a class="hover:text-primary transition-colors" href="#">Оплата</a></li>
+<h4 class="text-white font-bold mb-4 uppercase text-sm tracking-wider">Клиентам</h4>
+<ul class="space-y-2 text-sm">
+<li><a class="hover:text-primary transition-colors" href="#">Доставка и оплата</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">О компании</a></li>
 <li><a class="hover:text-primary transition-colors" href="#">Контакты</a></li>
-<li><a class="hover:text-primary transition-colors" href="#">Вопросы и ответы</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Блог</a></li>
 </ul>
 </div>
-</div>
-<div class="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
-<p class="text-xs text-slate-400 font-medium">© 2024 Спорт-Еда. Все права защищены.</p>
+<div>
+<h4 class="text-white font-bold mb-4 uppercase text-sm tracking-wider">Контакты</h4>
+<p class="text-sm mb-2">+375 (29) 123-45-67</p>
+<p class="text-sm mb-4">info@sport-eda.by</p>
 <div class="flex gap-4">
-<div class="h-8 w-12 bg-slate-100 dark:bg-slate-800 rounded flex items-center justify-center">
-<span class="text-[10px] font-bold text-slate-400">VISA</span>
-</div>
-<div class="h-8 w-12 bg-slate-100 dark:bg-slate-800 rounded flex items-center justify-center">
-<span class="text-[10px] font-bold text-slate-400">MC</span>
-</div>
-<div class="h-8 w-12 bg-slate-100 dark:bg-slate-800 rounded flex items-center justify-center">
-<span class="text-[10px] font-bold text-slate-400">BEL</span>
-</div>
+<a class="w-8 h-8 bg-gray-800 hover:bg-primary text-white flex items-center justify-center rounded-full transition-colors" href="#"><span class="text-xs">IG</span></a>
+<a class="w-8 h-8 bg-gray-800 hover:bg-primary text-white flex items-center justify-center rounded-full transition-colors" href="#"><span class="text-xs">VK</span></a>
+<a class="w-8 h-8 bg-gray-800 hover:bg-primary text-white flex items-center justify-center rounded-full transition-colors" href="#"><span class="text-xs">TG</span></a>
 </div>
 </div>
 </div>
 </footer>
+
 </body></html>

@@ -18,6 +18,7 @@ export default function Catalog() {
 
   const priceMin = priceMinParam != null && priceMinParam !== '' ? Number(priceMinParam) : null;
   const priceMax = priceMaxParam != null && priceMaxParam !== '' ? Number(priceMaxParam) : null;
+  const isSalePage = searchParams.get('sale') === 'true';
 
   useEffect(() => {
     setSearchInput(urlSearch);
@@ -84,11 +85,11 @@ export default function Catalog() {
   return (
     <main className={styles.main}>
       <div className={styles.container}>
-        <h1 className={styles.pageTitle}>Каталог товаров</h1>
+        <h1 className={styles.pageTitle}>{isSalePage ? 'Акции' : 'Каталог товаров'}</h1>
         <nav className={styles.breadcrumb}>
           <Link to="/">Главная</Link>
           <span className={styles.sep}>/</span>
-          <span className={styles.breadcrumbCurrent}>Каталог товаров</span>
+          <span className={styles.breadcrumbCurrent}>{isSalePage ? 'Акции' : 'Каталог товаров'}</span>
         </nav>
         <div className={styles.layout}>
           <aside className={styles.sidebar}>

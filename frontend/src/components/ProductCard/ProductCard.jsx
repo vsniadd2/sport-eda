@@ -90,18 +90,34 @@ export default function ProductCard({ product, showTag, showAvailability, showWi
     : (product.image_url?.startsWith('http') ? product.image_url : PLACEHOLDER);
 
   const isCatalog = variant === 'catalog';
+  const isRecommended = variant === 'recommended';
   const availabilityText = stock <= 0 ? 'Нет в наличии' : (stock <= 5 ? 'Осталось мало' : 'В наличии');
   const availabilityClass = stock <= 0 ? styles.availabilityOut : (stock <= 5 ? styles.availabilityLow : styles.availability);
+  const firstFlavor = (() => {
+    const f = product.flavors;
+    if (Array.isArray(f) && f[0]) return f[0];
+    if (typeof f === 'string') {
+      try {
+        const arr = JSON.parse(f);
+        return Array.isArray(arr) && arr[0] ? arr[0] : null;
+      } catch { return null; }
+    }
+    return null;
+  })();
+  const subtitle = [product.weight, firstFlavor].filter(Boolean).join(' • ');
 
   return (
-    <article className={`${styles.card} ${layout === 'list' ? styles.cardList : ''} ${compact ? styles.cardCompact : ''} ${variant === 'home' ? styles.cardHome : ''} ${isCatalog ? styles.cardCatalog : ''}`}>
+    <article className={`${styles.card} ${layout === 'list' ? styles.cardList : ''} ${compact ? styles.cardCompact : ''} ${variant === 'home' ? styles.cardHome : ''} ${isCatalog ? styles.cardCatalog : ''} ${isRecommended ? styles.cardRecommended : ''}`}>
       <Link to={`/catalog/${product.id}`} className={styles.link}>
       {showWishlist && (
-        <button type="button" className={styles.wishlistBtn} onClick={handleWishlist} aria-label={inFavorites ? 'Убрать из избранного' : 'В избранное'}>
+        <button type="button" className={`${styles.wishlistBtn} ${inFavorites ? styles.wishlistBtnActive : ''}`} onClick={handleWishlist} aria-label={inFavorites ? 'Убрать из избранного' : 'В избранное'}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill={inFavorites ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </button>
       )}
-      {(showTag || product.is_sale) && (
+      {isRecommended && (product.is_hit || product.is_sale) && (
+        <span className={product.is_hit ? styles.tagHit : styles.tagSale}>{product.is_hit ? 'Хит' : 'Акция'}</span>
+      )}
+      {!isRecommended && (showTag || product.is_sale) && (
         <span className={styles.tag}>{isCatalog && product.is_sale ? 'Sale' : 'Акция'}</span>
       )}
       <div className={styles.imageWrap}>
@@ -118,7 +134,7 @@ export default function ProductCard({ product, showTag, showAvailability, showWi
           </p>
         )}
         <h3 className={styles.name}>{product.name}</h3>
-        {product.weight && <p className={styles.weight}>{product.weight}</p>}
+        {isRecommended && subtitle ? <p className={styles.subtitle}>{subtitle}</p> : product.weight && !isRecommended && <p className={styles.weight}>{product.weight}</p>}
         {!showAvailability && product.description && <p className={styles.desc}>{product.description}</p>}
         {!showAvailability && !isCatalog && (
           <div className={styles.rating}>
@@ -126,16 +142,43 @@ export default function ProductCard({ product, showTag, showAvailability, showWi
             <span className={styles.ratingCount}>0</span>
           </div>
         )}
-        <div className={styles.priceWrap}>
-          {showSalePrice ? (
-            <>
-              <span className={styles.priceOld}>{formatPrice(product.price, isCatalog ? '' : '/шт')}</span>
-              <span className={isCatalog ? styles.priceSale : styles.price}>{formatPrice(product.sale_price, isCatalog ? '' : '/шт')}</span>
-            </>
-          ) : (
-            <span className={styles.price}>{formatPrice(product.price, isCatalog ? '' : '/шт')}</span>
-          )}
-        </div>
+        {isRecommended ? (
+          <div className={styles.priceRowRecommended}>
+            <div className={styles.priceWrap}>
+              {showSalePrice ? (
+                <>
+                  <span className={styles.priceOld}>{formatPrice(product.price)}</span>
+                  <span className={styles.price}>{formatPrice(product.sale_price)}</span>
+                </>
+              ) : (
+                <span className={styles.price}>{formatPrice(product.price)}</span>
+              )}
+            </div>
+            {inCart ? (
+              <div className={styles.quantityControl} onClick={(e) => e.stopPropagation()} role="group" aria-label="Количество">
+                <button type="button" className={styles.qtyBtn} onClick={handleDecrease} aria-label="Уменьшить">−</button>
+                <input type="text" inputMode="numeric" className={styles.qtyValue} min={1} max={stock} value={qtyFocused ? qtyInput : String(cartQty)} onChange={handleQtyChange} onBlur={handleQtyBlur} onFocus={handleQtyFocus} onClick={(e) => { e.stopPropagation(); e.preventDefault(); }} aria-label="Количество" />
+                <button type="button" className={styles.qtyBtn} onClick={handleIncrease} aria-label="Увеличить" disabled={stock <= 0 || cartQty >= stock}>+</button>
+              </div>
+            ) : (
+              <button type="button" className={styles.btnRoundPlus} onClick={handleAddToCart} disabled={stock <= 0} aria-label="В корзину">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"/></svg>
+              </button>
+            )}
+          </div>
+        ) : null}
+        {!isRecommended && (
+          <div className={styles.priceWrap}>
+            {showSalePrice ? (
+              <>
+                <span className={styles.priceOld}>{formatPrice(product.price, isCatalog ? '' : '/шт')}</span>
+                <span className={isCatalog ? styles.priceSale : styles.price}>{formatPrice(product.sale_price, isCatalog ? '' : '/шт')}</span>
+              </>
+            ) : (
+              <span className={styles.price}>{formatPrice(product.price, isCatalog ? '' : '/шт')}</span>
+            )}
+          </div>
+        )}
         {inCart ? (
           <div className={styles.quantityControl} onClick={(e) => e.stopPropagation()} role="group" aria-label="Количество">
             <button type="button" className={styles.qtyBtn} onClick={handleDecrease} aria-label="Уменьшить">
@@ -158,7 +201,7 @@ export default function ProductCard({ product, showTag, showAvailability, showWi
               +
             </button>
           </div>
-        ) : (
+        ) : !isRecommended && (
           <button type="button" className={isCatalog ? styles.btnIconFull : styles.btn} onClick={handleAddToCart} disabled={stock <= 0} aria-label="В корзину">
             {isCatalog ? (
               <>

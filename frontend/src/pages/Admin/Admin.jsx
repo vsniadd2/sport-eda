@@ -817,6 +817,12 @@ export default function Admin() {
       if (weight) body.append('weight', weight);
       const manufacturerVal = form.manufacturer?.value?.trim();
       if (manufacturerVal !== undefined && manufacturerVal !== '') body.append('manufacturer', manufacturerVal);
+      const countryVal = form.country?.value?.trim();
+      if (countryVal) body.append('country', countryVal);
+      const servingsVal = form.servings?.value?.trim();
+      if (servingsVal && !Number.isNaN(parseInt(servingsVal, 10))) body.append('servings', servingsVal);
+      const flavorsVal = form.flavors?.value?.trim();
+      if (flavorsVal) body.append('flavors', JSON.stringify(flavorsVal.split(/[,;]/).map((x) => x.trim()).filter(Boolean)));
       body.append('is_sale', form.is_sale?.checked ? 'true' : 'false');
       body.append('is_hit', form.is_hit?.checked ? 'true' : 'false');
       body.append('is_recommended', form.is_recommended?.checked ? 'true' : 'false');
@@ -910,6 +916,12 @@ export default function Admin() {
         body.append('how_to_use_step3', pageSettings.how_to_use_step3);
         body.append('show_how_to_use', pageSettings.show_how_to_use ? 'true' : 'false');
         body.append('show_related', pageSettings.show_related ? 'true' : 'false');
+        const countryVal = form.country?.value?.trim();
+        if (countryVal !== undefined) body.append('country', countryVal || '');
+        const servingsVal = form.servings?.value?.trim();
+        if (servingsVal !== undefined && servingsVal !== '') body.append('servings', servingsVal);
+        const flavorsVal = form.flavors?.value?.trim();
+        if (flavorsVal) body.append('flavors', JSON.stringify(flavorsVal.split(/[,;]/).map((x) => x.trim()).filter(Boolean)));
         for (let i = 0; i < Math.min(10, imageFiles.length); i++) {
           body.append('images', imageFiles[i]);
         }
@@ -930,6 +942,12 @@ export default function Admin() {
         if (qtyVal !== '' && !Number.isNaN(parseInt(qtyVal, 10))) payload.quantity = Math.max(0, parseInt(qtyVal, 10));
         const manufacturerVal = form.manufacturer?.value?.trim();
         if (manufacturerVal !== undefined) payload.manufacturer = manufacturerVal === '' ? null : manufacturerVal;
+        const countryVal = form.country?.value?.trim();
+        if (countryVal !== undefined) payload.country = countryVal === '' ? null : countryVal;
+        const servingsVal = form.servings?.value?.trim();
+        if (servingsVal !== undefined && servingsVal !== '') payload.servings = parseInt(servingsVal, 10);
+        const flavorsVal = form.flavors?.value?.trim();
+        if (flavorsVal !== undefined) payload.flavors = flavorsVal ? flavorsVal.split(/[,;]/).map((x) => x.trim()).filter(Boolean) : null;
         const res = await fetch(`${API_URL}/admin/products/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
@@ -2293,10 +2311,16 @@ export default function Admin() {
                                       ))}
                                     </select>
                                   </label>
+                                  {p.article != null && (
+                                    <label className={styles.label}>Артикул <input name="article" readOnly value={p.article} className={styles.inputReadonly} /></label>
+                                  )}
                                   <label className={styles.label}>Бренд <input name="manufacturer" defaultValue={p.manufacturer ?? ''} placeholder="Например: Optimum Nutrition" /></label>
                                   <label className={styles.label}>Название <input name="name" defaultValue={p.name} required /></label>
                                   <label className={styles.label}>Цена <input name="price" type="number" step="0.01" defaultValue={p.price} required /></label>
                                   <label className={styles.label}>Вес (например 150 гр) <input name="weight" defaultValue={p.weight || ''} placeholder="150 гр" /></label>
+                                  <label className={styles.label}>Страна <input name="country" defaultValue={p.country ?? ''} placeholder="Например: США" /></label>
+                                  <label className={styles.label}>Порций <input name="servings" type="number" min="0" defaultValue={p.servings ?? ''} placeholder="29" /></label>
+                                  <label className={styles.label}>Вкусы (через запятую) <input name="flavors" defaultValue={(() => { const f = p.flavors; if (Array.isArray(f)) return f.join(', '); if (typeof f === 'string') { try { const arr = JSON.parse(f); return Array.isArray(arr) ? arr.join(', ') : f; } catch { return f; } } return ''; })()} placeholder="Шоколад, Ваниль, Клубника" /></label>
                                   <label className={styles.label}>Краткое описание товара <textarea name="short_description" defaultValue={p.short_description || ''} placeholder="Краткое содержание под названием на странице товара" rows={2} className={styles.textareaAutoResize} onInput={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} onFocus={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} /></label>
                                   <label className={styles.label}>Подробное описание товара <textarea name="description" defaultValue={p.description || ''} placeholder="Полное описание для карточки и блока под фотками" rows={4} className={styles.textareaAutoResize} onInput={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} onFocus={(e) => { const t = e.target; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }} /></label>
                                   {(p.image_count ?? (p.has_image ? 1 : 0)) > 0 && (
@@ -2527,6 +2551,18 @@ export default function Admin() {
                         <label className={styles.label}>
                           Бренд (опционально)
                           <input name="manufacturer" placeholder="Например: Optimum Nutrition" />
+                        </label>
+                        <label className={styles.label}>
+                          Страна (опционально)
+                          <input name="country" placeholder="Например: США" />
+                        </label>
+                        <label className={styles.label}>
+                          Порций (опционально)
+                          <input name="servings" type="number" min="0" placeholder="29" />
+                        </label>
+                        <label className={styles.label}>
+                          Вкусы (через запятую, опционально)
+                          <input name="flavors" placeholder="Шоколад, Ваниль, Клубника" />
                         </label>
                         <label className={styles.label}>
                           Краткое описание (краткое содержание под названием на странице товара)

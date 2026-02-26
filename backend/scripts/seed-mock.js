@@ -117,32 +117,40 @@ try {
 
   // ——— Товары (около 100): базовые 20 + генерируем ещё 80 ———
   // Артикулы теперь генерируются автоматически триггером в БД (6-значные числа)
+  const flavorSets = [
+    ['Шоколад', 'Ваниль', 'Клубника'],
+    ['Шоколад', 'Ваниль', 'Банан'],
+    ['Ваниль', 'Клубника', 'Печенье'],
+    ['Шоколад', 'Ваниль'],
+    ['Клубника', 'Банан', 'Манго'],
+  ];
+
   const productTemplates = [
     // Протеин (0)
-    { catIdx: 0, name: 'Whey Protein 100% Gold Standard', description: 'Сывороточный протеин премиум-класса. 24 г белка на порцию.', weight: '908 г', price: 89.99, sale_price: 74.99, is_sale: true, is_hit: true, manufacturer: 'Optimum Nutrition' },
-    { catIdx: 0, name: 'Syntha-6 Edge', description: 'Многокомпонентный протеин с матрицей из 6 белков. Вкус шоколад.', weight: '907 г', price: 54.99, sale_price: null, is_sale: false, is_recommended: true, manufacturer: 'BSN' },
-    { catIdx: 0, name: 'Impact Whey Protein', description: 'Чистый сывороточный протеин. Более 80% белка.', weight: '1 кг', price: 39.99, sale_price: null, is_sale: false, is_hit: true, manufacturer: 'Myprotein' },
-    { catIdx: 0, name: 'Gold Standard Casein', description: 'Медленный белок для приёма перед сном.', weight: '908 г', price: 79.99, sale_price: 69.99, is_sale: true, is_recommended: true, manufacturer: 'Optimum Nutrition' },
-    { catIdx: 0, name: 'ISO 100 Hydrolyzed', description: 'Гидролизат сывороточного белка. Максимальная скорость усвоения.', weight: '681 г', price: 94.99, sale_price: null, is_sale: false, is_hit: false, manufacturer: 'Dymatize' },
+    { catIdx: 0, name: 'Whey Protein 100% Gold Standard', description: 'Сывороточный протеин премиум-класса. 24 г белка на порцию.', weight: '908 г', price: 89.99, sale_price: 74.99, is_sale: true, is_hit: true, manufacturer: 'Optimum Nutrition', country: 'США', servings: 29, flavors: ['Шоколад', 'Ваниль', 'Клубника'] },
+    { catIdx: 0, name: 'Syntha-6 Edge', description: 'Многокомпонентный протеин с матрицей из 6 белков. Вкус шоколад.', weight: '907 г', price: 54.99, sale_price: null, is_sale: false, is_recommended: true, manufacturer: 'BSN', country: 'США', servings: 24, flavors: ['Шоколад', 'Ваниль'] },
+    { catIdx: 0, name: 'Impact Whey Protein', description: 'Чистый сывороточный протеин. Более 80% белка.', weight: '1 кг', price: 39.99, sale_price: null, is_sale: false, is_hit: true, manufacturer: 'Myprotein', country: 'Великобритания', servings: 33, flavors: ['Ваниль', 'Шоколад', 'Клубника'] },
+    { catIdx: 0, name: 'Gold Standard Casein', description: 'Медленный белок для приёма перед сном.', weight: '908 г', price: 79.99, sale_price: 69.99, is_sale: true, is_recommended: true, manufacturer: 'Optimum Nutrition', country: 'США', servings: 29, flavors: ['Клубника', 'Ваниль', 'Шоколад'] },
+    { catIdx: 0, name: 'ISO 100 Hydrolyzed', description: 'Гидролизат сывороточного белка. Максимальная скорость усвоения.', weight: '681 г', price: 94.99, sale_price: null, is_sale: false, is_hit: false, manufacturer: 'Dymatize', country: 'США', servings: 20, flavors: ['Печенье', 'Клубника'] },
     // Гейнеры (1)
-    { catIdx: 1, name: 'Serious Mass', description: 'Высококалорийный гейнер. 1250 ккал на порцию.', weight: '2.72 кг', price: 44.99, sale_price: null, is_sale: false, is_recommended: true, manufacturer: 'Optimum Nutrition' },
-    { catIdx: 1, name: 'True-Mass', description: 'Гейнер с комплексом белков и углеводов. Клубника.', weight: '2.27 кг', price: 59.99, sale_price: 49.99, is_sale: true, is_hit: false, manufacturer: 'BSN' },
-    { catIdx: 1, name: 'Weight Gainer', description: 'Классический гейнер для набора массы. Ваниль.', weight: '3 кг', price: 34.99, sale_price: null, is_sale: false, is_recommended: true, manufacturer: 'Myprotein' },
+    { catIdx: 1, name: 'Serious Mass', description: 'Высококалорийный гейнер. 1250 ккал на порцию.', weight: '2.72 кг', price: 44.99, sale_price: null, is_sale: false, is_recommended: true, manufacturer: 'Optimum Nutrition', country: 'США', servings: 16, flavors: ['Шоколад', 'Ваниль', 'Клубника'] },
+    { catIdx: 1, name: 'True-Mass', description: 'Гейнер с комплексом белков и углеводов. Клубника.', weight: '2.27 кг', price: 59.99, sale_price: 49.99, is_sale: true, is_hit: false, manufacturer: 'BSN', country: 'США', servings: 14, flavors: ['Клубника', 'Шоколад'] },
+    { catIdx: 1, name: 'Weight Gainer', description: 'Классический гейнер для набора массы. Ваниль.', weight: '3 кг', price: 34.99, sale_price: null, is_sale: false, is_recommended: true, manufacturer: 'Myprotein', country: 'Великобритания', servings: 33, flavors: ['Ваниль', 'Шоколад'] },
     // Аминокислоты (2)
-    { catIdx: 2, name: 'BCAA 2:1:1', description: 'Разветвлённые аминокислоты. Соотношение 2:1:1. 400 мг.', weight: '400 г', price: 29.99, sale_price: 24.99, is_sale: true, is_hit: true, manufacturer: 'Optimum Nutrition' },
-    { catIdx: 2, name: 'Amino Energy', description: 'Аминокислоты + энергетик. Кофеин и витамины группы B.', weight: '30 порций', price: 42.99, sale_price: null, is_sale: false, is_recommended: true, manufacturer: 'Optimum Nutrition' },
-    { catIdx: 2, name: 'Super Amino 6000', description: 'Полный спектр аминокислот в таблетках. 300 таб.', weight: '300 таб', price: 24.99, sale_price: null, is_sale: false, is_hit: false, manufacturer: 'Dymatize' },
+    { catIdx: 2, name: 'BCAA 2:1:1', description: 'Разветвлённые аминокислоты. Соотношение 2:1:1. 400 мг.', weight: '400 г', price: 29.99, sale_price: 24.99, is_sale: true, is_hit: true, manufacturer: 'Optimum Nutrition', country: 'США', servings: 40, flavors: ['Лимон', 'Арбуз'] },
+    { catIdx: 2, name: 'Amino Energy', description: 'Аминокислоты + энергетик. Кофеин и витамины группы B.', weight: '30 порций', price: 42.99, sale_price: null, is_sale: false, is_recommended: true, manufacturer: 'Optimum Nutrition', country: 'США', servings: 30, flavors: ['Зелёный чай', 'Фруктовый пунш'] },
+    { catIdx: 2, name: 'Super Amino 6000', description: 'Полный спектр аминокислот в таблетках. 300 таб.', weight: '300 таб', price: 24.99, sale_price: null, is_sale: false, is_hit: false, manufacturer: 'Dymatize', country: 'США', servings: 100, flavors: null },
     // Витамины (3)
-    { catIdx: 3, name: 'Opti-Men', description: 'Мультивитаминный комплекс для активных мужчин. 90 порций.', weight: '90 таб', price: 36.99, sale_price: 31.99, is_sale: true, is_recommended: true, manufacturer: 'Optimum Nutrition' },
-    { catIdx: 3, name: 'Omega-3 Fish Oil', description: 'Рыбий жир. 1000 мг EPA и DHA на порцию.', weight: '180 капс', price: 18.99, sale_price: null, is_sale: false, is_hit: true, manufacturer: 'Myprotein' },
-    { catIdx: 3, name: 'Vitamin D3', description: 'Витамин D3. 2000 МЕ на капсулу. 360 капсул.', weight: '360 капс', price: 12.99, sale_price: null, is_sale: false, is_recommended: true, manufacturer: 'Myprotein' },
+    { catIdx: 3, name: 'Opti-Men', description: 'Мультивитаминный комплекс для активных мужчин. 90 порций.', weight: '90 таб', price: 36.99, sale_price: 31.99, is_sale: true, is_recommended: true, manufacturer: 'Optimum Nutrition', country: 'США', servings: 90, flavors: null },
+    { catIdx: 3, name: 'Omega-3 Fish Oil', description: 'Рыбий жир. 1000 мг EPA и DHA на порцию.', weight: '180 капс', price: 18.99, sale_price: null, is_sale: false, is_hit: true, manufacturer: 'Myprotein', country: 'Великобритания', servings: 90, flavors: null },
+    { catIdx: 3, name: 'Vitamin D3', description: 'Витамин D3. 2000 МЕ на капсулу. 360 капсул.', weight: '360 капс', price: 12.99, sale_price: null, is_sale: false, is_recommended: true, manufacturer: 'Myprotein', country: 'Великобритания', servings: 360, flavors: null },
     // Жиросжигатели (4)
-    { catIdx: 4, name: 'Hydroxycut Hardcore', description: 'Термогеник и жиросжигатель. Кофеин и экстракты.', weight: '100 капс', price: 48.99, sale_price: 42.99, is_sale: true, is_hit: true, manufacturer: 'MuscleTech' },
-    { catIdx: 4, name: 'Lipo-6 Black', description: 'Многофазный жиросжигатель. Ускорение метаболизма.', weight: '120 капс', price: 39.99, sale_price: null, is_sale: false, is_recommended: true, manufacturer: 'Nutrex' },
+    { catIdx: 4, name: 'Hydroxycut Hardcore', description: 'Термогеник и жиросжигатель. Кофеин и экстракты.', weight: '100 капс', price: 48.99, sale_price: 42.99, is_sale: true, is_hit: true, manufacturer: 'MuscleTech', country: 'США', servings: 100, flavors: null },
+    { catIdx: 4, name: 'Lipo-6 Black', description: 'Многофазный жиросжигатель. Ускорение метаболизма.', weight: '120 капс', price: 39.99, sale_price: null, is_sale: false, is_recommended: true, manufacturer: 'Nutrex', country: 'США', servings: 120, flavors: null },
     // Предтрены (5)
-    { catIdx: 5, name: 'C4 Original', description: 'Предтренировочный комплекс. Энергия и фокус. 30 порций.', weight: '300 г', price: 34.99, sale_price: 29.99, is_sale: true, is_hit: true, manufacturer: 'Cellucor' },
-    { catIdx: 5, name: 'Pre-Workout Explosion', description: 'Кофеин, бета-аланин, цитруллин. Вкус арбуз.', weight: '250 г', price: 28.99, sale_price: null, is_sale: false, is_recommended: true, manufacturer: 'Myprotein' },
-    { catIdx: 5, name: 'Pump Surge', description: 'Усиление пампа и выносливости. Без кофеина.', weight: '200 г', price: 32.99, sale_price: null, is_sale: false, is_hit: false, manufacturer: 'RSP Nutrition' },
+    { catIdx: 5, name: 'C4 Original', description: 'Предтренировочный комплекс. Энергия и фокус. 30 порций.', weight: '300 г', price: 34.99, sale_price: 29.99, is_sale: true, is_hit: true, manufacturer: 'Cellucor', country: 'США', servings: 30, flavors: ['Арбуз', 'Зелёное яблоко', 'Голубая малина'] },
+    { catIdx: 5, name: 'Pre-Workout Explosion', description: 'Кофеин, бета-аланин, цитруллин. Вкус арбуз.', weight: '250 г', price: 28.99, sale_price: null, is_sale: false, is_recommended: true, manufacturer: 'Myprotein', country: 'Великобритания', servings: 50, flavors: ['Арбуз', 'Клубника'] },
+    { catIdx: 5, name: 'Pump Surge', description: 'Усиление пампа и выносливости. Без кофеина.', weight: '200 г', price: 32.99, sale_price: null, is_sale: false, is_hit: false, manufacturer: 'RSP Nutrition', country: 'США', servings: 40, flavors: ['Лимон-лайм'] },
   ];
 
   const catProductNames = {
@@ -166,6 +174,8 @@ try {
     const price = Math.round((15 + (i % 80) * 0.8 + (catIdx * 5)) * 100) / 100;
     const sale = i % 5 === 0;
     const sale_price = sale ? Math.round(price * 0.85 * 100) / 100 : null;
+    const countries = ['США', 'Великобритания', 'Германия', 'Польша', 'Италия'];
+    const flavorSet = flavorSets[i % flavorSets.length];
     products.push({
       catIdx,
       name,
@@ -176,17 +186,19 @@ try {
       is_sale: sale,
       is_hit: i % 7 === 0,
       is_recommended: i % 4 === 0,
-      // article генерируется автоматически триггером в БД
       manufacturer: manufacturers[i % manufacturers.length],
+      country: countries[i % countries.length],
+      servings: 20 + (i % 30),
+      flavors: flavorSet,
     });
   }
 
   for (const p of products) {
     const categoryId = categoryIds[p.catIdx];
-    // article не передаём — он генерируется автоматически триггером
+    const flavorsJson = p.flavors && Array.isArray(p.flavors) ? JSON.stringify(p.flavors) : null;
     await client.query(
-      `INSERT INTO products (category_id, name, description, weight, price, sale_price, is_sale, is_hit, is_recommended, manufacturer, in_stock, quantity)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true, 100)`,
+      `INSERT INTO products (category_id, name, description, weight, price, sale_price, is_sale, is_hit, is_recommended, manufacturer, in_stock, quantity, country, servings, flavors)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true, 100, $11, $12, $13)`,
       [
         categoryId,
         p.name,
@@ -198,6 +210,9 @@ try {
         !!p.is_hit,
         !!p.is_recommended,
         p.manufacturer || null,
+        p.country || null,
+        p.servings ?? null,
+        flavorsJson,
       ]
     );
   }

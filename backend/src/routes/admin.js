@@ -624,6 +624,7 @@ router.get('/products', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT p.id, p.category_id, p.name, p.description, p.weight, p.price, p.sale_price, p.image_url, p.article, p.manufacturer,
+        p.country, p.servings, p.flavors,
         (p.image_data IS NOT NULL OR (SELECT COUNT(*) FROM product_images pi WHERE pi.product_id = p.id) > 0) AS has_image,
         (SELECT COUNT(*)::int FROM product_images pi WHERE pi.product_id = p.id) AS image_count,
         COALESCE(p.in_stock, true) AS in_stock, COALESCE(p.quantity, 0)::int AS quantity,
@@ -659,7 +660,7 @@ const productImageFields = [
 
 router.post('/products', upload.fields(productImageFields), async (req, res) => {
   try {
-    const { category_id, name, description, short_description, weight, price, sale_price, image_url, is_sale, is_hit, is_recommended, in_stock, quantity, article, manufacturer } = req.body || {};
+    const { category_id, name, description, short_description, weight, price, sale_price, image_url, is_sale, is_hit, is_recommended, in_stock, quantity, article, manufacturer, country, servings, flavors } = req.body || {};
     if (!category_id || !name || price === undefined) return res.status(400).json({ message: 'Категория, название и цена обязательны' });
     const sale = parseBool(is_sale);
     const hit = parseBool(is_hit);
@@ -670,10 +671,25 @@ router.post('/products', upload.fields(productImageFields), async (req, res) => 
     const shortDescVal = short_description !== undefined && short_description !== '' ? String(short_description).trim() : null;
     const articleVal = article !== undefined && article !== '' && !Number.isNaN(parseInt(article, 10)) ? parseInt(article, 10) : null;
     const manufacturerVal = manufacturer !== undefined && String(manufacturer).trim() !== '' ? String(manufacturer).trim() : null;
+    const countryVal = country !== undefined && String(country).trim() !== '' ? String(country).trim() : null;
+    const servingsVal = servings !== undefined && servings !== '' && !Number.isNaN(parseInt(servings, 10)) ? parseInt(servings, 10) : null;
+    const flavorsVal = (() => {
+      if (flavors === undefined || flavors === null) return null;
+      if (Array.isArray(flavors)) return JSON.stringify(flavors);
+      const s = String(flavors).trim();
+      if (!s) return null;
+      try {
+        const parsed = JSON.parse(s);
+        return Array.isArray(parsed) ? JSON.stringify(parsed) : null;
+      } catch {
+        const arr = s.split(/[,;]/).map((x) => x.trim()).filter(Boolean);
+        return arr.length ? JSON.stringify(arr) : null;
+      }
+    })();
     const result = await pool.query(
-      `INSERT INTO products (category_id, name, description, short_description, weight, price, sale_price, image_url, is_sale, is_hit, is_recommended, in_stock, quantity, article, manufacturer)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id, category_id, name, description, short_description, weight, price, sale_price, image_url, created_at`,
-      [category_id, name, description || null, shortDescVal, weight || null, parseFloat(price), salePriceVal, image_url || null, sale, hit, rec, inStock, qty, articleVal, manufacturerVal]
+      `INSERT INTO products (category_id, name, description, short_description, weight, price, sale_price, image_url, is_sale, is_hit, is_recommended, in_stock, quantity, article, manufacturer, country, servings, flavors)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING id, category_id, name, description, short_description, weight, price, sale_price, image_url, created_at`,
+      [category_id, name, description || null, shortDescVal, weight || null, parseFloat(price), salePriceVal, image_url || null, sale, hit, rec, inStock, qty, articleVal, manufacturerVal, countryVal, servingsVal, flavorsVal]
     );
     const productId = result.rows[0].id;
     const files = req.files?.images?.length ? req.files.images : (req.files?.image?.length ? req.files.image : []);
@@ -702,7 +718,7 @@ router.patch('/products/:id', upload.fields(productImageFields), async (req, res
     const {
       name, description, weight, price, sale_price, image_url, category_id, is_sale, is_hit, is_recommended, in_stock, quantity,
       short_description, trust_badges, how_to_use_intro, how_to_use_step1, how_to_use_step2, how_to_use_step3, show_how_to_use, show_related,
-      article, manufacturer,
+      article, manufacturer, country, servings, flavors,
     } = body;
     const updates = [];
     const values = [];
@@ -739,6 +755,32 @@ router.patch('/products/:id', upload.fields(productImageFields), async (req, res
     if (manufacturer !== undefined) {
       updates.push(`manufacturer = $${i++}`);
       values.push(typeof manufacturer === 'string' && manufacturer.trim() !== '' ? manufacturer.trim() : null);
+    }
+    if (country !== undefined) {
+      updates.push(`country = $${i++}`);
+      values.push(typeof country === 'string' && country.trim() !== '' ? country.trim() : null);
+    }
+    if (servings !== undefined && servings !== '') {
+      const servingsVal = Number.isNaN(parseInt(servings, 10)) ? null : parseInt(servings, 10);
+      updates.push(`servings = $${i++}`);
+      values.push(servingsVal);
+    }
+    if (flavors !== undefined) {
+      const flavorsVal = (() => {
+        if (flavors === null || flavors === '') return null;
+        if (Array.isArray(flavors)) return JSON.stringify(flavors);
+        const s = String(flavors).trim();
+        if (!s) return null;
+        try {
+          const parsed = JSON.parse(s);
+          return Array.isArray(parsed) ? JSON.stringify(parsed) : null;
+        } catch {
+          const arr = s.split(/[,;]/).map((x) => x.trim()).filter(Boolean);
+          return arr.length ? JSON.stringify(arr) : null;
+        }
+      })();
+      updates.push(`flavors = $${i++}`);
+      values.push(flavorsVal);
     }
     if (updates.length === 0 && !req.files?.images?.length && !req.files?.image?.length) return res.status(400).json({ message: 'Нет данных для обновления' });
     if (updates.length > 0) {

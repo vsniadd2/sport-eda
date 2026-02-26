@@ -44,6 +44,8 @@ export default function ProductDetail() {
   const [reviewsPage, setReviewsPage] = useState(1);
   const [qtyFocused, setQtyFocused] = useState(false);
   const [qtyInput, setQtyInput] = useState('');
+  const [activeTab, setActiveTab] = useState('specs');
+  const [selectedFlavor, setSelectedFlavor] = useState(0);
   const reviewListRef = useRef(null);
 
   const productId = String(id ?? '');
@@ -51,14 +53,29 @@ export default function ProductDetail() {
   const inCart = cartQty > 0;
   const myReview = reviews.find((r) => Number(r.user_id) === Number(user?.id));
 
+  const flavorsList = useMemo(() => {
+    const f = product?.flavors;
+    if (Array.isArray(f) && f.length > 0) return f;
+    if (typeof f === 'string') {
+      try {
+        const arr = JSON.parse(f);
+        return Array.isArray(arr) ? arr : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  }, [product]);
+
   const specItems = useMemo(() => {
     if (!product) return [];
     const items = [];
-    if (product.article) items.push({ label: 'Артикул', value: product.article });
+    if (product.article != null) items.push({ label: 'Артикул', value: String(product.article) });
     if (product.weight) items.push({ label: 'Вес', value: product.weight });
     if (product.manufacturer) items.push({ label: 'Бренд', value: product.manufacturer });
     if (product.category_name) items.push({ label: 'Категория', value: product.category_name });
-    items.push({ label: 'В наличии', value: (product.quantity ?? 0) > 0 ? `${product.quantity} шт` : 'Нет' });
+    if (product.country) items.push({ label: 'Страна', value: product.country });
+    if (product.servings != null) items.push({ label: 'Порций', value: String(product.servings) });
     return items;
   }, [product]);
 
@@ -251,15 +268,22 @@ export default function ProductDetail() {
 
   const trustBadges = Array.isArray(product.trust_badges) && product.trust_badges.length > 0
     ? product.trust_badges
-    : ['Лабораторно проверено', 'Гарантия качества', '100% Оригинал'];
+    : ['Проверено лабораторно', 'Гарантия качества', 'Быстрая доставка'];
 
+  /* Иконки для бейджей доверия: лаборатория, щит с галочкой, грузовик — без повторов и без звезды */
   const trustIcons = [
-    <svg key="t1" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>,
-    <svg key="t2" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>,
+    /* Колба / лаборатория — «Проверено лабораторно» */
+    <svg key="t1" viewBox="0 0 24 24" fill="currentColor"><path d="M19.8 18.4L14 10.67V6.5l1.35-1.69c.26-.33.03-.81-.39-.81H9.04c-.42 0-.65.48-.39.81L10 6.5v4.17L4.2 18.4c-.49.66-.02 1.6.8 1.6h14c.82 0 1.29-.94.8-1.6z"/></svg>,
+    /* Щит с галочкой — «Гарантия качества» */
+    <svg key="t2" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>,
+    /* Грузовик — «Быстрая доставка» */
     <svg key="t3" viewBox="0 0 24 24" fill="currentColor"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>,
   ];
 
   const fullStars = Math.round(parseFloat(avgRating) || 0);
+  const salePercent = showSalePrice && product.price
+    ? Math.round((1 - parseFloat(product.sale_price) / parseFloat(product.price)) * 100)
+    : null;
 
   return (
     <main className={styles.main}>
@@ -292,11 +316,10 @@ export default function ProductDetail() {
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
                 </button>
               )}
-              {(product.is_sale || product.is_hit || product.is_recommended) && (
+              {(product.is_hit || product.is_sale) && (
                 <div className={styles.imageBadges}>
-                  {product.is_sale && <span className={styles.imageBadge}>Акция</span>}
-                  {product.is_hit && <span className={`${styles.imageBadge} ${styles.imageBadgeDark}`}>Хит</span>}
-                  {product.is_recommended && <span className={`${styles.imageBadge} ${styles.imageBadgeGreen}`}>Советуем</span>}
+                  {product.is_hit && <span className={styles.imageBadge}>Хит продаж</span>}
+                  {product.is_sale && salePercent != null && <span className={styles.imageBadgeSale}>-{salePercent}%</span>}
                 </div>
               )}
             </div>
@@ -313,23 +336,10 @@ export default function ProductDetail() {
 
           {/* Right — Info */}
           <div className={styles.infoCol}>
-            {/* Badge */}
-            {(product.is_sale || product.is_hit || product.is_recommended) && (
-              <div className={styles.topBadge}>
-                {product.is_hit && <span>Хит продаж</span>}
-                {product.is_sale && <span>Акция</span>}
-                {product.is_recommended && <span>Рекомендуем</span>}
-              </div>
-            )}
-
-            <h1 className={styles.productTitle}>{product.name}</h1>
-
-            {/* Brand + Rating row */}
+            {/* Brand + Rating row (brand above title, uppercase) */}
             <div className={styles.brandRatingRow}>
               {product.manufacturer && (
-                <p className={styles.brandLine}>
-                  Бренд: <span className={styles.brandName}>{product.manufacturer}</span>
-                </p>
+                <span className={styles.brandUppercase}>{product.manufacturer}</span>
               )}
               {reviews.length > 0 && (
                 <button type="button" className={styles.starsBtn} onClick={() => reviewListRef.current?.scrollIntoView({ behavior: 'smooth' })}>
@@ -343,19 +353,47 @@ export default function ProductDetail() {
               )}
             </div>
 
+            <h1 className={styles.productTitle}>{product.name}</h1>
+
             {/* Short description */}
             {product.short_description && (
               <p className={styles.shortDesc}>{product.short_description}</p>
             )}
 
-            {/* Price Card */}
-            <div className={styles.priceCard}>
+            {/* Price */}
+            <div className={styles.priceBlock}>
               <div className={styles.priceRow}>
                 <span className={styles.priceMain}>{formatPrice(effectivePrice)}</span>
                 {oldPrice != null && <span className={styles.priceOld}>{formatPrice(oldPrice)}</span>}
               </div>
+              <p className={available > 0 ? styles.availability : styles.availabilityOut}>
+                <span className={styles.availabilityIcon} aria-hidden>{available > 0 ? '✓' : '✕'}</span>
+                {available > 0 ? `В наличии: ${available} шт` : 'Нет в наличии'}
+              </p>
+            </div>
 
-              <div className={styles.cartRow}>
+            {/* Flavor selector */}
+            {flavorsList.length > 0 && (
+              <div className={styles.flavorBlock}>
+                <label className={styles.flavorLabel}>Вкус</label>
+                <div className={styles.flavorButtons}>
+                  {flavorsList.map((flavor, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      className={selectedFlavor === i ? styles.flavorBtnActive : styles.flavorBtn}
+                      onClick={() => setSelectedFlavor(i)}
+                    >
+                      {flavor}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Cart + actions */}
+            <div className={styles.cartActionsRow}>
+              <div className={styles.cartBtnWrap}>
                 {user && inCart && (
                   <div className={styles.qtyStepper}>
                     <button type="button" onClick={handleDecrease} aria-label="Уменьшить">
@@ -376,101 +414,93 @@ export default function ProductDetail() {
                 {user ? (
                   <button type="button" className={styles.addToCartBtn} onClick={handleAddToCart} disabled={available <= 0}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/></svg>
-                    В корзину
+                    В КОРЗИНУ
                   </button>
                 ) : (
                   <Link to="/login" className={styles.addToCartBtn}>Войдите, чтобы купить</Link>
                 )}
               </div>
+              <div className={styles.actionIcons}>
+                <button type="button" className={styles.actionIconBtn} onClick={() => toggleFavorite(product.id)} aria-label={inFavorites ? 'Убрать из избранного' : 'В избранное'}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill={inFavorites ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                </button>
+                <button type="button" className={styles.actionIconBtn} onClick={() => setShowShareModal(true)} aria-label="Поделиться">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                </button>
+              </div>
             </div>
 
-            {/* Action row: favorite + share + cart link */}
-            <div className={styles.actionRow}>
-              <button type="button" className={`${styles.actionPill} ${inFavorites ? styles.actionPillActive : ''}`} onClick={() => toggleFavorite(product.id)}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill={inFavorites ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                {inFavorites ? 'В избранном' : 'В избранное'}
-              </button>
-              <button type="button" className={styles.actionPill} onClick={() => setShowShareModal(true)}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-                Поделиться
-              </button>
-              <Link to="/cart" className={styles.actionPill}>Перейти в корзину</Link>
-            </div>
-
-            {/* Benefits Cards */}
+            {/* Trust badges (1.txt: 3 cards) */}
             <div className={styles.benefitsGrid}>
-              {trustBadges.slice(0, 3).map((text, i) => (
-                <div key={i} className={styles.benefitCard}>
-                  <span className={styles.benefitIcon}>{trustIcons[i] || trustIcons[0]}</span>
-                  <span className={styles.benefitText}>{text}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Trust line */}
-            <div className={styles.trustLine}>
-              <div className={styles.trustItem}>
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
-                <span>Лабораторно проверено</span>
-              </div>
-              <div className={styles.trustItem}>
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
-                <span>Гарантия качества</span>
-              </div>
-              <div className={styles.trustItem}>
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-                <span>Быстрая доставка</span>
-              </div>
+              {trustBadges.slice(0, 3).map((text, i) => {
+                const parts = String(text).split(/\s+/);
+                const label = parts.length > 1 ? parts[0] : '';
+                const bold = parts.length > 1 ? parts.slice(1).join(' ') : text;
+                return (
+                  <div key={i} className={styles.benefitCard}>
+                    <span className={styles.benefitIcon}>{trustIcons[i] || trustIcons[0]}</span>
+                    <div className={styles.benefitTextWrap}>
+                      {label && <span className={styles.benefitLabel}>{label}</span>}
+                      <span className={styles.benefitText}>{bold}</span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
 
-        {/* ===== DETAILS SECTION ===== */}
+        {/* ===== DETAILS SECTION (Tabs) ===== */}
         <div className={styles.detailsSection}>
           <div className={styles.detailsGrid}>
-            {/* Left 2/3 */}
+            {/* Left 8/12 — Tabs content */}
             <div className={styles.detailsLeft}>
-              {product.short_description && (
-                <div className={styles.descBlock}>
-                  <h3 className={styles.detailsHeading}>Краткое описание</h3>
-                  <p className={styles.detailsParagraph}>{product.short_description}</p>
+              <div className={styles.tabsCard}>
+                <div className={styles.tabsHeader}>
+                  <button type="button" className={activeTab === 'specs' ? styles.tabActive : styles.tab} onClick={() => setActiveTab('specs')}>Характеристики</button>
+                  <button type="button" className={activeTab === 'description' ? styles.tabActive : styles.tab} onClick={() => setActiveTab('description')}>Описание</button>
+                  <button type="button" className={activeTab === 'howto' ? styles.tabActive : styles.tab} onClick={() => setActiveTab('howto')}>Как принимать</button>
                 </div>
-              )}
-              {product.description && (
-                <div className={styles.descBlock}>
-                  <h3 className={styles.detailsHeading}>Описание продукта</h3>
-                  <p className={styles.detailsParagraph}>{product.description}</p>
+                <div className={styles.tabsContent}>
+                  {activeTab === 'specs' && (
+                    <>
+                      <h3 className={styles.tabsContentTitle}>Основные характеристики</h3>
+                      <div className={styles.specsGrid}>
+                        {specItems.map((s) => (
+                          <div key={s.label} className={styles.specRow}>
+                            <span className={styles.specLabel}>{s.label}</span>
+                            <span className={styles.specValue}>{s.label === 'Бренд' ? <Link to={`/catalog?search=${encodeURIComponent(s.value)}`} className={styles.specLink}>{s.value}</Link> : s.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <h3 className={styles.tabsContentTitle}>Самовывоз и Оплата</h3>
+                      <div className={styles.deliveryBlock}>
+                        <h4 className={styles.deliveryTitle}>Самовывоз</h4>
+                        <p className={styles.deliveryText}>Заказ оформляется на сайте, оплата при получении. Менеджер свяжется по телефону, когда заказ будет готов.</p>
+                        <Link to="/payment" className={styles.deliveryLink}>Подробнее о доставке</Link>
+                      </div>
+                    </>
+                  )}
+                  {activeTab === 'description' && (
+                    <div className={styles.tabDescription}>
+                      {product.description ? <p className={styles.detailsParagraph}>{product.description}</p> : <p className={styles.detailsParagraph}>Описание отсутствует.</p>}
+                    </div>
+                  )}
+                  {activeTab === 'howto' && (
+                    <div className={styles.tabHowTo}>
+                      {product.show_how_to_use !== false && (product.how_to_use_step1 || product.how_to_use_intro) ? (
+                        <>
+                          {product.how_to_use_intro && <p className={styles.featureIntro}>{product.how_to_use_intro}</p>}
+                          <ul className={styles.featureList}>
+                            {product.how_to_use_step1 && <li><span className={styles.bullet}>•</span>{product.how_to_use_step1}</li>}
+                            {product.how_to_use_step2 && <li><span className={styles.bullet}>•</span>{product.how_to_use_step2}</li>}
+                            {product.how_to_use_step3 && <li><span className={styles.bullet}>•</span>{product.how_to_use_step3}</li>}
+                          </ul>
+                        </>
+                      ) : <p className={styles.detailsParagraph}>Инструкция по применению отсутствует.</p>}
+                    </div>
+                  )}
                 </div>
-              )}
-
-              <div className={styles.featureCardsGrid}>
-                {specItems.length > 0 && (
-                  <div className={styles.featureCard}>
-                    <h4 className={styles.featureCardTitle}>
-                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                      Характеристики
-                    </h4>
-                    <ul className={styles.featureList}>
-                      {specItems.map((s) => (
-                        <li key={s.label}><span className={styles.bullet}>•</span>{s.label}: {s.value}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {product.show_how_to_use && (product.how_to_use_step1 || product.how_to_use_intro) && (
-                  <div className={styles.featureCard}>
-                    <h4 className={styles.featureCardTitle}>
-                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
-                      Способ применения
-                    </h4>
-                    {product.how_to_use_intro && <p className={styles.featureIntro}>{product.how_to_use_intro}</p>}
-                    <ul className={styles.featureList}>
-                      {product.how_to_use_step1 && <li><span className={styles.bullet}>•</span>{product.how_to_use_step1}</li>}
-                      {product.how_to_use_step2 && <li><span className={styles.bullet}>•</span>{product.how_to_use_step2}</li>}
-                      {product.how_to_use_step3 && <li><span className={styles.bullet}>•</span>{product.how_to_use_step3}</li>}
-                    </ul>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -499,7 +529,7 @@ export default function ProductDetail() {
               </div>
               {(user && (canReview || myReview)) && (
                 <button type="button" className={styles.sidebarReviewBtn} onClick={() => document.getElementById('review-form-wrap')?.scrollIntoView({ behavior: 'smooth' })}>
-                  Оставить отзыв
+                  Написать отзыв
                 </button>
               )}
             </div>
@@ -598,22 +628,12 @@ export default function ProductDetail() {
         {user && !canReview && reviews.length > 0 && !myReview && <p className={styles.reviewHint}>Оставить отзыв могут только покупатели этого товара.</p>}
         {!user && <p className={styles.reviewHint}><Link to="/login">Войдите</Link>, чтобы оставить отзыв.</p>}
 
-        {/* Delivery */}
-        <section className={styles.deliverySection}>
-          <h2 className={styles.sectionHeading}>Самовывоз и оплата</h2>
-          <div className={styles.deliveryCard}>
-            <h3 className={styles.deliveryCardTitle}>Самовывоз</h3>
-            <p className={styles.deliveryCardText}>Заказ оформляется на сайте, оплата при получении. Менеджер свяжется по телефону, когда заказ будет готов.</p>
-            <Link to="/payment" className={styles.deliveryLink}>Подробнее о самовывозе</Link>
-          </div>
-        </section>
-
         {/* Related */}
         {product.show_related !== false && sameCategoryProducts.length > 0 && (
           <section className={styles.relatedSection}>
             <h2 className={styles.sectionHeading}>Рекомендуемые товары</h2>
             <div className={styles.relatedGrid}>
-              {sameCategoryProducts.map((p) => <ProductCard key={p.id} product={p} showWishlist layout="grid" compact />)}
+              {sameCategoryProducts.map((p) => <ProductCard key={p.id} product={p} showWishlist layout="grid" compact variant="recommended" />)}
             </div>
             {product?.category_slug && <Link to={`/catalog?category=${product.category_slug}`} className={styles.categoryLink}>Все товары категории «{product.category_name}»</Link>}
           </section>

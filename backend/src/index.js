@@ -74,6 +74,7 @@ if (process.argv.includes('seed-mock')) {
           search: payload.search || undefined,
           price_min: payload.price_min != null ? payload.price_min : undefined,
           price_max: payload.price_max != null ? payload.price_max : undefined,
+          sale: payload.sale === true || payload.sale === 'true' ? true : undefined,
         });
         socket.emit('catalog:results', { products });
       } catch (err) {

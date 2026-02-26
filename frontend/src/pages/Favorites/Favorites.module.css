@@ -1,36 +1,29 @@
 .main {
+  flex: 1;
+  padding: 32px 16px 56px;
+  background: var(--color-background-light, #f9fafb);
   min-height: calc(100vh - 180px);
-  min-height: calc(100dvh - 180px);
-  padding: 24px 24px 64px;
-  padding-bottom: max(64px, env(safe-area-inset-bottom));
-  background: #fff;
-}
-
-@media (max-width: 768px) {
-  .main {
-    padding: 20px 16px;
-  }
-}
-
-@media (max-width: 480px) {
-  .main {
-    padding: 16px 12px;
-  }
 }
 
 .container {
-  max-width: 1400px;
+  max-width: 1520px;
   margin: 0 auto;
+  padding: 0 24px;
 }
 
 .breadcrumb {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-gray);
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 .breadcrumb a {
   color: var(--color-gray);
+  text-decoration: none;
 }
 
 .breadcrumb a:hover {
@@ -38,15 +31,15 @@
 }
 
 .breadcrumbSep {
-  margin: 0 4px;
-  color: var(--color-light-gray);
+  color: var(--color-gray);
+  margin: 0 2px;
 }
 
-.title {
-  font-size: 28px;
+.pageTitle {
+  font-size: 32px;
   font-weight: 700;
-  color: var(--color-dark);
-  margin-bottom: 4px;
+  color: #1a1a1a;
+  margin-bottom: 8px;
   letter-spacing: -0.02em;
 }
 
@@ -60,21 +53,26 @@
 .empty {
   text-align: center;
   padding: 64px 24px;
-  max-width: 400px;
+  max-width: 420px;
   margin: 0 auto;
 }
 
 .emptyIcon {
-  color: var(--color-light-gray);
+  color: #d1d5db;
   margin-bottom: 24px;
   display: flex;
   justify-content: center;
 }
 
+.emptyIcon svg {
+  width: 80px;
+  height: 80px;
+}
+
 .emptyTitle {
   font-size: 22px;
   font-weight: 600;
-  color: var(--color-dark);
+  color: #1a1a1a;
   margin-bottom: 12px;
 }
 
@@ -93,100 +91,49 @@
   font-size: 15px;
   font-weight: 600;
   color: #fff;
-  background: var(--color-primary);
-  border-radius: 8px;
+  background: var(--color-primary, #ff6600);
+  border-radius: 12px;
+  text-decoration: none;
   transition: background 0.2s, transform 0.1s;
   min-height: 48px;
 }
 
 .ctaLink:hover {
-  background: var(--color-primary-dark);
+  background: #e65c00;
 }
 
-/* Loading */
-.loadingBlock {
-  padding: 48px 24px;
-  text-align: center;
-}
-
-.loading {
-  font-size: 15px;
-  color: var(--color-gray);
-}
-
-.skeletonGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 24px;
-  min-height: 200px;
-}
-
-.skeletonCard {
-  height: 280px;
-  border-radius: 12px;
-  background: linear-gradient(90deg, #e8e8e8 25%, #f0f0f0 50%, #e8e8e8 75%);
-  background-size: 200% 100%;
-  animation: favoritesSkeletonShine 1.2s ease-in-out infinite;
-}
-
-@keyframes favoritesSkeletonShine {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-.skeletonSyncLine {
-  height: 24px;
-  width: 160px;
-  border-radius: 4px;
-  margin: 0 auto;
-  background: linear-gradient(90deg, #e8e8e8 25%, #f0f0f0 50%, #e8e8e8 75%);
-  background-size: 200% 100%;
-  animation: favoritesSkeletonShine 1.2s ease-in-out infinite;
-}
-
-@media (max-width: 900px) {
-  .skeletonGrid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-  }
-}
-
-@media (max-width: 520px) {
-  .skeletonGrid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-}
-
-/* Grid */
+/* Grid — как в макете «Рекомендуемые»: 1 / 2 / 4 колонки, gap-6 */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(1, 1fr);
   gap: 24px;
   min-height: 200px;
 }
 
-@media (max-width: 900px) {
+@media (min-width: 640px) {
   .grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
   }
 }
 
-@media (max-width: 520px) {
+@media (min-width: 1024px) {
   .grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   .main {
-    padding: 24px 16px 48px;
+    padding: 24px 12px 48px;
   }
 
-  .title {
-    font-size: 24px;
+  .container {
+    padding: 0 12px;
+  }
+
+  .pageTitle {
+    font-size: 26px;
   }
 
   .empty {
@@ -195,5 +142,20 @@
 
   .emptyTitle {
     font-size: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main {
+    padding: 20px 12px 40px;
+  }
+
+  .pageTitle {
+    font-size: 22px;
+  }
+
+  .breadcrumb {
+    font-size: 12px;
+    margin-bottom: 20px;
   }
 }

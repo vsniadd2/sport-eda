@@ -38,6 +38,10 @@
   flex-shrink: 0;
 }
 
+.logo:focus-visible {
+  outline: none;
+}
+
 .logoIcon {
   width: 32px;
   height: 32px;

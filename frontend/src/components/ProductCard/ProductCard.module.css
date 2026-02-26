@@ -107,17 +107,24 @@
   height: 36px;
   padding: 0;
   color: #2d2d2d;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid var(--color-light-gray);
+  background: transparent;
+  border: none;
   border-radius: 50%;
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  transition: color 0.15s, background 0.15s;
 }
 
 .wishlistBtn:hover {
   color: var(--color-primary);
-  border-color: var(--color-primary);
-  background: #fff;
+  background: rgba(196, 92, 38, 0.08);
+}
+
+.wishlistBtnActive {
+  color: var(--color-primary);
+}
+
+.wishlistBtnActive:hover {
+  background: rgba(196, 92, 38, 0.12);
 }
 
 .tag {
@@ -138,6 +145,131 @@
 .cardCatalog .tag {
   top: 12px;
   left: 12px;
+}
+
+/* Recommended (1.txt style) */
+.cardRecommended {
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.05);
+  border: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.cardRecommended .link {
+  padding: 16px;
+}
+
+.cardRecommended .imageWrap {
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  background: #f3f4f6;
+}
+
+.cardRecommended .image {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.3s ease;
+}
+
+.cardRecommended:hover .image {
+  transform: scale(1.05);
+}
+
+.cardRecommended:hover {
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,.08);
+}
+
+.tagHit {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 1;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  background: #FF6600;
+  color: #fff;
+  border-radius: 6px;
+}
+
+.tagSale {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 1;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  background: #dc2626;
+  color: #fff;
+  border-radius: 6px;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 12px;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+}
+
+.btnRoundPlus {
+  margin-top: auto;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: #FF6600;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(255,102,0,.3);
+  transition: background 0.15s;
+}
+
+.btnRoundPlus:hover:not(:disabled) {
+  background: #e65c00;
+}
+
+.btnRoundPlus:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.priceRowRecommended {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 0;
+}
+
+.cardRecommended .priceWrap {
+  margin-bottom: 0;
+  flex-wrap: nowrap;
+}
+
+.cardRecommended .price {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.cardRecommended .body {
+  padding: 0;
 }
 
 

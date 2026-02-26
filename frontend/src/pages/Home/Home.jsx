@@ -131,7 +131,7 @@ export default function Home() {
             <div className={styles.benefitItem}>
               <div className={styles.benefitIcon}>
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7L12 16.4 5.7 21l2.3-7L2 9.4h7.6z"/>
+                  <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 12.41l-2.59-2.59L7 12.59l3.5 3.5 5.5-5.5L14 9.41l-3 3z"/>
                 </svg>
               </div>
               <div>
